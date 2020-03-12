@@ -1,0 +1,526 @@
+// Copyright (c) 2020 Kevin L. Mitchell
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you
+// may not use this file except in compliance with the License.  You
+// may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied.  See the License for the specific language governing
+// permissions and limitations under the License.
+
+package parser
+
+import (
+	"github.com/stretchr/testify/mock"
+
+	"github.com/hydralang/ptk/common"
+)
+
+// State represents the parser state.  This is passed to the parsing
+// functions and should contain all the data they require to perform
+// their operation.
+type State interface {
+	// Table returns the parser table currently in use.
+	Table() Table
+
+	// PushTable allows pushing an alternative parser table onto
+	// the parser table stack.  Use this, paired with PopTable,
+	// when your grammar has different rules in particular
+	// sections of the file, e.g., like PHP embedded in a web page
+	// template.
+	PushTable(tab Table)
+
+	// PopTable allows popping a table pushed with PushTable off
+	// the parser table stack.  Use this, paired with PushTable,
+	// when your grammar has different rules in particular
+	// sections of the file, e.g., like PHP embedded in a web page
+	// template.
+	PopTable() Table
+
+	// SetTable allows changing the current table on the fly.  Its
+	// action is similar to a PopTable followed by a PushTable, so
+	// the number of entries in the parser table stack remains the
+	// same.
+	SetTable(tab Table) Table
+
+	// Stream returns the token stream currently in use.
+	Stream() common.TokenStream
+
+	// PushStream allows pushing an alternative token stream onto
+	// the token stream stack.  Use this, paired with PopStream,
+	// when your grammar allows inclusion of alternate files.
+	// Note that if the current token stream returns a nil, an
+	// implicit PopStream will be performed.
+	PushStream(ts common.TokenStream)
+
+	// PopStream allows popping a token stream off the token
+	// stream stack.  Use this, paired with PushStream, when your
+	// grammar allows inclusion of alternate files.  Note that
+	// PopStream is called implicitly if the token stream returns
+	// a nil.
+	PopStream() common.TokenStream
+
+	// SetStream allows changing the current token stream on the
+	// fly.  Its action is similar to a PopStream followed by a
+	// PushStream, so the number of entries in the token stream
+	// stack remains the same.
+	SetStream(ts common.TokenStream) common.TokenStream
+
+	// Token returns the token currently being processed.  It will
+	// be nil if NextToken has not been called, or if NextToken
+	// returned a nil value.
+	Token() *common.Token
+
+	// NextToken returns the next token to be processed.
+	NextToken() *common.Token
+
+	// MoreTokens returns a boolean true if there are more tokens
+	// available, that is, if NextToken will not return nil.
+	MoreTokens() bool
+
+	// PushToken pushes a token back.  This token will end up
+	// being the next token returned when NextToken is called.
+	// Note that the token returned by Token is not changed.
+	PushToken(tok *common.Token)
+
+	// Expression parses a sub-expression.  This is the core,
+	// workhorse function of expression parsing utilizing the
+	// Pratt technique; many token parsing functions end up
+	// calling this function recursively.  It should be called
+	// with a "right binding power", which is used in operator
+	// precedence calculations.
+	Expression(p Parser, rbp int) (common.Node, error)
+
+	// Statement parses a single statement.  This is the core,
+	// workhorse function for statement parsing utilizing the
+	// Pratt technique.
+	Statement(p Parser) (common.Node, error)
+}
+
+// MockState is a mock implementation of the State interface.
+type MockState struct {
+	mock.Mock
+}
+
+// Table returns the parser table currently in use.
+func (m *MockState) Table() Table {
+	args := m.MethodCalled("Table")
+
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(Table)
+	}
+
+	return nil
+}
+
+// PushTable allows pushing an alternative parser table onto the
+// parser table stack.  Use this, paired with PopTable, when your
+// grammar has different rules in particular sections of the file,
+// e.g., like PHP embedded in a web page template.
+func (m *MockState) PushTable(tab Table) {
+	m.MethodCalled("PushTable", tab)
+}
+
+// PopTable allows popping a table pushed with PushTable off the
+// parser table stack.  Use this, paired with PushTable, when your
+// grammar has different rules in particular sections of the file,
+// e.g., like PHP embedded in a web page template.
+func (m *MockState) PopTable() Table {
+	args := m.MethodCalled("PopTable")
+
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(Table)
+	}
+
+	return nil
+}
+
+// SetTable allows changing the current table on the fly.  Its action
+// is similar to a PopTable followed by a PushTable, so the number of
+// entries in the parser table stack remains the same.
+func (m *MockState) SetTable(tab Table) Table {
+	args := m.MethodCalled("SetTable", tab)
+
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(Table)
+	}
+
+	return nil
+}
+
+// Stream returns the token stream currently in use.
+func (m *MockState) Stream() common.TokenStream {
+	args := m.MethodCalled("Stream")
+
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(common.TokenStream)
+	}
+
+	return nil
+}
+
+// PushStream allows pushing an alternative token stream onto the
+// token stream stack.  Use this, paired with PopStream, when your
+// grammar allows inclusion of alternate files.  Note that if the
+// current token stream returns a nil, an implicit PopStream will be
+// performed.
+func (m *MockState) PushStream(ts common.TokenStream) {
+	m.MethodCalled("PushStream", ts)
+}
+
+// PopStream allows popping a token stream off the token stream stack.
+// Use this, paired with PushStream, when your grammar allows
+// inclusion of alternate files.  Note that PopStream is called
+// implicitly if the token stream returns a nil.
+func (m *MockState) PopStream() common.TokenStream {
+	args := m.MethodCalled("PopStream")
+
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(common.TokenStream)
+	}
+
+	return nil
+}
+
+// SetStream allows changing the current token stream on the fly.  Its
+// action is similar to a PopStream followed by a PushStream, so the
+// number of entries in the token stream stack remains the same.
+func (m *MockState) SetStream(ts common.TokenStream) common.TokenStream {
+	args := m.MethodCalled("SetStream", ts)
+
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(common.TokenStream)
+	}
+
+	return nil
+}
+
+// Token returns the token currently being processed.  It will be nil
+// if NextToken has not been called, or if NextToken returned a nil
+// value.
+func (m *MockState) Token() *common.Token {
+	args := m.MethodCalled("Token")
+
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(*common.Token)
+	}
+
+	return nil
+}
+
+// NextToken returns the next token to be processed.
+func (m *MockState) NextToken() *common.Token {
+	args := m.MethodCalled("NextToken")
+
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(*common.Token)
+	}
+
+	return nil
+}
+
+// MoreTokens returns a boolean true if there are more tokens
+// available, that is, if NextToken will not return nil.
+func (m *MockState) MoreTokens() bool {
+	args := m.MethodCalled("MoreTokens")
+
+	return args.Bool(0)
+}
+
+// PushToken pushes a token back.  This token will end up being the
+// next token returned when NextToken is called.  Note that the token
+// returned by Token is not changed.
+func (m *MockState) PushToken(tok *common.Token) {
+	m.MethodCalled("PushToken", tok)
+}
+
+// Expression parses a sub-expression.  This is the core, workhorse
+// function of expression parsing utilizing the Pratt technique; many
+// token parsing functions end up calling this function recursively.
+// It should be called with a "right binding power", which is used in
+// operator precedence calculations.
+func (m *MockState) Expression(p Parser, rbp int) (common.Node, error) {
+	args := m.MethodCalled("Expression", p, rbp)
+
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(common.Node), args.Error(1)
+	}
+
+	return nil, args.Error(1)
+}
+
+// Statement parses a single statement.  This is the core, workhorse
+// function for statement parsing utilizing the Pratt technique.
+func (m *MockState) Statement(p Parser) (common.Node, error) {
+	args := m.MethodCalled("Statement", p)
+
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(common.Node), args.Error(1)
+	}
+
+	return nil, args.Error(1)
+}
+
+// state is an implementation of State.
+type state struct {
+	table  common.Stack  // Stack for tables
+	stream common.Stack  // Stack for token streams
+	tokens common.Stack  // Stack of pushed-back tokens
+	tok    *common.Token // Last returned token
+}
+
+// NewState constructs and returns a new state, with the specified
+// table and stream.
+func NewState(table Table, stream common.TokenStream) State {
+	obj := &state{
+		table:  common.NewStack(),
+		stream: common.NewStack(),
+		tokens: common.NewStack(),
+	}
+
+	// Push the initial table and stream
+	obj.table.Push(table)
+	obj.stream.Push(stream)
+
+	return obj
+}
+
+// Table returns the parser table currently in use.
+func (s *state) Table() Table {
+	if tmp := s.table.Get(); tmp != nil {
+		return tmp.(Table)
+	}
+
+	return nil
+}
+
+// PushTable allows pushing an alternative parser table onto the
+// parser table stack.  Use this, paired with PopTable, when your
+// grammar has different rules in particular sections of the file,
+// e.g., like PHP embedded in a web page template.
+func (s *state) PushTable(tab Table) {
+	s.table.Push(tab)
+}
+
+// PopTable allows popping a table pushed with PushTable off the
+// parser table stack.  Use this, paired with PushTable, when your
+// grammar has different rules in particular sections of the file,
+// e.g., like PHP embedded in a web page template.
+func (s *state) PopTable() Table {
+	if tmp := s.table.Pop(); tmp != nil {
+		return tmp.(Table)
+	}
+
+	return nil
+}
+
+// SetTable allows changing the current table on the fly.  Its action
+// is similar to a PopTable followed by a PushTable, so the number of
+// entries in the parser table stack remains the same.
+func (s *state) SetTable(tab Table) Table {
+	if tmp := s.table.Set(tab); tmp != nil {
+		return tmp.(Table)
+	}
+
+	return nil
+}
+
+// Stream returns the token stream currently in use.
+func (s *state) Stream() common.TokenStream {
+	if tmp := s.stream.Get(); tmp != nil {
+		return tmp.(common.TokenStream)
+	}
+
+	return nil
+}
+
+// PushStream allows pushing an alternative token stream onto the
+// token stream stack.  Use this, paired with PopStream, when your
+// grammar allows inclusion of alternate files.  Note that if the
+// current token stream returns a nil, an implicit PopStream will be
+// performed.
+func (s *state) PushStream(ts common.TokenStream) {
+	s.stream.Push(ts)
+}
+
+// PopStream allows popping a token stream off the token stream stack.
+// Use this, paired with PushStream, when your grammar allows
+// inclusion of alternate files.  Note that PopStream is called
+// implicitly if the token stream returns a nil.
+func (s *state) PopStream() common.TokenStream {
+	if tmp := s.stream.Pop(); tmp != nil {
+		return tmp.(common.TokenStream)
+	}
+
+	return nil
+}
+
+// SetStream allows changing the current token stream on the fly.  Its
+// action is similar to a PopStream followed by a PushStream, so the
+// number of entries in the token stream stack remains the same.
+func (s *state) SetStream(ts common.TokenStream) common.TokenStream {
+	if tmp := s.stream.Set(ts); tmp != nil {
+		return tmp.(common.TokenStream)
+	}
+
+	return nil
+}
+
+// Token returns the token currently being processed.  It will be nil
+// if NextToken has not been called, or if NextToken returned a nil
+// value.
+func (s *state) Token() *common.Token {
+	return s.tok
+}
+
+// getToken is a helper that retrieves a token from the token stream.
+func (s *state) getToken() *common.Token {
+	// Loop while we have a stream
+	for tmp := s.stream.Get(); tmp != nil; tmp = s.stream.Get() {
+		stream := tmp.(common.TokenStream)
+
+		// Get the next token from it
+		tok := stream.Next()
+		if tok == nil {
+			// Stream exhausted, pop it off and try again
+			s.stream.Pop()
+			continue
+		}
+
+		// OK, we have a token
+		return tok
+	}
+
+	return nil
+}
+
+// NextToken returns the next token to be processed.
+func (s *state) NextToken() *common.Token {
+	// Are there pushed-back tokens?
+	if s.tokens.Len() > 0 {
+		s.tok = s.tokens.Pop().(*common.Token)
+	} else {
+		// Get a token from the stream(s)
+		s.tok = s.getToken()
+	}
+
+	return s.tok
+}
+
+// MoreTokens returns a boolean true if there are more tokens
+// available, that is, if NextToken will not return nil.
+func (s *state) MoreTokens() bool {
+	// Check the pushed-back token stack first
+	if s.tokens.Len() > 0 {
+		return true
+	}
+
+	// Get a token from the stream(s)
+	tok := s.getToken()
+
+	// Did we get one?
+	if tok == nil {
+		return false
+	}
+
+	// Push the token back so it'll be returned next
+	s.PushToken(tok)
+	return true
+}
+
+// PushToken pushes a token back.  This token will end up being the
+// next token returned when NextToken is called.  Note that the token
+// returned by Token is not changed.
+func (s *state) PushToken(tok *common.Token) {
+	s.tokens.Push(tok)
+}
+
+// getEntry is a helper that retrieves the table entry for a
+// particular token.
+func (s *state) getEntry(tok *common.Token) (Entry, error) {
+	// Get the table to use
+	tab := s.Table()
+	if tab == nil {
+		return Entry{}, ErrNoTable
+	}
+
+	// Look up the entry
+	ent, ok := tab[tok.Type]
+	if !ok {
+		return Entry{}, UnknownTokenType(tok)
+	}
+
+	return ent, nil
+}
+
+// Expression parses a sub-expression.  This is the core, workhorse
+// function of expression parsing utilizing the Pratt technique; many
+// token parsing functions end up calling this function recursively.
+// It should be called with a "right binding power", which is used in
+// operator precedence calculations.
+func (s *state) Expression(p Parser, rbp int) (common.Node, error) {
+	// Get a token from the state
+	tok := s.NextToken()
+	if tok == nil {
+		return nil, ExpectedToken()
+	}
+
+	// Get the table entry for it
+	ent, err := s.getEntry(tok)
+	if err != nil {
+		return nil, err
+	}
+
+	// Process the token
+	node, err := ent.callFirst(p, s, tok)
+	if err != nil {
+		return nil, err
+	}
+
+	// Handle subsequent tokens
+	for tok = s.NextToken(); tok != nil; tok = s.NextToken() {
+		// Get the table entry for the token
+		ent, err = s.getEntry(tok)
+		if err != nil {
+			return nil, err
+		}
+
+		// Check the binding power of the token
+		if rbp >= ent.Power {
+			s.PushToken(tok)
+			break
+		}
+
+		// Process the token
+		node, err = ent.callNext(p, s, node, tok)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return node, nil
+}
+
+// Statement parses a single statement.  This is the core, workhorse
+// function for statement parsing utilizing the Pratt technique.
+func (s *state) Statement(p Parser) (common.Node, error) {
+	// Get a token from the state
+	tok := s.NextToken()
+	if tok == nil {
+		// No statement
+		return nil, nil
+	}
+
+	// Get the table entry for it
+	ent, err := s.getEntry(tok)
+	if err != nil {
+		return nil, err
+	}
+
+	// Process the token and return the result
+	return ent.callStmt(p, s, tok)
+}

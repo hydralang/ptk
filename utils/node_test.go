@@ -1,0 +1,226 @@
+// Copyright (c) 2020 Kevin L. Mitchell
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you
+// may not use this file except in compliance with the License.  You
+// may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied.  See the License for the specific language governing
+// permissions and limitations under the License.
+
+package utils
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/hydralang/ptk/common"
+)
+
+func TestUnaryOperatorImplementsNode(t *testing.T) {
+	assert.Implements(t, (*common.Node)(nil), &UnaryOperator{})
+}
+
+func TestUnaryFactoryBase(t *testing.T) {
+	op := &common.Token{}
+	exp := &common.MockNode{}
+	exp.On("Location").Return(nil)
+
+	result, err := UnaryFactory(op, exp)
+
+	assert.NoError(t, err)
+	assert.Equal(t, &UnaryOperator{
+		Op:  op,
+		Exp: exp,
+	}, result)
+}
+
+func TestUnaryFactoryLocation(t *testing.T) {
+	finalLoc := &common.MockLocation{}
+	opLoc := &common.MockLocation{}
+	expLoc := &common.MockLocation{}
+	opLoc.On("ThruEnd", expLoc).Return(finalLoc, nil)
+	op := &common.Token{
+		Loc: opLoc,
+	}
+	exp := &common.MockNode{}
+	exp.On("Location").Return(expLoc)
+
+	result, err := UnaryFactory(op, exp)
+
+	assert.NoError(t, err)
+	assert.Equal(t, &UnaryOperator{
+		Loc: finalLoc,
+		Op:  op,
+		Exp: exp,
+	}, result)
+	assert.Same(t, finalLoc, result.(*UnaryOperator).Loc)
+	opLoc.AssertExpectations(t)
+	exp.AssertExpectations(t)
+}
+
+func TestUnaryFactoryLocationError(t *testing.T) {
+	opLoc := &common.MockLocation{}
+	expLoc := &common.MockLocation{}
+	opLoc.On("ThruEnd", expLoc).Return(nil, assert.AnError)
+	op := &common.Token{
+		Loc: opLoc,
+	}
+	exp := &common.MockNode{}
+	exp.On("Location").Return(expLoc)
+
+	result, err := UnaryFactory(op, exp)
+
+	assert.Same(t, assert.AnError, err)
+	assert.Nil(t, result)
+	opLoc.AssertExpectations(t)
+	exp.AssertExpectations(t)
+}
+
+func TestUnaryOperatorLocation(t *testing.T) {
+	loc := &common.MockLocation{}
+	obj := &UnaryOperator{
+		Loc: loc,
+	}
+
+	result := obj.Location()
+
+	assert.Same(t, loc, result)
+}
+
+func TestUnaryOperatorChildren(t *testing.T) {
+	exp := &common.MockNode{}
+	obj := &UnaryOperator{
+		Exp: exp,
+	}
+
+	result := obj.Children()
+
+	assert.Equal(t, []common.Node{
+		common.NewAnnotatedNode(exp, "Exp"),
+	}, result)
+}
+
+func TestUnaryOperatorString(t *testing.T) {
+	obj := &UnaryOperator{
+		Op: &common.Token{Type: "op"},
+	}
+
+	result := obj.String()
+
+	assert.Equal(t, "<op> token", result)
+}
+
+func TestBinaryOperatorImplementsNode(t *testing.T) {
+	assert.Implements(t, (*common.Node)(nil), &BinaryOperator{})
+}
+
+func TestBinaryFactoryBase(t *testing.T) {
+	op := &common.Token{}
+	l := &common.MockNode{}
+	l.On("Location").Return(nil)
+	r := &common.MockNode{}
+	r.On("Location").Return(nil)
+
+	result, err := BinaryFactory(l, r, op)
+
+	assert.NoError(t, err)
+	assert.Equal(t, &BinaryOperator{
+		Op: op,
+		L:  l,
+		R:  r,
+	}, result)
+	assert.Same(t, l, result.(*BinaryOperator).L)
+	assert.Same(t, r, result.(*BinaryOperator).R)
+}
+
+func TestBinaryFactoryLocation(t *testing.T) {
+	finalLoc := &common.MockLocation{}
+	lLoc := &common.MockLocation{}
+	rLoc := &common.MockLocation{}
+	lLoc.On("ThruEnd", rLoc).Return(finalLoc, nil)
+	op := &common.Token{}
+	l := &common.MockNode{}
+	l.On("Location").Return(lLoc)
+	r := &common.MockNode{}
+	r.On("Location").Return(rLoc)
+
+	result, err := BinaryFactory(l, r, op)
+
+	assert.NoError(t, err)
+	assert.Equal(t, &BinaryOperator{
+		Loc: finalLoc,
+		Op:  op,
+		L:   l,
+		R:   r,
+	}, result)
+	assert.Same(t, finalLoc, result.(*BinaryOperator).Loc)
+	assert.Same(t, l, result.(*BinaryOperator).L)
+	assert.Same(t, r, result.(*BinaryOperator).R)
+	lLoc.AssertExpectations(t)
+	l.AssertExpectations(t)
+	r.AssertExpectations(t)
+}
+
+func TestBinaryFactoryLocationError(t *testing.T) {
+	lLoc := &common.MockLocation{}
+	rLoc := &common.MockLocation{}
+	lLoc.On("ThruEnd", rLoc).Return(nil, assert.AnError)
+	op := &common.Token{}
+	l := &common.MockNode{}
+	l.On("Location").Return(lLoc)
+	r := &common.MockNode{}
+	r.On("Location").Return(rLoc)
+
+	result, err := BinaryFactory(l, r, op)
+
+	assert.Same(t, assert.AnError, err)
+	assert.Nil(t, result)
+	lLoc.AssertExpectations(t)
+	l.AssertExpectations(t)
+	r.AssertExpectations(t)
+}
+
+func TestBinaryOperatorLocation(t *testing.T) {
+	loc := &common.MockLocation{}
+	obj := &BinaryOperator{
+		Loc: loc,
+	}
+
+	result := obj.Location()
+
+	assert.Same(t, loc, result)
+}
+
+func TestBinaryOperatorChildren(t *testing.T) {
+	l := &common.MockNode{}
+	l.On("dummy", "left")
+	r := &common.MockNode{}
+	r.On("dummy", "right")
+	obj := &BinaryOperator{
+		L: l,
+		R: r,
+	}
+
+	result := obj.Children()
+
+	assert.Equal(t, []common.Node{
+		common.NewAnnotatedNode(l, "L"),
+		common.NewAnnotatedNode(r, "R"),
+	}, result)
+}
+
+func TestBinaryOperatorString(t *testing.T) {
+	obj := &BinaryOperator{
+		Op: &common.Token{Type: "op"},
+	}
+
+	result := obj.String()
+
+	assert.Equal(t, "<op> token", result)
+}
