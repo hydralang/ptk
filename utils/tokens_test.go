@@ -143,3 +143,17 @@ func TestListTokenStreamNextEnding(t *testing.T) {
 		started: true,
 	}, obj)
 }
+
+func TestNewAsyncTokenStream(t *testing.T) {
+	toks := []*common.Token{{}, {}, {}}
+	ts := NewListTokenStream(toks)
+
+	result := NewAsyncTokenStream(ts)
+
+	i := 0
+	for tok := result.Next(); tok != nil; tok = result.Next() {
+		assert.Same(t, toks[i], tok)
+		i++
+	}
+	assert.Equal(t, len(toks), i)
+}

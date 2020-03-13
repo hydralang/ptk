@@ -19,5 +19,5 @@
 // function and the Prefix, Infix, and InfixR closure generators for
 // filling out an Entry; the Visualize function, which produces a
 // visualization of an abstract syntax tree; and the ChanTokenStream
-// type and the NewListTokenStream function.
+// type and the NewListTokenStream and NewAsyncTokenStream functions.
 package utils
