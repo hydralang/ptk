@@ -64,20 +64,40 @@ func (q *ChanTokenStream) Done() {
 	close(q.Chan)
 }
 
+// listTokenStream is an implementation of TokenStream that is
+// initialized with a list of tokens, and simply returns the tokens in
+// sequence.
+type listTokenStream struct {
+	toks    []*common.Token // The list of tokens
+	idx     int             // The index of the current token to return
+	started bool            // A boolean indicating whether the iterator has started
+}
+
 // NewListTokenStream returns a TokenStream that retrieves its tokens
 // from a list passed to the function.  This actually uses a
 // ChanTokenStream under the covers.
 func NewListTokenStream(toks []*common.Token) common.TokenStream {
-	// Get a queue token stream
-	obj := NewChanTokenStream()
+	// return obj
+	return &listTokenStream{
+		toks: toks,
+	}
+}
 
-	// Arrange to have all the tokens added to it
-	go func() {
-		for _, tok := range toks {
-			obj.Push(tok)
-		}
-		obj.Done()
-	}()
+// Next returns the next token.  At the end of the token stream, a nil
+// should be returned.
+func (lts *listTokenStream) Next() *common.Token {
+	// Check the state
+	switch {
+	case !lts.started: // Need to start?
+		lts.started = true
 
-	return obj
+	case lts.idx >= len(lts.toks)-1:
+		return nil
+
+	default:
+		lts.idx++
+	}
+
+	// Return the indexed token
+	return lts.toks[lts.idx]
 }

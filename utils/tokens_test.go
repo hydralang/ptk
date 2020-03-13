@@ -22,6 +22,10 @@ import (
 	"github.com/hydralang/ptk/common"
 )
 
+func TestChanTokenStreamImplementsTokenStream(t *testing.T) {
+	assert.Implements(t, (*common.TokenStream)(nil), &ChanTokenStream{})
+}
+
 func TestNewChanTokenStream(t *testing.T) {
 	result := NewChanTokenStream()
 
@@ -76,15 +80,66 @@ func TestChanTokenStreamDone(t *testing.T) {
 	assert.False(t, ok)
 }
 
+func TestListTokenStreamImplementsTokenStream(t *testing.T) {
+	assert.Implements(t, (*common.TokenStream)(nil), &listTokenStream{})
+}
+
 func TestNewListTokenStream(t *testing.T) {
 	toks := []*common.Token{{}, {}, {}}
 
 	result := NewListTokenStream(toks)
 
-	i := 0
-	for tok := result.Next(); tok != nil; tok = result.Next() {
-		assert.Same(t, toks[i], tok)
-		i++
+	assert.Equal(t, &listTokenStream{
+		toks: toks,
+	}, result)
+}
+
+func TestListTokenStreamNextUnstarted(t *testing.T) {
+	toks := []*common.Token{{}, {}, {}}
+	obj := &listTokenStream{
+		toks: toks,
 	}
-	assert.Equal(t, len(toks), i)
+
+	result := obj.Next()
+
+	assert.Same(t, toks[0], result)
+	assert.Equal(t, &listTokenStream{
+		toks:    toks,
+		started: true,
+	}, obj)
+}
+
+func TestListTokenStreamNextStarted(t *testing.T) {
+	toks := []*common.Token{{}, {}, {}}
+	obj := &listTokenStream{
+		toks:    toks,
+		started: true,
+	}
+
+	result := obj.Next()
+
+	assert.Same(t, toks[1], result)
+	assert.Equal(t, &listTokenStream{
+		toks:    toks,
+		idx:     1,
+		started: true,
+	}, obj)
+}
+
+func TestListTokenStreamNextEnding(t *testing.T) {
+	toks := []*common.Token{{}, {}, {}}
+	obj := &listTokenStream{
+		toks:    toks,
+		idx:     2,
+		started: true,
+	}
+
+	result := obj.Next()
+
+	assert.Nil(t, result)
+	assert.Equal(t, &listTokenStream{
+		toks:    toks,
+		idx:     2,
+		started: true,
+	}, obj)
 }
