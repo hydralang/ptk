@@ -13,7 +13,7 @@
 // permissions and limitations under the License.
 
 // Package common contains the common code used across all ptk
-// subpackages.  The Location, LocationError, Node, AnnotatedNode,
-// Token, and TokenStream types are the most important types from this
+// subpackages.  The Location, LocationError, Node, Token, and
+// TokenStream types are the most important types from this
 // subpackage.
 package common

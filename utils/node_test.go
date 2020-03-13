@@ -22,6 +22,76 @@ import (
 	"github.com/hydralang/ptk/common"
 )
 
+func TestAnnotatedNodeImplementsNode(t *testing.T) {
+	assert.Implements(t, (*common.Node)(nil), &AnnotatedNode{})
+}
+
+func TestNewAnnotatedNode(t *testing.T) {
+	node := &common.MockNode{}
+
+	result := NewAnnotatedNode(node, "annotation")
+
+	assert.Equal(t, &AnnotatedNode{
+		node: node,
+		ann:  "annotation",
+	}, result)
+}
+
+func TestAnnotatedNodeLocation(t *testing.T) {
+	loc := &common.MockLocation{}
+	node := &common.MockNode{}
+	node.On("Location").Return(loc)
+	obj := &AnnotatedNode{
+		node: node,
+	}
+
+	result := obj.Location()
+
+	assert.Same(t, loc, result)
+	node.AssertExpectations(t)
+}
+
+func TestAnnotatedNodeChildren(t *testing.T) {
+	children := []common.Node{&common.MockNode{}, &common.MockNode{}, &common.MockNode{}}
+	node := &common.MockNode{}
+	node.On("Children").Return(children)
+	obj := &AnnotatedNode{
+		node: node,
+	}
+
+	result := obj.Children()
+
+	assert.Same(t, children[0], result[0])
+	assert.Same(t, children[1], result[1])
+	assert.Same(t, children[2], result[2])
+	node.AssertExpectations(t)
+}
+
+func TestAnnotatedNodeString(t *testing.T) {
+	node := &common.MockNode{}
+	node.On("String").Return("mock node")
+	obj := &AnnotatedNode{
+		node: node,
+		ann:  "annotation",
+	}
+
+	result := obj.String()
+
+	assert.Equal(t, "annotation: mock node", result)
+	node.AssertExpectations(t)
+}
+
+func TestAnnotatedNodeUnwrap(t *testing.T) {
+	node := &common.MockNode{}
+	obj := &AnnotatedNode{
+		node: node,
+	}
+
+	result := obj.Unwrap()
+
+	assert.Same(t, node, result)
+}
+
 func TestUnaryOperatorImplementsNode(t *testing.T) {
 	assert.Implements(t, (*common.Node)(nil), &UnaryOperator{})
 }
@@ -102,7 +172,7 @@ func TestUnaryOperatorChildren(t *testing.T) {
 	result := obj.Children()
 
 	assert.Equal(t, []common.Node{
-		common.NewAnnotatedNode(exp, "Exp"),
+		NewAnnotatedNode(exp, "Exp"),
 	}, result)
 }
 
@@ -210,8 +280,8 @@ func TestBinaryOperatorChildren(t *testing.T) {
 	result := obj.Children()
 
 	assert.Equal(t, []common.Node{
-		common.NewAnnotatedNode(l, "L"),
-		common.NewAnnotatedNode(r, "R"),
+		NewAnnotatedNode(l, "L"),
+		NewAnnotatedNode(r, "R"),
 	}, result)
 }
 

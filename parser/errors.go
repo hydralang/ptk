@@ -24,7 +24,6 @@ import (
 
 // Simple errors that may be generated within the package.
 var (
-	ErrSplitLocation    = errors.New("Attempt to range file location through an incompatible location")
 	ErrExpectedToken    = errors.New("No tokens available")
 	ErrUnknownTokenType = errors.New("Unknown token type")
 	ErrUnexpectedToken  = errors.New("Unexpected token")

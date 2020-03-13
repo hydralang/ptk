@@ -32,9 +32,9 @@ func literal(p parser.Parser, s parser.State, pow int, tok *common.Token) (commo
 // as Token implements Node.
 var Literal = parser.ExprFirst(literal)
 
-// Prefix is an ExprFirst function for prefix operators, e.g., "+" or
-// "-" when used directly before a token, that is, not in a binary
-// operator context; for example, "+123" or "-12".  The Prefix
+// Prefix constructs an ExprFirst function for prefix operators, e.g.,
+// "+" or "-" when used directly before a token--that is, not in a
+// binary operator context.  For example, "+123" or "-12".  The Prefix
 // function should be passed a "factory" function that constructs a
 // Node; this function will be called with the token representing the
 // operator and the expression to the right of the operator.  It

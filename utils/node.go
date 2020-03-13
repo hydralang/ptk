@@ -14,7 +14,54 @@
 
 package utils
 
-import "github.com/hydralang/ptk/common"
+import (
+	"fmt"
+
+	"github.com/hydralang/ptk/common"
+)
+
+// AnnotatedNode is a wrapper for Node that implements Node.  The
+// Location and String calls are proxied through, and there is an
+// Unwrap call to retrieve the wrapped Node, but the String method
+// includes a specified annotation.  This is used to allow attaching
+// annotations to the string representations of nodes for the purposes
+// of visualizing the AST.
+type AnnotatedNode struct {
+	node common.Node // The wrapped node
+	ann  string      // The annotation text
+}
+
+// NewAnnotatedNode returns a new AnnotatedNode wrapping a given node
+// with the specified annotation.
+func NewAnnotatedNode(node common.Node, annotation string) *AnnotatedNode {
+	return &AnnotatedNode{
+		node: node,
+		ann:  annotation,
+	}
+}
+
+// Location returns the node's location range.
+func (an *AnnotatedNode) Location() common.Location {
+	return an.node.Location()
+}
+
+// Children returns a list of child nodes.
+func (an *AnnotatedNode) Children() []common.Node {
+	return an.node.Children()
+}
+
+// String returns a string describing the node.  This should include
+// the location range that encompasses all of the node's tokens.
+func (an *AnnotatedNode) String() string {
+	return fmt.Sprintf("%s: %s", an.ann, an.node)
+}
+
+// Unwrap returns the underlying node.  This may be used when the
+// underlying node contains data or other methods that are not
+// otherwise accessible.
+func (an *AnnotatedNode) Unwrap() common.Node {
+	return an.node
+}
 
 // UnaryOperator is a Node implementation that describes the use of a
 // unary operator, e.g., "~".
@@ -52,7 +99,7 @@ func (u *UnaryOperator) Location() common.Location {
 
 // Children returns a list of child nodes.
 func (u *UnaryOperator) Children() []common.Node {
-	return []common.Node{common.NewAnnotatedNode(u.Exp, "Exp")}
+	return []common.Node{NewAnnotatedNode(u.Exp, "Exp")}
 }
 
 // String returns a string describing the node.  This should include
@@ -62,7 +109,7 @@ func (u *UnaryOperator) String() string {
 }
 
 // BinaryOperator is a Node implementation that describes the use of a
-// binary operator, e.g., "~".
+// binary operator, e.g., "*".
 type BinaryOperator struct {
 	Loc common.Location // The location of the expression
 	Op  *common.Token   // The unary operator
@@ -70,8 +117,8 @@ type BinaryOperator struct {
 	R   common.Node     // The right-hand side expression
 }
 
-// BinaryFactory is a factory function that may be passed to Prefix,
-// and which constructs a BinaryOperator node.
+// BinaryFactory is a factory function that may be passed to Infix or
+// InfixR, and which constructs a BinaryOperator node.
 func BinaryFactory(l, r common.Node, op *common.Token) (common.Node, error) {
 	obj := &BinaryOperator{
 		Op: op,
@@ -101,8 +148,8 @@ func (b *BinaryOperator) Location() common.Location {
 // Children returns a list of child nodes.
 func (b *BinaryOperator) Children() []common.Node {
 	return []common.Node{
-		common.NewAnnotatedNode(b.L, "L"),
-		common.NewAnnotatedNode(b.R, "R"),
+		NewAnnotatedNode(b.L, "L"),
+		NewAnnotatedNode(b.R, "R"),
 	}
 }
 

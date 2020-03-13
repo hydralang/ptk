@@ -67,38 +67,38 @@
 // of the token.  The application's lexical analyzer should produce
 // instances of this struct and communicate them to the parser through
 // a TokenStream instance; TokenStream is an interface with a Next
-// method, which returns subsequent Token instances.  (Two
-// implementations of TokenStream are provided, but the lexical
-// analyzer could also be designed to implement the TokenStream
-// interface.)
+// method, which returns subsequent Token instances.  (Several
+// implementations of TokenStream are provided in the utils package,
+// but the lexical analyzer could also be designed to implement the
+// TokenStream interface.)
 //
 // The Location type is also defined in common, as is LocationError.
 // The former is an interface with three methods, the most important
 // being String; the latter allows wrapping an error with the location
 // of the error.  There is also an implementation of Location,
-// FileLocation; this Location implementation should be suitable for
-// most uses.
+// FileLocation, in the utils package; this Location implementation
+// should be suitable for most uses.
 //
 // The final important type in common is the Node type, which is the
 // return type for all the major functions involved in the parser
 // framework.  Typically, the Node would be a set of data structures
 // which form an abstract syntax tree, but the use of an interface
 // here should allow alternatives depending on the application.  An
-// AnnotatedNode is also available; this allows wrapping arbitrary
-// Node instances with additional annotation, which may be useful for
-// the visualization utilities.
+// AnnotatedNode is also available in the utils package; this allows
+// wrapping arbitrary Node instances with additional annotation, which
+// may be useful for the visualization utilities.
 //
 // The utils directory contains utilities that may be useful to
-// developers working with ptk.  It contains UnaryOperator and
-// BinaryOperator, which are implementations of Node that can be used
-// with unary and binary operators, as the name implies.  It also
-// provides the Literal function, which may be used for literal tokens
-// and can be assigned to Entry.First; the Prefix function, which
-// generates a closure assignable to Entry.First for tokens
-// representing unary operators; and the Infix and InfixR functions,
-// which generate closures assignable to Entry.Next for tokens
-// representing left-associative and right-associative binary
-// operators, respectively.
+// developers working with ptk.  Besides the implementations mentioned
+// above, it contains UnaryOperator and BinaryOperator, which are
+// implementations of Node that can be used with unary and binary
+// operators, as the name implies.  It also provides the Literal
+// function, which may be used for literal tokens and can be assigned
+// to Entry.First; the Prefix function, which generates a closure
+// assignable to Entry.First for tokens representing unary operators;
+// and the Infix and InfixR functions, which generate closures
+// assignable to Entry.Next for tokens representing left-associative
+// and right-associative binary operators, respectively.
 //
 // The utils directory also contains the Visualize function, which can
 // be used to create a string dump of an abstract syntax tree; the

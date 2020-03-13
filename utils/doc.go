@@ -13,9 +13,11 @@
 // permissions and limitations under the License.
 
 // Package utils provides some utility functions that developers
-// utilizing ptk may find useful.  These include the UnaryOperator and
-// BinaryOperator implementations of Node; the Literal function and
-// the Prefix, Infix, and InfixR closure generators for filling out an
-// Entry; and the Visualize function, which produces a visualization
-// of an abstract syntax tree.
+// utilizing ptk may find useful.  These include the FileLocation
+// implementation of Location; the UnaryOperator and BinaryOperator
+// implementations of Node, as well as AnnotatedNode; the Literal
+// function and the Prefix, Infix, and InfixR closure generators for
+// filling out an Entry; the Visualize function, which produces a
+// visualization of an abstract syntax tree; and the ChanTokenStream
+// type and the NewListTokenStream function.
 package utils

@@ -15,8 +15,6 @@
 package common
 
 import (
-	"fmt"
-
 	"github.com/stretchr/testify/mock"
 )
 
@@ -68,47 +66,4 @@ func (m *MockNode) String() string {
 	args := m.MethodCalled("String")
 
 	return args.String(0)
-}
-
-// AnnotatedNode is a wrapper for Node that implements Node.  The
-// Location and String calls are proxied through, and there is an
-// Unwrap call to retrieve the wrapped Node, but the String method
-// includes a specified annotation.  This is used to allow attaching
-// annotations to the string representations of nodes for the purposes
-// of visualizing the AST.
-type AnnotatedNode struct {
-	node Node   // The wrapped node
-	ann  string // The annotation text
-}
-
-// NewAnnotatedNode returns a new AnnotatedNode wrapping a given node
-// with the specified annotation.
-func NewAnnotatedNode(node Node, annotation string) *AnnotatedNode {
-	return &AnnotatedNode{
-		node: node,
-		ann:  annotation,
-	}
-}
-
-// Location returns the node's location range.
-func (an *AnnotatedNode) Location() Location {
-	return an.node.Location()
-}
-
-// Children returns a list of child nodes.
-func (an *AnnotatedNode) Children() []Node {
-	return an.node.Children()
-}
-
-// String returns a string describing the node.  This should include
-// the location range that encompasses all of the node's tokens.
-func (an *AnnotatedNode) String() string {
-	return fmt.Sprintf("%s: %s", an.ann, an.node)
-}
-
-// Unwrap returns the underlying node.  This may be used when the
-// underlying node contains data or other methods that are not
-// otherwise accessible.
-func (an *AnnotatedNode) Unwrap() Node {
-	return an.node
 }
