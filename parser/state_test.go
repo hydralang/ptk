@@ -28,6 +28,66 @@ func TestMockStateImplementsState(t *testing.T) {
 	assert.Implements(t, (*State)(nil), &MockState{})
 }
 
+func TestMockStateParserNil(t *testing.T) {
+	obj := &MockState{}
+	obj.On("Parser").Return(nil)
+
+	result := obj.Parser()
+
+	assert.Nil(t, result)
+	obj.AssertExpectations(t)
+}
+
+func TestMockStateParserNotNil(t *testing.T) {
+	p := &MockParser{}
+	obj := &MockState{}
+	obj.On("Parser").Return(p)
+
+	result := obj.Parser()
+
+	assert.Same(t, p, result)
+	obj.AssertExpectations(t)
+}
+
+func TestMockStateAppState(t *testing.T) {
+	obj := &MockState{}
+	obj.On("AppState").Return("state")
+
+	result := obj.AppState()
+
+	assert.Equal(t, "state", result)
+	obj.AssertExpectations(t)
+}
+
+func TestMockStatePushAppState(t *testing.T) {
+	obj := &MockState{}
+	obj.On("PushAppState", "state")
+
+	obj.PushAppState("state")
+
+	obj.AssertExpectations(t)
+}
+
+func TestMockStatePopAppState(t *testing.T) {
+	obj := &MockState{}
+	obj.On("PopAppState").Return("state")
+
+	result := obj.PopAppState()
+
+	assert.Equal(t, "state", result)
+	obj.AssertExpectations(t)
+}
+
+func TestMockStateSetAppState(t *testing.T) {
+	obj := &MockState{}
+	obj.On("SetAppState", "new").Return("old")
+
+	result := obj.SetAppState("new")
+
+	assert.Equal(t, "old", result)
+	obj.AssertExpectations(t)
+}
+
 func TestMockStateTableNil(t *testing.T) {
 	obj := &MockState{}
 	obj.On("Table").Return(nil)
@@ -247,11 +307,10 @@ func TestPushToken(t *testing.T) {
 }
 
 func TestMockStateExpressionNil(t *testing.T) {
-	p := &MockParser{}
 	obj := &MockState{}
-	obj.On("Expression", p, 42).Return(nil, assert.AnError)
+	obj.On("Expression", 42).Return(nil, assert.AnError)
 
-	result, err := obj.Expression(p, 42)
+	result, err := obj.Expression(42)
 
 	assert.Same(t, assert.AnError, err)
 	assert.Nil(t, result)
@@ -260,11 +319,10 @@ func TestMockStateExpressionNil(t *testing.T) {
 
 func TestMockStateExpressionNotNil(t *testing.T) {
 	expected := &common.MockNode{}
-	p := &MockParser{}
 	obj := &MockState{}
-	obj.On("Expression", p, 42).Return(expected, assert.AnError)
+	obj.On("Expression", 42).Return(expected, assert.AnError)
 
-	result, err := obj.Expression(p, 42)
+	result, err := obj.Expression(42)
 
 	assert.Same(t, assert.AnError, err)
 	assert.Same(t, expected, result)
@@ -272,11 +330,10 @@ func TestMockStateExpressionNotNil(t *testing.T) {
 }
 
 func TestMockStateStatementNil(t *testing.T) {
-	p := &MockParser{}
 	obj := &MockState{}
-	obj.On("Statement", p).Return(nil, assert.AnError)
+	obj.On("Statement").Return(nil, assert.AnError)
 
-	result, err := obj.Statement(p)
+	result, err := obj.Statement()
 
 	assert.Same(t, assert.AnError, err)
 	assert.Nil(t, result)
@@ -285,11 +342,10 @@ func TestMockStateStatementNil(t *testing.T) {
 
 func TestMockStateStatementNotNil(t *testing.T) {
 	expected := &common.MockNode{}
-	p := &MockParser{}
 	obj := &MockState{}
-	obj.On("Statement", p).Return(expected, assert.AnError)
+	obj.On("Statement").Return(expected, assert.AnError)
 
-	result, err := obj.Statement(p)
+	result, err := obj.Statement()
 
 	assert.Same(t, assert.AnError, err)
 	assert.Same(t, expected, result)
@@ -304,18 +360,96 @@ func TestNewState(t *testing.T) {
 	tab := Table{
 		"foo": Entry{},
 	}
+	parser := &MockParser{}
+	parser.On("Table").Return(tab)
 	stream := &common.MockTokenStream{}
+	var opt1Called State
+	var opt2Called State
+	options := []Option{
+		func(s State) {
+			opt1Called = s
+		},
+		func(s State) {
+			opt2Called = s
+		},
+	}
 
-	result := NewState(tab, stream)
+	result := NewState(parser, stream, options)
 
+	assert.Same(t, result, opt1Called)
+	assert.Same(t, result, opt2Called)
 	state, ok := result.(*state)
 	require.True(t, ok)
+	assert.Same(t, parser, state.parser)
+	assert.Equal(t, 0, state.appState.Len())
 	assert.Equal(t, 1, state.table.Len())
 	assert.Equal(t, tab, state.table.Get())
 	assert.Equal(t, 1, state.stream.Len())
 	assert.Same(t, stream, state.stream.Get())
 	assert.Equal(t, 0, state.tokens.Len())
 	assert.Nil(t, state.tok)
+}
+
+func TestStateParser(t *testing.T) {
+	p := &MockParser{}
+	obj := &state{
+		parser: p,
+	}
+
+	result := obj.Parser()
+
+	assert.Same(t, p, result)
+}
+
+func TestStateAppState(t *testing.T) {
+	appStack := &common.MockStack{}
+	appStack.On("Get").Return("state")
+	obj := &state{
+		appState: appStack,
+	}
+
+	result := obj.AppState()
+
+	assert.Equal(t, "state", result)
+	appStack.AssertExpectations(t)
+}
+
+func TestStatePushAppState(t *testing.T) {
+	appStack := &common.MockStack{}
+	appStack.On("Push", "state")
+	obj := &state{
+		appState: appStack,
+	}
+
+	obj.PushAppState("state")
+
+	appStack.AssertExpectations(t)
+}
+
+func TestStatePopAppState(t *testing.T) {
+	appStack := &common.MockStack{}
+	appStack.On("Pop").Return("state")
+	obj := &state{
+		appState: appStack,
+	}
+
+	result := obj.PopAppState()
+
+	assert.Equal(t, "state", result)
+	appStack.AssertExpectations(t)
+}
+
+func TestStateSetAppState(t *testing.T) {
+	appStack := &common.MockStack{}
+	appStack.On("Set", "new").Return("old")
+	obj := &state{
+		appState: appStack,
+	}
+
+	result := obj.SetAppState("new")
+
+	assert.Equal(t, "old", result)
+	appStack.AssertExpectations(t)
 }
 
 func TestStateTableBase(t *testing.T) {
@@ -787,7 +921,6 @@ func (bn *binaryNode) String() string {
 }
 
 func TestStateExpressionBase(t *testing.T) {
-	parser := &MockParser{}
 	tableStack := &common.MockStack{}
 	streamStack := &common.MockStack{}
 	tokensStack := common.NewStack()
@@ -803,17 +936,15 @@ func TestStateExpressionBase(t *testing.T) {
 		{Type: "+"},
 		{Type: "n", Value: 3},
 	}
-	var first ExprFirst = func(p Parser, s State, pow int, tok *common.Token) (common.Node, error) {
-		assert.Same(t, parser, p)
+	var first ExprFirst = func(s State, pow int, tok *common.Token) (common.Node, error) {
 		assert.Same(t, obj, s)
 		assert.Equal(t, 0, pow)
 		return tok, nil
 	}
-	var next ExprNext = func(p Parser, s State, pow int, l common.Node, tok *common.Token) (common.Node, error) {
-		assert.Same(t, parser, p)
+	var next ExprNext = func(s State, pow int, l common.Node, tok *common.Token) (common.Node, error) {
 		assert.Same(t, obj, s)
 		assert.Equal(t, 10, pow)
-		r, _ := s.Expression(p, pow)
+		r, _ := s.Expression(pow)
 		return &binaryNode{
 			L:  l,
 			R:  r,
@@ -837,7 +968,7 @@ func TestStateExpressionBase(t *testing.T) {
 		tokensStack.Push(tok)
 	}
 
-	result, err := obj.Expression(parser, 0)
+	result, err := obj.Expression(0)
 
 	assert.NoError(t, err)
 	assert.Equal(t, &binaryNode{
@@ -854,7 +985,6 @@ func TestStateExpressionBase(t *testing.T) {
 }
 
 func TestStateExpressionPrecedence(t *testing.T) {
-	parser := &MockParser{}
 	tableStack := &common.MockStack{}
 	streamStack := &common.MockStack{}
 	tokensStack := common.NewStack()
@@ -872,14 +1002,12 @@ func TestStateExpressionPrecedence(t *testing.T) {
 		{Type: "+"},
 		{Type: "n", Value: 4},
 	}
-	var first ExprFirst = func(p Parser, s State, pow int, tok *common.Token) (common.Node, error) {
-		assert.Same(t, parser, p)
+	var first ExprFirst = func(s State, pow int, tok *common.Token) (common.Node, error) {
 		assert.Same(t, obj, s)
 		assert.Equal(t, 0, pow)
 		return tok, nil
 	}
-	var next ExprNext = func(p Parser, s State, pow int, l common.Node, tok *common.Token) (common.Node, error) {
-		assert.Same(t, parser, p)
+	var next ExprNext = func(s State, pow int, l common.Node, tok *common.Token) (common.Node, error) {
 		assert.Same(t, obj, s)
 		switch tok.Type {
 		case "+":
@@ -887,7 +1015,7 @@ func TestStateExpressionPrecedence(t *testing.T) {
 		case "*":
 			assert.Equal(t, 20, pow)
 		}
-		r, _ := s.Expression(p, pow)
+		r, _ := s.Expression(pow)
 		return &binaryNode{
 			L:  l,
 			R:  r,
@@ -915,7 +1043,7 @@ func TestStateExpressionPrecedence(t *testing.T) {
 		tokensStack.Push(tok)
 	}
 
-	result, err := obj.Expression(parser, 0)
+	result, err := obj.Expression(0)
 
 	assert.NoError(t, err)
 	assert.Equal(t, &binaryNode{
@@ -936,7 +1064,6 @@ func TestStateExpressionPrecedence(t *testing.T) {
 }
 
 func TestStateExpressionNoTokens(t *testing.T) {
-	parser := &MockParser{}
 	tableStack := &common.MockStack{}
 	streamStack := &common.MockStack{}
 	tokensStack := common.NewStack()
@@ -947,7 +1074,7 @@ func TestStateExpressionNoTokens(t *testing.T) {
 	}
 	streamStack.On("Get").Return(nil)
 
-	result, err := obj.Expression(parser, 0)
+	result, err := obj.Expression(0)
 
 	assert.True(t, errors.Is(err, ErrExpectedToken))
 	assert.Nil(t, result)
@@ -956,7 +1083,6 @@ func TestStateExpressionNoTokens(t *testing.T) {
 }
 
 func TestStateExpressionFirstEntryMissing(t *testing.T) {
-	parser := &MockParser{}
 	tableStack := &common.MockStack{}
 	streamStack := &common.MockStack{}
 	tokensStack := common.NewStack()
@@ -979,7 +1105,7 @@ func TestStateExpressionFirstEntryMissing(t *testing.T) {
 		tokensStack.Push(tok)
 	}
 
-	result, err := obj.Expression(parser, 0)
+	result, err := obj.Expression(0)
 
 	assert.True(t, errors.Is(err, ErrUnknownTokenType))
 	assert.Nil(t, result)
@@ -988,7 +1114,6 @@ func TestStateExpressionFirstEntryMissing(t *testing.T) {
 }
 
 func TestStateExpressionFirstFails(t *testing.T) {
-	parser := &MockParser{}
 	tableStack := &common.MockStack{}
 	streamStack := &common.MockStack{}
 	tokensStack := common.NewStack()
@@ -1004,17 +1129,15 @@ func TestStateExpressionFirstFails(t *testing.T) {
 		{Type: "+"},
 		{Type: "n", Value: 3},
 	}
-	var first ExprFirst = func(p Parser, s State, pow int, tok *common.Token) (common.Node, error) {
-		assert.Same(t, parser, p)
+	var first ExprFirst = func(s State, pow int, tok *common.Token) (common.Node, error) {
 		assert.Same(t, obj, s)
 		assert.Equal(t, 0, pow)
 		return nil, assert.AnError
 	}
-	var next ExprNext = func(p Parser, s State, pow int, l common.Node, tok *common.Token) (common.Node, error) {
-		assert.Same(t, parser, p)
+	var next ExprNext = func(s State, pow int, l common.Node, tok *common.Token) (common.Node, error) {
 		assert.Same(t, obj, s)
 		assert.Equal(t, 10, pow)
-		r, _ := s.Expression(p, pow)
+		r, _ := s.Expression(pow)
 		return &binaryNode{
 			L:  l,
 			R:  r,
@@ -1037,7 +1160,7 @@ func TestStateExpressionFirstFails(t *testing.T) {
 		tokensStack.Push(tok)
 	}
 
-	result, err := obj.Expression(parser, 0)
+	result, err := obj.Expression(0)
 
 	assert.Same(t, assert.AnError, err)
 	assert.Nil(t, result)
@@ -1046,7 +1169,6 @@ func TestStateExpressionFirstFails(t *testing.T) {
 }
 
 func TestStateExpressionNextEntryMissing(t *testing.T) {
-	parser := &MockParser{}
 	tableStack := &common.MockStack{}
 	streamStack := &common.MockStack{}
 	tokensStack := common.NewStack()
@@ -1062,8 +1184,7 @@ func TestStateExpressionNextEntryMissing(t *testing.T) {
 		{Type: "+"},
 		{Type: "n", Value: 3},
 	}
-	var first ExprFirst = func(p Parser, s State, pow int, tok *common.Token) (common.Node, error) {
-		assert.Same(t, parser, p)
+	var first ExprFirst = func(s State, pow int, tok *common.Token) (common.Node, error) {
 		assert.Same(t, obj, s)
 		assert.Equal(t, 0, pow)
 		return tok, nil
@@ -1080,7 +1201,7 @@ func TestStateExpressionNextEntryMissing(t *testing.T) {
 		tokensStack.Push(tok)
 	}
 
-	result, err := obj.Expression(parser, 0)
+	result, err := obj.Expression(0)
 
 	assert.True(t, errors.Is(err, ErrUnknownTokenType))
 	assert.Nil(t, result)
@@ -1089,7 +1210,6 @@ func TestStateExpressionNextEntryMissing(t *testing.T) {
 }
 
 func TestStateExpressionNextFails(t *testing.T) {
-	parser := &MockParser{}
 	tableStack := &common.MockStack{}
 	streamStack := &common.MockStack{}
 	tokensStack := common.NewStack()
@@ -1105,14 +1225,12 @@ func TestStateExpressionNextFails(t *testing.T) {
 		{Type: "+"},
 		{Type: "n", Value: 3},
 	}
-	var first ExprFirst = func(p Parser, s State, pow int, tok *common.Token) (common.Node, error) {
-		assert.Same(t, parser, p)
+	var first ExprFirst = func(s State, pow int, tok *common.Token) (common.Node, error) {
 		assert.Same(t, obj, s)
 		assert.Equal(t, 0, pow)
 		return tok, nil
 	}
-	var next ExprNext = func(p Parser, s State, pow int, l common.Node, tok *common.Token) (common.Node, error) {
-		assert.Same(t, parser, p)
+	var next ExprNext = func(s State, pow int, l common.Node, tok *common.Token) (common.Node, error) {
 		assert.Same(t, obj, s)
 		assert.Equal(t, 10, pow)
 		return nil, assert.AnError
@@ -1133,7 +1251,7 @@ func TestStateExpressionNextFails(t *testing.T) {
 		tokensStack.Push(tok)
 	}
 
-	result, err := obj.Expression(parser, 0)
+	result, err := obj.Expression(0)
 
 	assert.Same(t, assert.AnError, err)
 	assert.Nil(t, result)
@@ -1162,7 +1280,6 @@ func (sn *stmtNode) String() string {
 }
 
 func TestStateStatementBase(t *testing.T) {
-	parser := &MockParser{}
 	tableStack := &common.MockStack{}
 	streamStack := &common.MockStack{}
 	tokensStack := common.NewStack()
@@ -1178,8 +1295,7 @@ func TestStateStatementBase(t *testing.T) {
 		{Type: "kw", Value: "kw3"},
 		{Type: "end"},
 	}
-	var stmt Statement = func(p Parser, s State, tok *common.Token) (common.Node, error) {
-		assert.Same(t, parser, p)
+	var stmt Statement = func(s State, tok *common.Token) (common.Node, error) {
 		assert.Same(t, obj, s)
 		node := &stmtNode{
 			toks: []*common.Token{tok},
@@ -1204,7 +1320,7 @@ func TestStateStatementBase(t *testing.T) {
 		tokensStack.Push(tok)
 	}
 
-	result, err := obj.Statement(parser)
+	result, err := obj.Statement()
 
 	assert.NoError(t, err)
 	assert.Equal(t, &stmtNode{
@@ -1215,7 +1331,6 @@ func TestStateStatementBase(t *testing.T) {
 }
 
 func TestStateStatementNoTokens(t *testing.T) {
-	parser := &MockParser{}
 	tableStack := &common.MockStack{}
 	streamStack := &common.MockStack{}
 	tokensStack := common.NewStack()
@@ -1226,7 +1341,7 @@ func TestStateStatementNoTokens(t *testing.T) {
 	}
 	streamStack.On("Get").Return(nil)
 
-	result, err := obj.Statement(parser)
+	result, err := obj.Statement()
 
 	assert.NoError(t, err)
 	assert.Nil(t, result)
@@ -1235,7 +1350,6 @@ func TestStateStatementNoTokens(t *testing.T) {
 }
 
 func TestStateStatementNoEntry(t *testing.T) {
-	parser := &MockParser{}
 	tableStack := &common.MockStack{}
 	streamStack := &common.MockStack{}
 	tokensStack := common.NewStack()
@@ -1258,7 +1372,7 @@ func TestStateStatementNoEntry(t *testing.T) {
 		tokensStack.Push(tok)
 	}
 
-	result, err := obj.Statement(parser)
+	result, err := obj.Statement()
 
 	assert.True(t, errors.Is(err, ErrUnknownTokenType))
 	assert.Nil(t, result)
@@ -1267,7 +1381,6 @@ func TestStateStatementNoEntry(t *testing.T) {
 }
 
 func TestStateStatementStmtFailed(t *testing.T) {
-	parser := &MockParser{}
 	tableStack := &common.MockStack{}
 	streamStack := &common.MockStack{}
 	tokensStack := common.NewStack()
@@ -1283,8 +1396,7 @@ func TestStateStatementStmtFailed(t *testing.T) {
 		{Type: "kw", Value: "kw3"},
 		{Type: "end"},
 	}
-	var stmt Statement = func(p Parser, s State, tok *common.Token) (common.Node, error) {
-		assert.Same(t, parser, p)
+	var stmt Statement = func(s State, tok *common.Token) (common.Node, error) {
 		assert.Same(t, obj, s)
 		return nil, assert.AnError
 	}
@@ -1299,7 +1411,7 @@ func TestStateStatementStmtFailed(t *testing.T) {
 		tokensStack.Push(tok)
 	}
 
-	result, err := obj.Statement(parser)
+	result, err := obj.Statement()
 
 	assert.Same(t, assert.AnError, err)
 	assert.Nil(t, result)

@@ -24,6 +24,30 @@ import (
 // functions and should contain all the data they require to perform
 // their operation.
 type State interface {
+	// Parser returns the parser object.
+	Parser() Parser
+
+	// AppState returns the current application state.
+	AppState() interface{}
+
+	// PushAppState allows pushing an alternative application
+	// state onto the application state stack.  Use this, paired
+	// with PopAppState, when your grammar needs different state
+	// in particular sections of the file.
+	PushAppState(state interface{})
+
+	// PopAppState allows popping an application state pushed with
+	// PushAppState off the application state stack.  Use this,
+	// paired with PushAppState, when your grammar needs different
+	// state in particular sections of the file.
+	PopAppState() interface{}
+
+	// SetAppState allows changing the current application state
+	// on the fly.  Its action is similar to a PopAppState
+	// followed by a PushAppState, so the number of entries in the
+	// application state stack remains the same.
+	SetAppState(state interface{}) interface{}
+
 	// Table returns the parser table currently in use.
 	Table() Table
 
@@ -93,17 +117,63 @@ type State interface {
 	// calling this function recursively.  It should be called
 	// with a "right binding power", which is used in operator
 	// precedence calculations.
-	Expression(p Parser, rbp int) (common.Node, error)
+	Expression(rbp int) (common.Node, error)
 
 	// Statement parses a single statement.  This is the core,
 	// workhorse function for statement parsing utilizing the
 	// Pratt technique.
-	Statement(p Parser) (common.Node, error)
+	Statement() (common.Node, error)
 }
 
 // MockState is a mock implementation of the State interface.
 type MockState struct {
 	mock.Mock
+}
+
+// Parser returns the parser object.
+func (m *MockState) Parser() Parser {
+	args := m.MethodCalled("Parser")
+
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(Parser)
+	}
+
+	return nil
+}
+
+// AppState returns the current application state.
+func (m *MockState) AppState() interface{} {
+	args := m.MethodCalled("AppState")
+
+	return args.Get(0)
+}
+
+// PushAppState allows pushing an alternative application state onto
+// the application state stack.  Use this, paired with PopAppState,
+// when your grammar needs different state in particular sections of
+// the file.
+func (m *MockState) PushAppState(state interface{}) {
+	m.MethodCalled("PushAppState", state)
+}
+
+// PopAppState allows popping an application state pushed with
+// PushAppState off the application state stack.  Use this, paired
+// with PushAppState, when your grammar needs different state in
+// particular sections of the file.
+func (m *MockState) PopAppState() interface{} {
+	args := m.MethodCalled("PopAppState")
+
+	return args.Get(0)
+}
+
+// SetAppState allows changing the current application state on the
+// fly.  Its action is similar to a PopAppState followed by a
+// PushAppState, so the number of entries in the application state
+// stack remains the same.
+func (m *MockState) SetAppState(state interface{}) interface{} {
+	args := m.MethodCalled("SetAppState", state)
+
+	return args.Get(0)
 }
 
 // Table returns the parser table currently in use.
@@ -243,8 +313,8 @@ func (m *MockState) PushToken(tok *common.Token) {
 // token parsing functions end up calling this function recursively.
 // It should be called with a "right binding power", which is used in
 // operator precedence calculations.
-func (m *MockState) Expression(p Parser, rbp int) (common.Node, error) {
-	args := m.MethodCalled("Expression", p, rbp)
+func (m *MockState) Expression(rbp int) (common.Node, error) {
+	args := m.MethodCalled("Expression", rbp)
 
 	if tmp := args.Get(0); tmp != nil {
 		return tmp.(common.Node), args.Error(1)
@@ -255,8 +325,8 @@ func (m *MockState) Expression(p Parser, rbp int) (common.Node, error) {
 
 // Statement parses a single statement.  This is the core, workhorse
 // function for statement parsing utilizing the Pratt technique.
-func (m *MockState) Statement(p Parser) (common.Node, error) {
-	args := m.MethodCalled("Statement", p)
+func (m *MockState) Statement() (common.Node, error) {
+	args := m.MethodCalled("Statement")
 
 	if tmp := args.Get(0); tmp != nil {
 		return tmp.(common.Node), args.Error(1)
@@ -267,26 +337,69 @@ func (m *MockState) Statement(p Parser) (common.Node, error) {
 
 // state is an implementation of State.
 type state struct {
-	table  common.Stack  // Stack for tables
-	stream common.Stack  // Stack for token streams
-	tokens common.Stack  // Stack of pushed-back tokens
-	tok    *common.Token // Last returned token
+	parser   Parser        // The parser being used
+	appState common.Stack  // Stack for application state
+	table    common.Stack  // Stack for tables
+	stream   common.Stack  // Stack for token streams
+	tokens   common.Stack  // Stack of pushed-back tokens
+	tok      *common.Token // Last returned token
 }
 
 // NewState constructs and returns a new state, with the specified
 // table and stream.
-func NewState(table Table, stream common.TokenStream) State {
+func NewState(parser Parser, stream common.TokenStream, options []Option) State {
 	obj := &state{
-		table:  common.NewStack(),
-		stream: common.NewStack(),
-		tokens: common.NewStack(),
+		parser:   parser,
+		appState: common.NewStack(),
+		table:    common.NewStack(),
+		stream:   common.NewStack(),
+		tokens:   common.NewStack(),
 	}
 
 	// Push the initial table and stream
-	obj.table.Push(table)
+	obj.table.Push(parser.Table())
 	obj.stream.Push(stream)
 
+	// Apply options
+	for _, opt := range options {
+		opt(obj)
+	}
+
 	return obj
+}
+
+// Parser returns the parser object.
+func (s *state) Parser() Parser {
+	return s.parser
+}
+
+// AppState returns the current application state.
+func (s *state) AppState() interface{} {
+	return s.appState.Get()
+}
+
+// PushAppState allows pushing an alternative application state onto
+// the application state stack.  Use this, paired with PopAppState,
+// when your grammar needs different state in particular sections of
+// the file.
+func (s *state) PushAppState(state interface{}) {
+	s.appState.Push(state)
+}
+
+// PopAppState allows popping an application state pushed with
+// PushAppState off the application state stack.  Use this, paired
+// with PushAppState, when your grammar needs different state in
+// particular sections of the file.
+func (s *state) PopAppState() interface{} {
+	return s.appState.Pop()
+}
+
+// SetAppState allows changing the current application state on the
+// fly.  Its action is similar to a PopAppState followed by a
+// PushAppState, so the number of entries in the application state
+// stack remains the same.
+func (s *state) SetAppState(state interface{}) interface{} {
+	return s.appState.Set(state)
 }
 
 // Table returns the parser table currently in use.
@@ -462,7 +575,7 @@ func (s *state) getEntry(tok *common.Token) (Entry, error) {
 // token parsing functions end up calling this function recursively.
 // It should be called with a "right binding power", which is used in
 // operator precedence calculations.
-func (s *state) Expression(p Parser, rbp int) (common.Node, error) {
+func (s *state) Expression(rbp int) (common.Node, error) {
 	// Get a token from the state
 	tok := s.NextToken()
 	if tok == nil {
@@ -476,7 +589,7 @@ func (s *state) Expression(p Parser, rbp int) (common.Node, error) {
 	}
 
 	// Process the token
-	node, err := ent.callFirst(p, s, tok)
+	node, err := ent.callFirst(s, tok)
 	if err != nil {
 		return nil, err
 	}
@@ -496,7 +609,7 @@ func (s *state) Expression(p Parser, rbp int) (common.Node, error) {
 		}
 
 		// Process the token
-		node, err = ent.callNext(p, s, node, tok)
+		node, err = ent.callNext(s, node, tok)
 		if err != nil {
 			return nil, err
 		}
@@ -507,7 +620,7 @@ func (s *state) Expression(p Parser, rbp int) (common.Node, error) {
 
 // Statement parses a single statement.  This is the core, workhorse
 // function for statement parsing utilizing the Pratt technique.
-func (s *state) Statement(p Parser) (common.Node, error) {
+func (s *state) Statement() (common.Node, error) {
 	// Get a token from the state
 	tok := s.NextToken()
 	if tok == nil {
@@ -522,5 +635,5 @@ func (s *state) Statement(p Parser) (common.Node, error) {
 	}
 
 	// Process the token and return the result
-	return ent.callStmt(p, s, tok)
+	return ent.callStmt(s, tok)
 }

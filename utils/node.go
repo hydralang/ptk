@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/hydralang/ptk/common"
+	"github.com/hydralang/ptk/parser"
 )
 
 // AnnotatedNode is a wrapper for Node that implements Node.  The
@@ -73,7 +74,7 @@ type UnaryOperator struct {
 
 // UnaryFactory is a factory function that may be passed to Prefix,
 // and which constructs a UnaryOperator node.
-func UnaryFactory(op *common.Token, exp common.Node) (common.Node, error) {
+func UnaryFactory(s parser.State, op *common.Token, exp common.Node) (common.Node, error) {
 	obj := &UnaryOperator{
 		Op:  op,
 		Exp: exp,
@@ -119,7 +120,7 @@ type BinaryOperator struct {
 
 // BinaryFactory is a factory function that may be passed to Infix or
 // InfixR, and which constructs a BinaryOperator node.
-func BinaryFactory(l, r common.Node, op *common.Token) (common.Node, error) {
+func BinaryFactory(s parser.State, l, r common.Node, op *common.Token) (common.Node, error) {
 	obj := &BinaryOperator{
 		Op: op,
 		L:  l,

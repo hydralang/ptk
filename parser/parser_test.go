@@ -19,6 +19,7 @@ import (
 
 	"github.com/klmitch/patcher"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/hydralang/ptk/common"
 )
@@ -27,10 +28,33 @@ func TestMockParserImplementsParser(t *testing.T) {
 	assert.Implements(t, (*Parser)(nil), &MockParser{})
 }
 
+func TestMockParserTableNil(t *testing.T) {
+	obj := &MockParser{}
+	obj.On("Table").Return(nil)
+
+	result := obj.Table()
+
+	assert.Nil(t, result)
+	obj.AssertExpectations(t)
+}
+
+func TestMockParserTableNotNil(t *testing.T) {
+	tab := Table{
+		"ent": Entry{},
+	}
+	obj := &MockParser{}
+	obj.On("Table").Return(tab)
+
+	result := obj.Table()
+
+	assert.Equal(t, tab, result)
+	obj.AssertExpectations(t)
+}
+
 func TestMockParserExpressionNil(t *testing.T) {
 	stream := &common.MockTokenStream{}
 	obj := &MockParser{}
-	obj.On("Expression", stream).Return(nil, assert.AnError)
+	obj.On("Expression", stream, mock.Anything).Return(nil, assert.AnError)
 
 	result, err := obj.Expression(stream)
 
@@ -43,7 +67,7 @@ func TestMockParserExpressionNotNil(t *testing.T) {
 	expected := &common.MockNode{}
 	stream := &common.MockTokenStream{}
 	obj := &MockParser{}
-	obj.On("Expression", stream).Return(expected, assert.AnError)
+	obj.On("Expression", stream, mock.Anything).Return(expected, assert.AnError)
 
 	result, err := obj.Expression(stream)
 
@@ -55,7 +79,7 @@ func TestMockParserExpressionNotNil(t *testing.T) {
 func TestMockParserStatementNil(t *testing.T) {
 	stream := &common.MockTokenStream{}
 	obj := &MockParser{}
-	obj.On("Statement", stream).Return(nil, assert.AnError)
+	obj.On("Statement", stream, mock.Anything).Return(nil, assert.AnError)
 
 	result, err := obj.Statement(stream)
 
@@ -68,7 +92,7 @@ func TestMockParserStatementNotNil(t *testing.T) {
 	expected := &common.MockNode{}
 	stream := &common.MockTokenStream{}
 	obj := &MockParser{}
-	obj.On("Statement", stream).Return(expected, assert.AnError)
+	obj.On("Statement", stream, mock.Anything).Return(expected, assert.AnError)
 
 	result, err := obj.Statement(stream)
 
@@ -80,7 +104,7 @@ func TestMockParserStatementNotNil(t *testing.T) {
 func TestMockParserStatementsNil(t *testing.T) {
 	stream := &common.MockTokenStream{}
 	obj := &MockParser{}
-	obj.On("Statements", stream).Return(nil, assert.AnError)
+	obj.On("Statements", stream, mock.Anything).Return(nil, assert.AnError)
 
 	result, err := obj.Statements(stream)
 
@@ -92,7 +116,7 @@ func TestMockParserStatementsNil(t *testing.T) {
 func TestMockParserStatementsNotNil(t *testing.T) {
 	stream := &common.MockTokenStream{}
 	obj := &MockParser{}
-	obj.On("Statements", stream).Return([]common.Node{}, assert.AnError)
+	obj.On("Statements", stream, mock.Anything).Return([]common.Node{}, assert.AnError)
 
 	result, err := obj.Statements(stream)
 
@@ -117,6 +141,20 @@ func TestNew(t *testing.T) {
 	}, result)
 }
 
+func TestParserTable(t *testing.T) {
+	obj := &parser{
+		table: Table{
+			"ent": Entry{},
+		},
+	}
+
+	result := obj.Table()
+
+	assert.Equal(t, Table{
+		"ent": Entry{},
+	}, result)
+}
+
 func TestParserExpression(t *testing.T) {
 	obj := &parser{
 		table: Table{
@@ -124,16 +162,21 @@ func TestParserExpression(t *testing.T) {
 		},
 	}
 	stream := &common.MockTokenStream{}
+	options := []Option{
+		func(s State) {},
+		func(s State) {},
+	}
 	state := &MockState{}
 	node := &common.MockNode{}
-	state.On("Expression", obj, 0).Return(node, assert.AnError)
-	defer patcher.SetVar(&newState, func(tab Table, str common.TokenStream) State {
-		assert.Equal(t, obj.table, tab)
+	state.On("Expression", 0).Return(node, assert.AnError)
+	defer patcher.SetVar(&newState, func(p Parser, str common.TokenStream, options []Option) State {
+		assert.Same(t, obj, p)
 		assert.Same(t, stream, str)
+		assert.Len(t, options, 2)
 		return state
 	}).Install().Restore()
 
-	result, err := obj.Expression(stream)
+	result, err := obj.Expression(stream, options...)
 
 	assert.Same(t, assert.AnError, err)
 	assert.Same(t, node, result)
@@ -147,16 +190,21 @@ func TestParserStatement(t *testing.T) {
 		},
 	}
 	stream := &common.MockTokenStream{}
+	options := []Option{
+		func(s State) {},
+		func(s State) {},
+	}
 	state := &MockState{}
 	node := &common.MockNode{}
-	state.On("Statement", obj).Return(node, assert.AnError)
-	defer patcher.SetVar(&newState, func(tab Table, str common.TokenStream) State {
-		assert.Equal(t, obj.table, tab)
+	state.On("Statement").Return(node, assert.AnError)
+	defer patcher.SetVar(&newState, func(p Parser, str common.TokenStream, options []Option) State {
+		assert.Same(t, obj, p)
 		assert.Same(t, stream, str)
+		assert.Len(t, options, 2)
 		return state
 	}).Install().Restore()
 
-	result, err := obj.Statement(stream)
+	result, err := obj.Statement(stream, options...)
 
 	assert.Same(t, assert.AnError, err)
 	assert.Same(t, node, result)
@@ -170,20 +218,25 @@ func TestParserStatementsBase(t *testing.T) {
 		},
 	}
 	stream := &common.MockTokenStream{}
+	options := []Option{
+		func(s State) {},
+		func(s State) {},
+	}
 	state := &MockState{}
 	nodes := []common.Node{&common.MockNode{}, &common.MockNode{}, &common.MockNode{}}
 	for i, node := range nodes {
 		node.(*common.MockNode).On("dummy", i) // make distinct
-		state.On("Statement", obj).Return(node, nil).Once()
+		state.On("Statement").Return(node, nil).Once()
 	}
-	state.On("Statement", obj).Return(nil, nil)
-	defer patcher.SetVar(&newState, func(tab Table, str common.TokenStream) State {
-		assert.Equal(t, obj.table, tab)
+	state.On("Statement").Return(nil, nil)
+	defer patcher.SetVar(&newState, func(p Parser, str common.TokenStream, options []Option) State {
+		assert.Same(t, obj, p)
 		assert.Same(t, stream, str)
+		assert.Len(t, options, 2)
 		return state
 	}).Install().Restore()
 
-	result, err := obj.Statements(stream)
+	result, err := obj.Statements(stream, options...)
 
 	assert.NoError(t, err)
 	assert.Equal(t, nodes, result)
@@ -197,15 +250,20 @@ func TestParserStatementsError(t *testing.T) {
 		},
 	}
 	stream := &common.MockTokenStream{}
+	options := []Option{
+		func(s State) {},
+		func(s State) {},
+	}
 	state := &MockState{}
-	state.On("Statement", obj).Return(nil, assert.AnError)
-	defer patcher.SetVar(&newState, func(tab Table, str common.TokenStream) State {
-		assert.Equal(t, obj.table, tab)
+	state.On("Statement").Return(nil, assert.AnError)
+	defer patcher.SetVar(&newState, func(p Parser, str common.TokenStream, options []Option) State {
+		assert.Same(t, obj, p)
 		assert.Same(t, stream, str)
+		assert.Len(t, options, 2)
 		return state
 	}).Install().Restore()
 
-	result, err := obj.Statements(stream)
+	result, err := obj.Statements(stream, options...)
 
 	assert.Same(t, assert.AnError, err)
 	assert.Nil(t, result)

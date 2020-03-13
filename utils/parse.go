@@ -22,7 +22,7 @@ import (
 // literal is a ExprFirst function for literal tokens.  Its
 // implementation is trivial: it simply returns the token, as Token
 // implements Node.
-func literal(p parser.Parser, s parser.State, pow int, tok *common.Token) (common.Node, error) {
+func literal(s parser.State, pow int, tok *common.Token) (common.Node, error) {
 	return tok, nil
 }
 
@@ -41,16 +41,16 @@ var Literal = parser.ExprFirst(literal)
 // should also be called with a binding power; typically, this binding
 // power will be higher than the binding power for the same operator
 // as a binary operator, which is why it is separate from the Entry.
-func Prefix(factory func(op *common.Token, exp common.Node) (common.Node, error), power int) parser.ExprFirst {
-	return func(p parser.Parser, s parser.State, pow int, tok *common.Token) (common.Node, error) {
+func Prefix(factory func(s parser.State, op *common.Token, exp common.Node) (common.Node, error), power int) parser.ExprFirst {
+	return func(s parser.State, pow int, tok *common.Token) (common.Node, error) {
 		// Get the sub-expression on the right
-		exp, err := s.Expression(p, power)
+		exp, err := s.Expression(power)
 		if err != nil {
 			return nil, err
 		}
 
 		// Construct the node and return it
-		return factory(tok, exp)
+		return factory(s, tok, exp)
 	}
 }
 
@@ -61,16 +61,16 @@ func Prefix(factory func(op *common.Token, exp common.Node) (common.Node, error)
 // "factory" function that constructs a Node; this function will be
 // called with the left and right nodes and the token representing the
 // operator.
-func Infix(factory func(l, r common.Node, op *common.Token) (common.Node, error)) parser.ExprNext {
-	return func(p parser.Parser, s parser.State, pow int, l common.Node, tok *common.Token) (common.Node, error) {
+func Infix(factory func(s parser.State, l, r common.Node, op *common.Token) (common.Node, error)) parser.ExprNext {
+	return func(s parser.State, pow int, l common.Node, tok *common.Token) (common.Node, error) {
 		// Get the sub-expression on the right
-		r, err := s.Expression(p, pow)
+		r, err := s.Expression(pow)
 		if err != nil {
 			return nil, err
 		}
 
 		// Construct the node and return it
-		return factory(l, r, tok)
+		return factory(s, l, r, tok)
 	}
 }
 
@@ -80,15 +80,15 @@ func Infix(factory func(l, r common.Node, op *common.Token) (common.Node, error)
 // The InfixR should be passed a factory function, which will be
 // called with the left and right nodes and the token representing the
 // operator.
-func InfixR(factory func(l, r common.Node, op *common.Token) (common.Node, error)) parser.ExprNext {
-	return func(p parser.Parser, s parser.State, pow int, l common.Node, tok *common.Token) (common.Node, error) {
+func InfixR(factory func(s parser.State, l, r common.Node, op *common.Token) (common.Node, error)) parser.ExprNext {
+	return func(s parser.State, pow int, l common.Node, tok *common.Token) (common.Node, error) {
 		// Get the sub-expression on the right
-		r, err := s.Expression(p, pow-1)
+		r, err := s.Expression(pow - 1)
 		if err != nil {
 			return nil, err
 		}
 
 		// Construct the node and return it
-		return factory(l, r, tok)
+		return factory(s, l, r, tok)
 	}
 }

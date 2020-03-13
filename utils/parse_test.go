@@ -24,25 +24,24 @@ import (
 )
 
 func TestLiteral(t *testing.T) {
-	p := &parser.MockParser{}
 	s := &parser.MockState{}
 	tok := &common.Token{}
 
-	result, err := literal(p, s, 42, tok)
+	result, err := literal(s, 42, tok)
 
 	assert.NoError(t, err)
 	assert.Same(t, tok, result)
 }
 
 func TestPrefixBase(t *testing.T) {
-	p := &parser.MockParser{}
 	s := &parser.MockState{}
 	op := &common.Token{}
 	exp := &common.MockNode{}
-	s.On("Expression", p, 42).Return(exp, nil)
+	s.On("Expression", 42).Return(exp, nil)
 	node := &common.MockNode{}
 	factoryCalled := false
-	factory := func(o *common.Token, e common.Node) (common.Node, error) {
+	factory := func(fs parser.State, o *common.Token, e common.Node) (common.Node, error) {
+		assert.Same(t, s, fs)
 		assert.Same(t, op, o)
 		assert.Same(t, exp, e)
 		factoryCalled = true
@@ -50,7 +49,7 @@ func TestPrefixBase(t *testing.T) {
 	}
 
 	first := Prefix(factory, 42)
-	result, err := first(p, s, 17, op)
+	result, err := first(s, 17, op)
 
 	assert.NoError(t, err)
 	assert.Same(t, node, result)
@@ -58,14 +57,14 @@ func TestPrefixBase(t *testing.T) {
 }
 
 func TestPrefixExpressionFails(t *testing.T) {
-	p := &parser.MockParser{}
 	s := &parser.MockState{}
 	op := &common.Token{}
 	exp := &common.MockNode{}
-	s.On("Expression", p, 42).Return(nil, assert.AnError)
+	s.On("Expression", 42).Return(nil, assert.AnError)
 	node := &common.MockNode{}
 	factoryCalled := false
-	factory := func(o *common.Token, e common.Node) (common.Node, error) {
+	factory := func(fs parser.State, o *common.Token, e common.Node) (common.Node, error) {
+		assert.Same(t, s, fs)
 		assert.Same(t, op, o)
 		assert.Same(t, exp, e)
 		factoryCalled = true
@@ -73,7 +72,7 @@ func TestPrefixExpressionFails(t *testing.T) {
 	}
 
 	first := Prefix(factory, 42)
-	result, err := first(p, s, 17, op)
+	result, err := first(s, 17, op)
 
 	assert.Same(t, assert.AnError, err)
 	assert.Nil(t, result)
@@ -81,13 +80,13 @@ func TestPrefixExpressionFails(t *testing.T) {
 }
 
 func TestPrefixFactoryFails(t *testing.T) {
-	p := &parser.MockParser{}
 	s := &parser.MockState{}
 	op := &common.Token{}
 	exp := &common.MockNode{}
-	s.On("Expression", p, 42).Return(exp, nil)
+	s.On("Expression", 42).Return(exp, nil)
 	factoryCalled := false
-	factory := func(o *common.Token, e common.Node) (common.Node, error) {
+	factory := func(fs parser.State, o *common.Token, e common.Node) (common.Node, error) {
+		assert.Same(t, s, fs)
 		assert.Same(t, op, o)
 		assert.Same(t, exp, e)
 		factoryCalled = true
@@ -95,7 +94,7 @@ func TestPrefixFactoryFails(t *testing.T) {
 	}
 
 	first := Prefix(factory, 42)
-	result, err := first(p, s, 17, op)
+	result, err := first(s, 17, op)
 
 	assert.Same(t, assert.AnError, err)
 	assert.Nil(t, result)
@@ -103,15 +102,15 @@ func TestPrefixFactoryFails(t *testing.T) {
 }
 
 func TestInfixBase(t *testing.T) {
-	p := &parser.MockParser{}
 	s := &parser.MockState{}
 	op := &common.Token{}
 	left := &common.MockNode{}
 	right := &common.MockNode{}
-	s.On("Expression", p, 17).Return(right, nil)
+	s.On("Expression", 17).Return(right, nil)
 	node := &common.MockNode{}
 	factoryCalled := false
-	factory := func(l, r common.Node, o *common.Token) (common.Node, error) {
+	factory := func(fs parser.State, l, r common.Node, o *common.Token) (common.Node, error) {
+		assert.Same(t, s, fs)
 		assert.Same(t, left, l)
 		assert.Same(t, right, r)
 		assert.Same(t, op, o)
@@ -120,7 +119,7 @@ func TestInfixBase(t *testing.T) {
 	}
 
 	next := Infix(factory)
-	result, err := next(p, s, 17, left, op)
+	result, err := next(s, 17, left, op)
 
 	assert.NoError(t, err)
 	assert.Same(t, node, result)
@@ -128,15 +127,15 @@ func TestInfixBase(t *testing.T) {
 }
 
 func TestInfixExpressionFails(t *testing.T) {
-	p := &parser.MockParser{}
 	s := &parser.MockState{}
 	op := &common.Token{}
 	left := &common.MockNode{}
 	right := &common.MockNode{}
-	s.On("Expression", p, 17).Return(nil, assert.AnError)
+	s.On("Expression", 17).Return(nil, assert.AnError)
 	node := &common.MockNode{}
 	factoryCalled := false
-	factory := func(l, r common.Node, o *common.Token) (common.Node, error) {
+	factory := func(fs parser.State, l, r common.Node, o *common.Token) (common.Node, error) {
+		assert.Same(t, s, fs)
 		assert.Same(t, left, l)
 		assert.Same(t, right, r)
 		assert.Same(t, op, o)
@@ -145,7 +144,7 @@ func TestInfixExpressionFails(t *testing.T) {
 	}
 
 	next := Infix(factory)
-	result, err := next(p, s, 17, left, op)
+	result, err := next(s, 17, left, op)
 
 	assert.Same(t, assert.AnError, err)
 	assert.Nil(t, result)
@@ -153,14 +152,14 @@ func TestInfixExpressionFails(t *testing.T) {
 }
 
 func TestInfixFactoryFails(t *testing.T) {
-	p := &parser.MockParser{}
 	s := &parser.MockState{}
 	op := &common.Token{}
 	left := &common.MockNode{}
 	right := &common.MockNode{}
-	s.On("Expression", p, 17).Return(right, nil)
+	s.On("Expression", 17).Return(right, nil)
 	factoryCalled := false
-	factory := func(l, r common.Node, o *common.Token) (common.Node, error) {
+	factory := func(fs parser.State, l, r common.Node, o *common.Token) (common.Node, error) {
+		assert.Same(t, s, fs)
 		assert.Same(t, op, o)
 		assert.Same(t, left, l)
 		assert.Same(t, right, r)
@@ -169,7 +168,7 @@ func TestInfixFactoryFails(t *testing.T) {
 	}
 
 	next := Infix(factory)
-	result, err := next(p, s, 17, left, op)
+	result, err := next(s, 17, left, op)
 
 	assert.Same(t, assert.AnError, err)
 	assert.Nil(t, result)
@@ -177,15 +176,15 @@ func TestInfixFactoryFails(t *testing.T) {
 }
 
 func TestInfixRBase(t *testing.T) {
-	p := &parser.MockParser{}
 	s := &parser.MockState{}
 	op := &common.Token{}
 	left := &common.MockNode{}
 	right := &common.MockNode{}
-	s.On("Expression", p, 16).Return(right, nil)
+	s.On("Expression", 16).Return(right, nil)
 	node := &common.MockNode{}
 	factoryCalled := false
-	factory := func(l, r common.Node, o *common.Token) (common.Node, error) {
+	factory := func(fs parser.State, l, r common.Node, o *common.Token) (common.Node, error) {
+		assert.Same(t, s, fs)
 		assert.Same(t, left, l)
 		assert.Same(t, right, r)
 		assert.Same(t, op, o)
@@ -194,7 +193,7 @@ func TestInfixRBase(t *testing.T) {
 	}
 
 	next := InfixR(factory)
-	result, err := next(p, s, 17, left, op)
+	result, err := next(s, 17, left, op)
 
 	assert.NoError(t, err)
 	assert.Same(t, node, result)
@@ -202,15 +201,15 @@ func TestInfixRBase(t *testing.T) {
 }
 
 func TestInfixRExpressionFails(t *testing.T) {
-	p := &parser.MockParser{}
 	s := &parser.MockState{}
 	op := &common.Token{}
 	left := &common.MockNode{}
 	right := &common.MockNode{}
-	s.On("Expression", p, 16).Return(nil, assert.AnError)
+	s.On("Expression", 16).Return(nil, assert.AnError)
 	node := &common.MockNode{}
 	factoryCalled := false
-	factory := func(l, r common.Node, o *common.Token) (common.Node, error) {
+	factory := func(fs parser.State, l, r common.Node, o *common.Token) (common.Node, error) {
+		assert.Same(t, s, fs)
 		assert.Same(t, left, l)
 		assert.Same(t, right, r)
 		assert.Same(t, op, o)
@@ -219,7 +218,7 @@ func TestInfixRExpressionFails(t *testing.T) {
 	}
 
 	next := InfixR(factory)
-	result, err := next(p, s, 17, left, op)
+	result, err := next(s, 17, left, op)
 
 	assert.Same(t, assert.AnError, err)
 	assert.Nil(t, result)
@@ -227,14 +226,14 @@ func TestInfixRExpressionFails(t *testing.T) {
 }
 
 func TestInfixRFactoryFails(t *testing.T) {
-	p := &parser.MockParser{}
 	s := &parser.MockState{}
 	op := &common.Token{}
 	left := &common.MockNode{}
 	right := &common.MockNode{}
-	s.On("Expression", p, 16).Return(right, nil)
+	s.On("Expression", 16).Return(right, nil)
 	factoryCalled := false
-	factory := func(l, r common.Node, o *common.Token) (common.Node, error) {
+	factory := func(fs parser.State, l, r common.Node, o *common.Token) (common.Node, error) {
+		assert.Same(t, s, fs)
 		assert.Same(t, op, o)
 		assert.Same(t, left, l)
 		assert.Same(t, right, r)
@@ -243,7 +242,7 @@ func TestInfixRFactoryFails(t *testing.T) {
 	}
 
 	next := InfixR(factory)
-	result, err := next(p, s, 17, left, op)
+	result, err := next(s, 17, left, op)
 
 	assert.Same(t, assert.AnError, err)
 	assert.Nil(t, result)

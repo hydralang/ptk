@@ -24,26 +24,23 @@ import (
 )
 
 func TestEntryCallFirstNil(t *testing.T) {
-	p := &MockParser{}
 	s := &MockState{}
 	tok := &common.Token{}
 	ent := Entry{}
 
-	result, err := ent.callFirst(p, s, tok)
+	result, err := ent.callFirst(s, tok)
 
 	assert.True(t, errors.Is(err, ErrUnexpectedToken))
 	assert.Nil(t, result)
 }
 
 func TestEntryCallFirstNotNil(t *testing.T) {
-	p := &MockParser{}
 	s := &MockState{}
 	tok := &common.Token{}
 	node := &common.MockNode{}
 	ent := Entry{
 		Power: 42,
-		First: ExprFirst(func(ep Parser, es State, pow int, eTok *common.Token) (common.Node, error) {
-			assert.Same(t, p, ep)
+		First: ExprFirst(func(es State, pow int, eTok *common.Token) (common.Node, error) {
 			assert.Same(t, s, es)
 			assert.Equal(t, 42, pow)
 			assert.Same(t, tok, eTok)
@@ -51,35 +48,32 @@ func TestEntryCallFirstNotNil(t *testing.T) {
 		}),
 	}
 
-	result, err := ent.callFirst(p, s, tok)
+	result, err := ent.callFirst(s, tok)
 
 	assert.Same(t, assert.AnError, err)
 	assert.Same(t, node, result)
 }
 
 func TestEntryCallNextNil(t *testing.T) {
-	p := &MockParser{}
 	s := &MockState{}
 	l := &common.MockNode{}
 	tok := &common.Token{}
 	ent := Entry{}
 
-	result, err := ent.callNext(p, s, l, tok)
+	result, err := ent.callNext(s, l, tok)
 
 	assert.True(t, errors.Is(err, ErrUnexpectedToken))
 	assert.Nil(t, result)
 }
 
 func TestEntryCallNextNotNil(t *testing.T) {
-	p := &MockParser{}
 	s := &MockState{}
 	l := &common.MockNode{}
 	tok := &common.Token{}
 	node := &common.MockNode{}
 	ent := Entry{
 		Power: 42,
-		Next: ExprNext(func(ep Parser, es State, pow int, el common.Node, eTok *common.Token) (common.Node, error) {
-			assert.Same(t, p, ep)
+		Next: ExprNext(func(es State, pow int, el common.Node, eTok *common.Token) (common.Node, error) {
 			assert.Same(t, s, es)
 			assert.Equal(t, 42, pow)
 			assert.Same(t, l, el)
@@ -88,39 +82,36 @@ func TestEntryCallNextNotNil(t *testing.T) {
 		}),
 	}
 
-	result, err := ent.callNext(p, s, l, tok)
+	result, err := ent.callNext(s, l, tok)
 
 	assert.Same(t, assert.AnError, err)
 	assert.Same(t, node, result)
 }
 
 func TestEntryCallStmtNil(t *testing.T) {
-	p := &MockParser{}
 	s := &MockState{}
 	tok := &common.Token{}
 	ent := Entry{}
 
-	result, err := ent.callStmt(p, s, tok)
+	result, err := ent.callStmt(s, tok)
 
 	assert.True(t, errors.Is(err, ErrUnexpectedToken))
 	assert.Nil(t, result)
 }
 
 func TestEntryCallStmtNotNil(t *testing.T) {
-	p := &MockParser{}
 	s := &MockState{}
 	tok := &common.Token{}
 	node := &common.MockNode{}
 	ent := Entry{
-		Stmt: Statement(func(ep Parser, es State, eTok *common.Token) (common.Node, error) {
-			assert.Same(t, p, ep)
+		Stmt: Statement(func(es State, eTok *common.Token) (common.Node, error) {
 			assert.Same(t, s, es)
 			assert.Same(t, tok, eTok)
 			return node, assert.AnError
 		}),
 	}
 
-	result, err := ent.callStmt(p, s, tok)
+	result, err := ent.callStmt(s, tok)
 
 	assert.Same(t, assert.AnError, err)
 	assert.Same(t, node, result)

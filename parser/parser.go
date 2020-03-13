@@ -22,24 +22,28 @@ import (
 
 // Patch points to enable testing functions below in isolation.
 var (
-	newState func(Table, common.TokenStream) State = NewState
+	newState func(Parser, common.TokenStream, []Option) State = NewState
 )
 
 // Parser represents the actual parser.  This is passed to the parsing
 // functions along with the parsing state.
 type Parser interface {
+	// Table returns the default table that will be used to
+	// initialize the state.
+	Table() Table
+
 	// Expression parses a single expression from the specified
 	// token stream.
-	Expression(stream common.TokenStream) (common.Node, error)
+	Expression(stream common.TokenStream, options ...Option) (common.Node, error)
 
 	// Statement parses a single statement from the specified
 	// token stream.
-	Statement(stream common.TokenStream) (common.Node, error)
+	Statement(stream common.TokenStream, options ...Option) (common.Node, error)
 
 	// Statements parses all statements from the specified token
 	// stream.  It is essentially equivalent to running Statement
 	// in a loop until all tokens are exhausted.
-	Statements(stream common.TokenStream) ([]common.Node, error)
+	Statements(stream common.TokenStream, options ...Option) ([]common.Node, error)
 }
 
 // MockParser is a mock implementation of the Parser interface.
@@ -47,10 +51,22 @@ type MockParser struct {
 	mock.Mock
 }
 
+// Table returns the default table that will be used to initialize the
+// state.
+func (m *MockParser) Table() Table {
+	args := m.MethodCalled("Table")
+
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(Table)
+	}
+
+	return nil
+}
+
 // Expression parses a single expression from the specified token
 // stream.
-func (m *MockParser) Expression(stream common.TokenStream) (common.Node, error) {
-	args := m.MethodCalled("Expression", stream)
+func (m *MockParser) Expression(stream common.TokenStream, options ...Option) (common.Node, error) {
+	args := m.MethodCalled("Expression", stream, options)
 
 	if tmp := args.Get(0); tmp != nil {
 		return tmp.(common.Node), args.Error(1)
@@ -61,8 +77,8 @@ func (m *MockParser) Expression(stream common.TokenStream) (common.Node, error) 
 
 // Statement parses a single statement from the specified token
 // stream.
-func (m *MockParser) Statement(stream common.TokenStream) (common.Node, error) {
-	args := m.MethodCalled("Statement", stream)
+func (m *MockParser) Statement(stream common.TokenStream, options ...Option) (common.Node, error) {
+	args := m.MethodCalled("Statement", stream, options)
 
 	if tmp := args.Get(0); tmp != nil {
 		return tmp.(common.Node), args.Error(1)
@@ -74,8 +90,8 @@ func (m *MockParser) Statement(stream common.TokenStream) (common.Node, error) {
 // Statements parses all statements from the specified token stream.
 // It is essentially equivalent to running Statement in a loop until
 // all tokens are exhausted.
-func (m *MockParser) Statements(stream common.TokenStream) ([]common.Node, error) {
-	args := m.MethodCalled("Statements", stream)
+func (m *MockParser) Statements(stream common.TokenStream, options ...Option) ([]common.Node, error) {
+	args := m.MethodCalled("Statements", stream, options)
 
 	if tmp := args.Get(0); tmp != nil {
 		return tmp.([]common.Node), args.Error(1)
@@ -96,38 +112,44 @@ func New(table Table) Parser {
 	}
 }
 
+// Table returns the default table that will be used to initialize the
+// state.
+func (p *parser) Table() Table {
+	return p.table
+}
+
 // Expression parses a single expression from the specified token
 // stream.
-func (p *parser) Expression(stream common.TokenStream) (common.Node, error) {
+func (p *parser) Expression(stream common.TokenStream, options ...Option) (common.Node, error) {
 	// Construct a state
-	s := newState(p.table, stream)
+	s := newState(p, stream, options)
 
 	// Parse an expression
-	return s.Expression(p, 0)
+	return s.Expression(0)
 }
 
 // Statement parses a single statement from the specified token
 // stream.
-func (p *parser) Statement(stream common.TokenStream) (common.Node, error) {
+func (p *parser) Statement(stream common.TokenStream, options ...Option) (common.Node, error) {
 	// Construct a state
-	s := newState(p.table, stream)
+	s := newState(p, stream, options)
 
 	// Parse a statement
-	return s.Statement(p)
+	return s.Statement()
 }
 
 // Statements parses all statements from the specified token stream.
 // It is essentially equivalent to running Statement in a loop until
 // all tokens are exhausted.
-func (p *parser) Statements(stream common.TokenStream) ([]common.Node, error) {
+func (p *parser) Statements(stream common.TokenStream, options ...Option) ([]common.Node, error) {
 	// Construct a state
-	s := newState(p.table, stream)
+	s := newState(p, stream, options)
 
 	// Parse as many statements as possible
 	var err error
 	var node common.Node
 	nodes := []common.Node{}
-	for node, err = s.Statement(p); node != nil; node, err = s.Statement(p) {
+	for node, err = s.Statement(); node != nil; node, err = s.Statement() {
 		// Add the new node to the list
 		nodes = append(nodes, node)
 	}
