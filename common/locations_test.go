@@ -83,3 +83,24 @@ func TestMockLocationThruEndNotNil(t *testing.T) {
 	assert.Same(t, expected, result)
 	obj.AssertExpectations(t)
 }
+
+func TestMockLocationIncrNil(t *testing.T) {
+	obj := &MockLocation{}
+	obj.On("Incr", 'c', 8).Return(nil)
+
+	result := obj.Incr('c', 8)
+
+	assert.Nil(t, result)
+	obj.AssertExpectations(t)
+}
+
+func TestMockLocationIncrNotNil(t *testing.T) {
+	expected := &MockLocation{}
+	obj := &MockLocation{}
+	obj.On("Incr", 'c', 8).Return(expected)
+
+	result := obj.Incr('c', 8)
+
+	assert.Same(t, expected, result)
+	obj.AssertExpectations(t)
+}

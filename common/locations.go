@@ -33,6 +33,11 @@ type Location interface {
 	// Location that ranges from the beginning of this location to
 	// the ending of another location.
 	ThruEnd(other Location) (Location, error)
+
+	// Incr increments the location by one character.  It is
+	// passed the character (a rune) and the tabstop size (for
+	// handling tabs).  It should return a new Location.
+	Incr(c rune, tabstop int) Location
 }
 
 // MockLocation is a mock for Location
@@ -70,4 +75,17 @@ func (m *MockLocation) ThruEnd(other Location) (Location, error) {
 	}
 
 	return nil, args.Error(1)
+}
+
+// Incr increments the location by one character.  It is passed the
+// character (a rune) and the tabstop size (for handling tabs).  It
+// should return a new Location.
+func (m *MockLocation) Incr(c rune, tabstop int) Location {
+	args := m.MethodCalled("Incr", c, tabstop)
+
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(Location)
+	}
+
+	return nil
 }

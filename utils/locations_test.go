@@ -26,84 +26,12 @@ func TestFileLocationImplementsLocation(t *testing.T) {
 	assert.Implements(t, (*common.Location)(nil), &FileLocation{})
 }
 
-func TestFileLocationAdvanceColumn(t *testing.T) {
-	loc := FileLocation{
-		File: "file",
-		B: FilePos{
-			L: 3,
-			C: 2,
-		},
-		E: FilePos{
-			L: 3,
-			C: 3,
-		},
-	}
-
-	loc.Advance(FilePos{C: 2})
-
-	assert.Equal(t, FilePos{L: 3, C: 3}, loc.B)
-	assert.Equal(t, FilePos{L: 3, C: 5}, loc.E)
-}
-
-func TestFileLocationAdvanceLine(t *testing.T) {
-	loc := FileLocation{
-		File: "file",
-		B: FilePos{
-			L: 3,
-			C: 2,
-		},
-		E: FilePos{
-			L: 3,
-			C: 3,
-		},
-	}
-
-	loc.Advance(FilePos{L: 1, C: 2})
-
-	assert.Equal(t, FilePos{L: 3, C: 3}, loc.B)
-	assert.Equal(t, FilePos{L: 4, C: 3}, loc.E)
-}
-
-func TestFileLocationAdvanceTab8(t *testing.T) {
-	loc := FileLocation{
-		File: "file",
-		B: FilePos{
-			L: 3,
-			C: 2,
-		},
-		E: FilePos{
-			L: 3,
-			C: 3,
-		},
-	}
-
-	loc.AdvanceTab(8)
-
-	assert.Equal(t, FilePos{L: 3, C: 3}, loc.B)
-	assert.Equal(t, FilePos{L: 3, C: 9}, loc.E)
-}
-
-func TestFileLocationAdvanceTab4(t *testing.T) {
-	loc := FileLocation{
-		File: "file",
-		B: FilePos{
-			L: 3,
-			C: 2,
-		},
-		E: FilePos{
-			L: 3,
-			C: 3,
-		},
-	}
-
-	loc.AdvanceTab(4)
-
-	assert.Equal(t, FilePos{L: 3, C: 3}, loc.B)
-	assert.Equal(t, FilePos{L: 3, C: 5}, loc.E)
-}
-
 func TestFileLocationString0Columns(t *testing.T) {
-	loc := FileLocation{File: "file", B: FilePos{3, 2}, E: FilePos{3, 2}}
+	loc := FileLocation{
+		File: "file",
+		B:    FilePos{3, 2},
+		E:    FilePos{3, 2},
+	}
 
 	result := loc.String()
 
@@ -111,7 +39,11 @@ func TestFileLocationString0Columns(t *testing.T) {
 }
 
 func TestFileLocationString1Column(t *testing.T) {
-	loc := FileLocation{File: "file", B: FilePos{3, 2}, E: FilePos{3, 3}}
+	loc := FileLocation{
+		File: "file",
+		B:    FilePos{3, 2},
+		E:    FilePos{3, 3},
+	}
 
 	result := loc.String()
 
@@ -119,7 +51,11 @@ func TestFileLocationString1Column(t *testing.T) {
 }
 
 func TestFileLocationString2Columns(t *testing.T) {
-	loc := FileLocation{File: "file", B: FilePos{3, 2}, E: FilePos{3, 4}}
+	loc := FileLocation{
+		File: "file",
+		B:    FilePos{3, 2},
+		E:    FilePos{3, 4},
+	}
 
 	result := loc.String()
 
@@ -127,7 +63,11 @@ func TestFileLocationString2Columns(t *testing.T) {
 }
 
 func TestFileLocationString2Lines(t *testing.T) {
-	loc := FileLocation{File: "file", B: FilePos{3, 2}, E: FilePos{4, 2}}
+	loc := FileLocation{
+		File: "file",
+		B:    FilePos{3, 2},
+		E:    FilePos{4, 2},
+	}
 
 	result := loc.String()
 
@@ -135,8 +75,16 @@ func TestFileLocationString2Lines(t *testing.T) {
 }
 
 func TestFileLocationThruBase(t *testing.T) {
-	loc1 := FileLocation{File: "file", B: FilePos{3, 2}, E: FilePos{3, 3}}
-	loc2 := FileLocation{File: "file", B: FilePos{3, 5}, E: FilePos{3, 6}}
+	loc1 := FileLocation{
+		File: "file",
+		B:    FilePos{3, 2},
+		E:    FilePos{3, 3},
+	}
+	loc2 := FileLocation{
+		File: "file",
+		B:    FilePos{3, 5},
+		E:    FilePos{3, 6},
+	}
 
 	result, err := loc1.Thru(loc2)
 
@@ -149,8 +97,16 @@ func TestFileLocationThruBase(t *testing.T) {
 }
 
 func TestFileLocationThruSplitFile(t *testing.T) {
-	loc1 := FileLocation{File: "file", B: FilePos{3, 2}, E: FilePos{3, 3}}
-	loc2 := FileLocation{File: "other", B: FilePos{3, 5}, E: FilePos{3, 6}}
+	loc1 := FileLocation{
+		File: "file",
+		B:    FilePos{3, 2},
+		E:    FilePos{3, 3},
+	}
+	loc2 := FileLocation{
+		File: "other",
+		B:    FilePos{3, 5},
+		E:    FilePos{3, 6},
+	}
 
 	result, err := loc1.Thru(loc2)
 
@@ -159,7 +115,11 @@ func TestFileLocationThruSplitFile(t *testing.T) {
 }
 
 func TestFileLocationThruSplitLocation(t *testing.T) {
-	loc1 := FileLocation{File: "file", B: FilePos{3, 2}, E: FilePos{3, 3}}
+	loc1 := FileLocation{
+		File: "file",
+		B:    FilePos{3, 2},
+		E:    FilePos{3, 3},
+	}
 	loc2 := &common.MockLocation{}
 
 	result, err := loc1.Thru(loc2)
@@ -169,8 +129,16 @@ func TestFileLocationThruSplitLocation(t *testing.T) {
 }
 
 func TestFileLocationThruEndBase(t *testing.T) {
-	loc1 := FileLocation{File: "file", B: FilePos{3, 2}, E: FilePos{3, 3}}
-	loc2 := FileLocation{File: "file", B: FilePos{3, 5}, E: FilePos{3, 6}}
+	loc1 := FileLocation{
+		File: "file",
+		B:    FilePos{3, 2},
+		E:    FilePos{3, 3},
+	}
+	loc2 := FileLocation{
+		File: "file",
+		B:    FilePos{3, 5},
+		E:    FilePos{3, 6},
+	}
 
 	result, err := loc1.ThruEnd(loc2)
 
@@ -183,8 +151,16 @@ func TestFileLocationThruEndBase(t *testing.T) {
 }
 
 func TestFileLocationThruEndSplitFile(t *testing.T) {
-	loc1 := FileLocation{File: "file", B: FilePos{3, 2}, E: FilePos{3, 3}}
-	loc2 := FileLocation{File: "other", B: FilePos{3, 5}, E: FilePos{3, 6}}
+	loc1 := FileLocation{
+		File: "file",
+		B:    FilePos{3, 2},
+		E:    FilePos{3, 3},
+	}
+	loc2 := FileLocation{
+		File: "other",
+		B:    FilePos{3, 5},
+		E:    FilePos{3, 6},
+	}
 
 	result, err := loc1.ThruEnd(loc2)
 
@@ -193,11 +169,204 @@ func TestFileLocationThruEndSplitFile(t *testing.T) {
 }
 
 func TestFileLocationThruEndSplitLocation(t *testing.T) {
-	loc1 := FileLocation{File: "file", B: FilePos{3, 2}, E: FilePos{3, 3}}
+	loc1 := FileLocation{
+		File: "file",
+		B:    FilePos{3, 2},
+		E:    FilePos{3, 3},
+	}
 	loc2 := &common.MockLocation{}
 
 	result, err := loc1.ThruEnd(loc2)
 
 	assert.Same(t, common.ErrSplitLocation, err)
 	assert.Nil(t, result)
+}
+
+func TestFileLocationAdvanceColumn(t *testing.T) {
+	loc := FileLocation{
+		File: "file",
+		B:    FilePos{3, 2},
+		E:    FilePos{3, 3},
+	}
+
+	result := loc.advance(FilePos{C: 2})
+
+	assert.Equal(t, FileLocation{
+		File: "file",
+		B:    FilePos{3, 3},
+		E:    FilePos{3, 5},
+	}, result)
+	assert.Equal(t, FileLocation{
+		File: "file",
+		B:    FilePos{3, 2},
+		E:    FilePos{3, 3},
+	}, loc)
+}
+
+func TestFileLocationAdvanceLine(t *testing.T) {
+	loc := FileLocation{
+		File: "file",
+		B:    FilePos{3, 2},
+		E:    FilePos{3, 3},
+	}
+
+	result := loc.advance(FilePos{L: 1, C: 2})
+
+	assert.Equal(t, FileLocation{
+		File: "file",
+		B:    FilePos{3, 3},
+		E:    FilePos{4, 3},
+	}, result)
+	assert.Equal(t, FileLocation{
+		File: "file",
+		B:    FilePos{3, 2},
+		E:    FilePos{3, 3},
+	}, loc)
+}
+
+func TestFileLocationIncrBase(t *testing.T) {
+	loc := FileLocation{
+		File: "file",
+		B:    FilePos{3, 2},
+		E:    FilePos{3, 3},
+	}
+
+	result := loc.Incr('c', 8)
+
+	assert.Equal(t, FileLocation{
+		File: "file",
+		B:    FilePos{3, 3},
+		E:    FilePos{3, 4},
+	}, result)
+	assert.Equal(t, FileLocation{
+		File: "file",
+		B:    FilePos{3, 2},
+		E:    FilePos{3, 3},
+	}, loc)
+}
+
+func TestFileLocationIncrEOF(t *testing.T) {
+	loc := FileLocation{
+		File: "file",
+		B:    FilePos{3, 2},
+		E:    FilePos{3, 3},
+	}
+
+	result := loc.Incr(common.EOF, 8)
+
+	assert.Equal(t, FileLocation{
+		File: "file",
+		B:    FilePos{3, 3},
+		E:    FilePos{3, 3},
+	}, result)
+	assert.Equal(t, FileLocation{
+		File: "file",
+		B:    FilePos{3, 2},
+		E:    FilePos{3, 3},
+	}, loc)
+}
+
+func TestFileLocationIncrNewline(t *testing.T) {
+	loc := FileLocation{
+		File: "file",
+		B:    FilePos{3, 2},
+		E:    FilePos{3, 3},
+	}
+
+	result := loc.Incr('\n', 8)
+
+	assert.Equal(t, FileLocation{
+		File: "file",
+		B:    FilePos{3, 3},
+		E:    FilePos{4, 1},
+	}, result)
+	assert.Equal(t, FileLocation{
+		File: "file",
+		B:    FilePos{3, 2},
+		E:    FilePos{3, 3},
+	}, loc)
+}
+
+func TestFileLocationIncrTab8(t *testing.T) {
+	loc := FileLocation{
+		File: "file",
+		B:    FilePos{3, 2},
+		E:    FilePos{3, 3},
+	}
+
+	result := loc.Incr('\t', 8)
+
+	assert.Equal(t, FileLocation{
+		File: "file",
+		B:    FilePos{3, 3},
+		E:    FilePos{3, 9},
+	}, result)
+	assert.Equal(t, FileLocation{
+		File: "file",
+		B:    FilePos{3, 2},
+		E:    FilePos{3, 3},
+	}, loc)
+}
+
+func TestFileLocationIncrTab4(t *testing.T) {
+	loc := FileLocation{
+		File: "file",
+		B:    FilePos{3, 2},
+		E:    FilePos{3, 3},
+	}
+
+	result := loc.Incr('\t', 4)
+
+	assert.Equal(t, FileLocation{
+		File: "file",
+		B:    FilePos{3, 3},
+		E:    FilePos{3, 5},
+	}, result)
+	assert.Equal(t, FileLocation{
+		File: "file",
+		B:    FilePos{3, 2},
+		E:    FilePos{3, 3},
+	}, loc)
+}
+
+func TestFileLocationIncrFormFeedMidLine(t *testing.T) {
+	loc := FileLocation{
+		File: "file",
+		B:    FilePos{3, 2},
+		E:    FilePos{3, 3},
+	}
+
+	result := loc.Incr('\f', 8)
+
+	assert.Equal(t, FileLocation{
+		File: "file",
+		B:    FilePos{3, 3},
+		E:    FilePos{3, 4},
+	}, result)
+	assert.Equal(t, FileLocation{
+		File: "file",
+		B:    FilePos{3, 2},
+		E:    FilePos{3, 3},
+	}, loc)
+}
+
+func TestFileLocationIncrFormFeedBeginningOfLine(t *testing.T) {
+	loc := FileLocation{
+		File: "file",
+		B:    FilePos{3, 1},
+		E:    FilePos{3, 2},
+	}
+
+	result := loc.Incr('\f', 8)
+
+	assert.Equal(t, FileLocation{
+		File: "file",
+		B:    FilePos{3, 1},
+		E:    FilePos{3, 2},
+	}, result)
+	assert.Equal(t, FileLocation{
+		File: "file",
+		B:    FilePos{3, 1},
+		E:    FilePos{3, 2},
+	}, loc)
 }
