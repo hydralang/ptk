@@ -45,3 +45,125 @@ func TestMockCharStreamNextNotNil(t *testing.T) {
 	assert.Same(t, assert.AnError, err)
 	assert.Equal(t, common.Char{Rune: 'c'}, result)
 }
+
+func TestListCharStreamImplementsCharStream(t *testing.T) {
+	assert.Implements(t, (*CharStream)(nil), &listCharStream{})
+}
+
+func TestNewListCharStream(t *testing.T) {
+	chars := []common.Char{
+		{Rune: 't'},
+		{Rune: 'e'},
+		{Rune: 's'},
+		{Rune: 't'},
+	}
+
+	result := NewListCharStream(chars, assert.AnError)
+
+	assert.Equal(t, &listCharStream{
+		chars: chars,
+		err:   assert.AnError,
+	}, result)
+}
+
+func TestListCharStreamNextFirst(t *testing.T) {
+	chars := []common.Char{
+		{Rune: 't'},
+		{Rune: 'e'},
+		{Rune: 's'},
+		{Rune: 't'},
+	}
+	obj := &listCharStream{
+		chars: chars,
+	}
+
+	result, err := obj.Next()
+
+	assert.NoError(t, err)
+	assert.Equal(t, common.Char{Rune: 't'}, result)
+	assert.Equal(t, &listCharStream{
+		chars: chars,
+		pos:   1,
+	}, obj)
+}
+
+func TestListCharStreamNextLast(t *testing.T) {
+	chars := []common.Char{
+		{Rune: 't'},
+		{Rune: 'e'},
+		{Rune: 's'},
+		{Rune: 't'},
+	}
+	obj := &listCharStream{
+		chars: chars,
+		pos:   3,
+	}
+
+	result, err := obj.Next()
+
+	assert.NoError(t, err)
+	assert.Equal(t, common.Char{Rune: 't'}, result)
+	assert.Equal(t, &listCharStream{
+		chars: chars,
+		pos:   4,
+	}, obj)
+}
+
+func TestListCharStreamNextAgain(t *testing.T) {
+	chars := []common.Char{
+		{Rune: 't'},
+		{Rune: 'e'},
+		{Rune: 's'},
+		{Rune: 't'},
+	}
+	obj := &listCharStream{
+		chars: chars,
+		pos:   4,
+	}
+
+	result, err := obj.Next()
+
+	assert.NoError(t, err)
+	assert.Equal(t, common.Char{Rune: 't'}, result)
+	assert.Equal(t, &listCharStream{
+		chars: chars,
+		pos:   4,
+	}, obj)
+}
+
+func TestListCharStreamNextEOF(t *testing.T) {
+	chars := []common.Char{
+		{Rune: common.EOF},
+	}
+	obj := &listCharStream{
+		chars: chars,
+	}
+
+	result, err := obj.Next()
+
+	assert.NoError(t, err)
+	assert.Equal(t, common.Char{Rune: common.EOF}, result)
+	assert.Equal(t, &listCharStream{
+		chars: chars,
+		pos:   1,
+	}, obj)
+}
+
+func TestListCharStreamNextEOFWithError(t *testing.T) {
+	chars := []common.Char{
+		{Rune: common.EOF},
+	}
+	obj := &listCharStream{
+		chars: chars,
+		err:   assert.AnError,
+	}
+
+	result, err := obj.Next()
+
+	assert.Same(t, assert.AnError, err)
+	assert.Equal(t, common.Char{Rune: common.EOF}, result)
+	assert.Equal(t, &listCharStream{
+		chars: chars,
+		pos:   1,
+	}, obj)
+}

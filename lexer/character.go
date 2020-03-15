@@ -48,3 +48,47 @@ func (m *MockCharStream) Next() (common.Char, error) {
 
 	return common.Char{}, args.Error(1)
 }
+
+// listCharStream is a character stream that returns characters from a
+// simple list.  It is intended for testing in cases where
+// MockCharStream is not a good fit.
+type listCharStream struct {
+	chars []common.Char // Characters to return
+	pos   int           // Position within the character list
+	err   error         // Error to return on next common.EOF
+}
+
+// NewListCharStream constructs and returns a CharStream
+// implementation that returns characters from a list of characters.
+// The last character should be a common.EOF; this character will be
+// returned with the error passed in.  This character stream is
+// intended for testing, in cases where a MockCharStream is not a good
+// fit.
+func NewListCharStream(chars []common.Char, err error) CharStream {
+	return &listCharStream{
+		chars: chars,
+		err:   err,
+	}
+}
+
+// Next returns the next character from the stream as a Char, which
+// will include the character's location.  If an error was
+// encountered, that will also be returned.
+func (lcs *listCharStream) Next() (common.Char, error) {
+	// Last character will be returned endlessly
+	idx := lcs.pos
+	if idx >= len(lcs.chars) {
+		idx = len(lcs.chars) - 1
+	} else {
+		lcs.pos++
+	}
+
+	// Select an error to return on first EOF
+	var err error
+	if lcs.chars[idx].Rune == common.EOF {
+		err = lcs.err
+		lcs.err = nil
+	}
+
+	return lcs.chars[idx], err
+}
