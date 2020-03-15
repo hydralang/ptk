@@ -14,7 +14,11 @@
 
 package lexer
 
-import "github.com/stretchr/testify/mock"
+import (
+	"github.com/stretchr/testify/mock"
+
+	"github.com/hydralang/ptk/common"
+)
 
 // Recognizer describes a recognizer.  A recognizer is an object
 // returned by the Classify method of a Classifier; its Recognize
@@ -32,7 +36,7 @@ type Recognizer interface {
 	// declared, after which the character will be discarded.  The
 	// Recognize method will be called with the lexer state and
 	// the character stream wrapped in a BackTracker.
-	Recognize(state State, str *BackTracker) bool
+	Recognize(state State, str common.BackTracker) bool
 }
 
 // MockRecognizer is a mock implementation of the Recognizer
@@ -48,7 +52,7 @@ type MockRecognizer struct {
 // will be called, if one is declared, after which the character will
 // be discarded.  The Recognize method will be called with the lexer
 // state and the character stream wrapped in a BackTracker.
-func (m *MockRecognizer) Recognize(state State, str *BackTracker) bool {
+func (m *MockRecognizer) Recognize(state State, str common.BackTracker) bool {
 	args := m.MethodCalled("Recognize", state, str)
 
 	return args.Bool(0)

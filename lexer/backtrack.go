@@ -20,11 +20,6 @@ import (
 	"github.com/hydralang/ptk/common"
 )
 
-// TrackAll is a special value for the max argument to NewBackTracker
-// and BackTracker.SetMax that indicates the desire to track all
-// characters.
-const TrackAll = -1
-
 // btElem is a struct type containing the returned character and error
 // from the source character stream.
 type btElem struct {
@@ -32,11 +27,11 @@ type btElem struct {
 	err error       // The error returned
 }
 
-// BackTracker is an implementation of common.CharStream that includes
-// backtracking capability.  A BackTracker wraps another character
-// stream (including another instance of BackTracker), but provides
+// backTracker is an implementation of common.CharStream that includes
+// backtracking capability.  A backTracker wraps another character
+// stream (including another instance of backTracker), but provides
 // additional methods for controlling backtracking.
-type BackTracker struct {
+type backTracker struct {
 	src   common.CharStream // The source character stream
 	max   int               // Maximum length to backtrack by
 	saved *list.List        // Saved characters
@@ -49,8 +44,8 @@ type BackTracker struct {
 // BackTracker, if desired) in a BackTracker.  The max parameter
 // indicates the maximum number of characters to track; use 0 to track
 // no characters, and TrackAll to track all characters.
-func NewBackTracker(src common.CharStream, max int) *BackTracker {
-	return &BackTracker{
+func NewBackTracker(src common.CharStream, max int) common.BackTracker {
+	return &backTracker{
 		src:   src,
 		max:   max,
 		saved: &list.List{},
@@ -63,7 +58,7 @@ func NewBackTracker(src common.CharStream, max int) *BackTracker {
 // Next returns the next character from the stream as a Char, which
 // will include the character's location.  If an error was
 // encountered, that will also be returned.
-func (bt *BackTracker) Next() (ch common.Char, err error) {
+func (bt *backTracker) Next() (ch common.Char, err error) {
 	// Check if we're revisiting old friends
 	if bt.next != nil {
 		ch = bt.next.Value.(btElem).ch
@@ -85,7 +80,7 @@ func (bt *BackTracker) Next() (ch common.Char, err error) {
 			})
 
 			// Do any required trimming
-			if bt.max > TrackAll && bt.saved.Len() > bt.max {
+			if bt.max > common.TrackAll && bt.saved.Len() > bt.max {
 				bt.saved.Remove(bt.saved.Front())
 			} else {
 				bt.pos++
@@ -112,7 +107,7 @@ func (bt *BackTracker) Next() (ch common.Char, err error) {
 // returned characters to be backtracked over.  If the new value for
 // max is less than the previous value, characters at the front of the
 // backtracking queue will be discarded to bring the size down to max.
-func (bt *BackTracker) SetMax(max int) {
+func (bt *backTracker) SetMax(max int) {
 	bt.max = max
 
 	// Do any required trimming
@@ -120,7 +115,7 @@ func (bt *BackTracker) SetMax(max int) {
 		bt.saved = &list.List{}
 		bt.pos = 0
 	} else {
-		for bt.max > TrackAll && bt.saved.Len() > bt.max {
+		for bt.max > common.TrackAll && bt.saved.Len() > bt.max {
 			bt.saved.Remove(bt.saved.Front())
 			bt.pos--
 		}
@@ -129,7 +124,7 @@ func (bt *BackTracker) SetMax(max int) {
 
 // Accept accepts characters from the backtracking queue, leaving only
 // the specified number of characters on the queue.
-func (bt *BackTracker) Accept(leave int) {
+func (bt *backTracker) Accept(leave int) {
 	if bt.max == 0 {
 		// Nothing saved
 		return
@@ -170,18 +165,18 @@ func (bt *BackTracker) Accept(leave int) {
 
 // Len returns the number of characters saved so far on the
 // backtracking queue.
-func (bt *BackTracker) Len() int {
+func (bt *backTracker) Len() int {
 	return bt.saved.Len()
 }
 
 // Pos returns the position of the most recently returned character
 // within the saved character list.
-func (bt *BackTracker) Pos() int {
+func (bt *backTracker) Pos() int {
 	return bt.pos - 1
 }
 
 // BackTrack resets to the beginning of the backtracking queue.
-func (bt *BackTracker) BackTrack() {
+func (bt *backTracker) BackTrack() {
 	bt.next = bt.saved.Front()
 	bt.pos = 0
 }

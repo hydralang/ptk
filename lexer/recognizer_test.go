@@ -18,6 +18,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/hydralang/ptk/common"
 )
 
 func TestMockRecognizerImplementsRecognizer(t *testing.T) {
@@ -26,7 +28,7 @@ func TestMockRecognizerImplementsRecognizer(t *testing.T) {
 
 func TestMockRecognizerRecognize(t *testing.T) {
 	s := &MockState{}
-	str := &BackTracker{}
+	str := &common.MockBackTracker{}
 	obj := &MockRecognizer{}
 	obj.On("Recognize", s, str).Return(true)
 
