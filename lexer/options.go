@@ -16,6 +16,17 @@ package lexer
 
 import "github.com/klmitch/kent"
 
+// Option is a lexer option that may be passed to the Lex method.
+type Option func(state State)
+
+// AppState is an option allowing an application state to be set when
+// lexing a character stream.
+func AppState(state interface{}) Option {
+	return func(s State) {
+		s.PushAppState(state)
+	}
+}
+
 // ScannerOption is a scanner option that may be passed to the
 // NewScanner function.
 type ScannerOption func(s *scanner)

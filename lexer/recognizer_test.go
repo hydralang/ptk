@@ -17,45 +17,21 @@ package lexer
 import (
 	"testing"
 
-	"github.com/klmitch/kent"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAppState(t *testing.T) {
+func TestMockRecognizerImplementsRecognizer(t *testing.T) {
+	assert.Implements(t, (*Recognizer)(nil), &MockRecognizer{})
+}
+
+func TestMockRecognizerRecognize(t *testing.T) {
 	s := &MockState{}
-	s.On("PushAppState", "state")
+	str := &BackTracker{}
+	obj := &MockRecognizer{}
+	obj.On("Recognize", s, str).Return(true)
 
-	opt := AppState("state")
-	opt(s)
+	result := obj.Recognize(s, str)
 
-	s.AssertExpectations(t)
-}
-
-func TestLineEndings(t *testing.T) {
-	ls := &MockLineStyle{}
-	s := &scanner{}
-
-	opt := LineEndings(ls)
-	opt(s)
-
-	assert.Same(t, ls, s.ls)
-}
-
-func TestTabStop(t *testing.T) {
-	s := &scanner{}
-
-	opt := TabStop(42)
-	opt(s)
-
-	assert.Equal(t, 42, s.ts)
-}
-
-func TestReporter(t *testing.T) {
-	rep := &kent.MockReporter{}
-	s := &scanner{}
-
-	opt := Reporter(rep)
-	opt(s)
-
-	assert.Same(t, rep, s.rep)
+	assert.True(t, result)
+	obj.AssertExpectations(t)
 }
