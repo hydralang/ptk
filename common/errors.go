@@ -19,7 +19,7 @@ import (
 	"fmt"
 )
 
-// Simple errors that may be generated within the package
+// Simple errors that may be generated within the package.
 var (
 	ErrSplitLocation = errors.New("Attempt to range file location through an incompatible location")
 )
