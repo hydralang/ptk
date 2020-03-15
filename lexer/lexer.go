@@ -30,7 +30,7 @@ type Lexer interface {
 	// interface and which reads the specified io.Reader and
 	// converts it to tokens.  Tokens represent the "words" of the
 	// language being parsed.
-	Lex(cs CharStream, options ...Option) common.TokenStream
+	Lex(cs common.CharStream, options ...Option) common.TokenStream
 }
 
 // MockLexer is a mock implementation of the Lexer interface.
@@ -54,7 +54,7 @@ func (m *MockLexer) Classifier() Classifier {
 // interface and which reads the specified io.Reader and converts it
 // to tokens.  Tokens represent the "words" of the language being
 // parsed.
-func (m *MockLexer) Lex(cs CharStream, options ...Option) common.TokenStream {
+func (m *MockLexer) Lex(cs common.CharStream, options ...Option) common.TokenStream {
 	args := m.MethodCalled("Lex", cs, options)
 
 	if tmp := args.Get(0); tmp != nil {

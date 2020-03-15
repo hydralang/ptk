@@ -12,42 +12,11 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package lexer
+package utils
 
 import (
-	"github.com/stretchr/testify/mock"
-
 	"github.com/hydralang/ptk/common"
 )
-
-// CharStream presents a stream of characters.  The basic character
-// stream does not provide backtracking or character push-back.  The
-// Scanner is one implementation of CharStream.
-type CharStream interface {
-	// Next returns the next character from the stream as a Char,
-	// which will include the character's location.  If an error
-	// was encountered, that will also be returned.
-	Next() (common.Char, error)
-}
-
-// MockCharStream is a mock implementation of the CharStream
-// interface.
-type MockCharStream struct {
-	mock.Mock
-}
-
-// Next returns the next character from the stream as a Char, which
-// will include the character's location.  If an error was
-// encountered, that will also be returned.
-func (m *MockCharStream) Next() (common.Char, error) {
-	args := m.MethodCalled("Next")
-
-	if tmp := args.Get(0); tmp != nil {
-		return tmp.(common.Char), args.Error(1)
-	}
-
-	return common.Char{}, args.Error(1)
-}
 
 // listCharStream is a character stream that returns characters from a
 // simple list.  It is intended for testing in cases where
@@ -58,13 +27,13 @@ type listCharStream struct {
 	err   error         // Error to return on next common.EOF
 }
 
-// NewListCharStream constructs and returns a CharStream
+// NewListCharStream constructs and returns a common.CharStream
 // implementation that returns characters from a list of characters.
 // The last character should be a common.EOF; this character will be
 // returned with the error passed in.  This character stream is
 // intended for testing, in cases where a MockCharStream is not a good
 // fit.
-func NewListCharStream(chars []common.Char, err error) CharStream {
+func NewListCharStream(chars []common.Char, err error) common.CharStream {
 	return &listCharStream{
 		chars: chars,
 		err:   err,

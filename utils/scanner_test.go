@@ -12,7 +12,7 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package lexer
+package utils
 
 import (
 	"bytes"
@@ -27,7 +27,7 @@ import (
 )
 
 func TestScannerImplementsCharStream(t *testing.T) {
-	assert.Implements(t, (*CharStream)(nil), &scanner{})
+	assert.Implements(t, (*common.CharStream)(nil), &scanner{})
 }
 
 func TestNewScanner(t *testing.T) {

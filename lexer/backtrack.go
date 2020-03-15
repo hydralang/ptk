@@ -32,24 +32,24 @@ type btElem struct {
 	err error       // The error returned
 }
 
-// BackTracker is an implementation of CharStream that includes
+// BackTracker is an implementation of common.CharStream that includes
 // backtracking capability.  A BackTracker wraps another character
 // stream (including another instance of BackTracker), but provides
 // additional methods for controlling backtracking.
 type BackTracker struct {
-	src   CharStream    // The source character stream
-	max   int           // Maximum length to backtrack by
-	saved *list.List    // Saved characters
-	next  *list.Element // Next character to return
-	pos   int           // Position within the saved characters
-	last  btElem        // Last return from source
+	src   common.CharStream // The source character stream
+	max   int               // Maximum length to backtrack by
+	saved *list.List        // Saved characters
+	next  *list.Element     // Next character to return
+	pos   int               // Position within the saved characters
+	last  btElem            // Last return from source
 }
 
 // NewBackTracker wraps another character stream (which may also be a
 // BackTracker, if desired) in a BackTracker.  The max parameter
 // indicates the maximum number of characters to track; use 0 to track
 // no characters, and TrackAll to track all characters.
-func NewBackTracker(src CharStream, max int) *BackTracker {
+func NewBackTracker(src common.CharStream, max int) *BackTracker {
 	return &BackTracker{
 		src:   src,
 		max:   max,

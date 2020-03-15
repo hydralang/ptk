@@ -27,8 +27,8 @@ type State interface {
 	// state.  Most applications should prefer to utilize the
 	// BackTracker instance passed to the Classify, Recognize, or
 	// Error methods, but this can be used to obtain a reference
-	// to the underlying CharStream, if that is desired.
-	CharStream() CharStream
+	// to the underlying common.CharStream, if that is desired.
+	CharStream() common.CharStream
 
 	// AppState returns the current application state.
 	AppState() interface{}
@@ -99,13 +99,13 @@ func (m *MockState) Lexer() Lexer {
 // CharStream retrieves the character stream stored in the state.
 // Most applications should prefer to utilize the BackTracker instance
 // passed to the Classify, Recognize, or Error methods, but this can
-// be used to obtain a reference to the underlying CharStream, if that
-// is desired.
-func (m *MockState) CharStream() CharStream {
+// be used to obtain a reference to the underlying common.CharStream,
+// if that is desired.
+func (m *MockState) CharStream() common.CharStream {
 	args := m.MethodCalled("CharStream")
 
 	if tmp := args.Get(0); tmp != nil {
-		return tmp.(CharStream)
+		return tmp.(common.CharStream)
 	}
 
 	return nil

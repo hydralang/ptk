@@ -49,7 +49,7 @@ func TestMockLexerClassifierNotNil(t *testing.T) {
 }
 
 func TestMockLexerLexNil(t *testing.T) {
-	cs := &MockCharStream{}
+	cs := &common.MockCharStream{}
 	obj := &MockLexer{}
 	obj.On("Lex", cs, mock.Anything).Return(nil)
 
@@ -61,7 +61,7 @@ func TestMockLexerLexNil(t *testing.T) {
 
 func TestMockLexerLexNotNil(t *testing.T) {
 	stream := &common.MockTokenStream{}
-	cs := &MockCharStream{}
+	cs := &common.MockCharStream{}
 	obj := &MockLexer{}
 	obj.On("Lex", cs, mock.Anything).Return(stream)
 

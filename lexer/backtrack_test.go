@@ -24,11 +24,11 @@ import (
 )
 
 func TestBackTrackerImplementsCharStream(t *testing.T) {
-	assert.Implements(t, (*CharStream)(nil), &BackTracker{})
+	assert.Implements(t, (*common.CharStream)(nil), &BackTracker{})
 }
 
 func TestNewBackTracker(t *testing.T) {
-	src := &MockCharStream{}
+	src := &common.MockCharStream{}
 
 	result := NewBackTracker(src, 42)
 
@@ -43,7 +43,7 @@ func TestNewBackTracker(t *testing.T) {
 }
 
 func TestBackTrackerNextBase(t *testing.T) {
-	src := &MockCharStream{}
+	src := &common.MockCharStream{}
 	src.On("Next").Return(common.Char{Rune: 't'}, assert.AnError)
 	obj := &BackTracker{
 		src:   src,
@@ -72,7 +72,7 @@ func TestBackTrackerNextBase(t *testing.T) {
 }
 
 func TestBackTrackerNextTrackNone(t *testing.T) {
-	src := &MockCharStream{}
+	src := &common.MockCharStream{}
 	src.On("Next").Return(common.Char{Rune: 't'}, assert.AnError)
 	obj := &BackTracker{
 		src:   src,
@@ -97,7 +97,7 @@ func TestBackTrackerNextTrackNone(t *testing.T) {
 }
 
 func TestBackTrackerNextNoTrim(t *testing.T) {
-	src := &MockCharStream{}
+	src := &common.MockCharStream{}
 	src.On("Next").Return(common.Char{Rune: 't'}, assert.AnError)
 	obj := &BackTracker{
 		src:   src,
@@ -130,7 +130,7 @@ func TestBackTrackerNextNoTrim(t *testing.T) {
 }
 
 func TestBackTrackerNextWithTrim(t *testing.T) {
-	src := &MockCharStream{}
+	src := &common.MockCharStream{}
 	src.On("Next").Return(common.Char{Rune: 't'}, assert.AnError)
 	obj := &BackTracker{
 		src:   src,
@@ -163,7 +163,7 @@ func TestBackTrackerNextWithTrim(t *testing.T) {
 }
 
 func TestBackTrackerNextSaveEOF(t *testing.T) {
-	src := &MockCharStream{}
+	src := &common.MockCharStream{}
 	src.On("Next").Return(common.Char{Rune: common.EOF}, assert.AnError)
 	obj := &BackTracker{
 		src:   src,
@@ -192,7 +192,7 @@ func TestBackTrackerNextSaveEOF(t *testing.T) {
 }
 
 func TestBackTrackerNextBackTracked(t *testing.T) {
-	src := &MockCharStream{}
+	src := &common.MockCharStream{}
 	obj := &BackTracker{
 		src:   src,
 		max:   TrackAll,
@@ -225,7 +225,7 @@ func TestBackTrackerNextBackTracked(t *testing.T) {
 }
 
 func TestBackTrackerNextExtension(t *testing.T) {
-	src := &MockCharStream{}
+	src := &common.MockCharStream{}
 	src.On("Next").Return(common.Char{Rune: 't'}, assert.AnError)
 	obj := &BackTracker{
 		max:   TrackAll,

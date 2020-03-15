@@ -12,18 +12,40 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package lexer
+package utils
 
 import (
 	"testing"
+
+	"github.com/klmitch/kent"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestAppState(t *testing.T) {
-	s := &MockState{}
-	s.On("PushAppState", "state")
+func TestLineEndings(t *testing.T) {
+	ls := &MockLineStyle{}
+	s := &scanner{}
 
-	opt := AppState("state")
+	opt := LineEndings(ls)
 	opt(s)
 
-	s.AssertExpectations(t)
+	assert.Same(t, ls, s.ls)
+}
+
+func TestTabStop(t *testing.T) {
+	s := &scanner{}
+
+	opt := TabStop(42)
+	opt(s)
+
+	assert.Equal(t, 42, s.ts)
+}
+
+func TestReporter(t *testing.T) {
+	rep := &kent.MockReporter{}
+	s := &scanner{}
+
+	opt := Reporter(rep)
+	opt(s)
+
+	assert.Same(t, rep, s.rep)
 }

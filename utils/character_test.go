@@ -12,7 +12,7 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package lexer
+package utils
 
 import (
 	"testing"
@@ -22,32 +22,8 @@ import (
 	"github.com/hydralang/ptk/common"
 )
 
-func TestMockCharStreamImplementsCharStream(t *testing.T) {
-	assert.Implements(t, (*CharStream)(nil), &MockCharStream{})
-}
-
-func TestMockCharStreamNextNil(t *testing.T) {
-	obj := &MockCharStream{}
-	obj.On("Next").Return(nil, assert.AnError)
-
-	result, err := obj.Next()
-
-	assert.Same(t, assert.AnError, err)
-	assert.Equal(t, common.Char{}, result)
-}
-
-func TestMockCharStreamNextNotNil(t *testing.T) {
-	obj := &MockCharStream{}
-	obj.On("Next").Return(common.Char{Rune: 'c'}, assert.AnError)
-
-	result, err := obj.Next()
-
-	assert.Same(t, assert.AnError, err)
-	assert.Equal(t, common.Char{Rune: 'c'}, result)
-}
-
 func TestListCharStreamImplementsCharStream(t *testing.T) {
-	assert.Implements(t, (*CharStream)(nil), &listCharStream{})
+	assert.Implements(t, (*common.CharStream)(nil), &listCharStream{})
 }
 
 func TestNewListCharStream(t *testing.T) {

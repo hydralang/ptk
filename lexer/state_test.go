@@ -58,7 +58,7 @@ func TestMockStateCharStreamNil(t *testing.T) {
 }
 
 func TestMockStateCharStreamNotNil(t *testing.T) {
-	cs := &MockCharStream{}
+	cs := &common.MockCharStream{}
 	obj := &MockState{}
 	obj.On("CharStream").Return(cs)
 

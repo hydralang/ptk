@@ -14,7 +14,11 @@
 
 package common
 
-import "unicode"
+import (
+	"unicode"
+
+	"github.com/stretchr/testify/mock"
+)
 
 // EOF is used to signal an end-of-file in the character stream.
 const EOF rune = unicode.MaxRune + 1
@@ -24,4 +28,33 @@ const EOF rune = unicode.MaxRune + 1
 type Char struct {
 	Rune rune     // The rune read from the source
 	Loc  Location // The location of the rune within the stream
+}
+
+// CharStream presents a stream of characters.  The basic character
+// stream does not provide backtracking or character push-back.  The
+// Scanner is one implementation of CharStream.
+type CharStream interface {
+	// Next returns the next character from the stream as a Char,
+	// which will include the character's location.  If an error
+	// was encountered, that will also be returned.
+	Next() (Char, error)
+}
+
+// MockCharStream is a mock implementation of the CharStream
+// interface.
+type MockCharStream struct {
+	mock.Mock
+}
+
+// Next returns the next character from the stream as a Char, which
+// will include the character's location.  If an error was
+// encountered, that will also be returned.
+func (m *MockCharStream) Next() (Char, error) {
+	args := m.MethodCalled("Next")
+
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(Char), args.Error(1)
+	}
+
+	return Char{}, args.Error(1)
 }

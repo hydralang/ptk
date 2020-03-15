@@ -12,7 +12,7 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package lexer
+package utils
 
 import (
 	"io"
@@ -35,10 +35,11 @@ const (
 	sentinel                          // Signals saved is unset
 )
 
-// Scanner is an implementation of CharStream that wraps io.Reader
-// objects.  Scanner also contains logic to handle diverse line ending
-// styles through the use of LineStyle objects; line endings will be
-// converted into single newlines if this support is enabled.
+// Scanner is an implementation of common.CharStream that wraps
+// io.Reader objects.  Scanner also contains logic to handle diverse
+// line ending styles through the use of LineStyle objects; line
+// endings will be converted into single newlines if this support is
+// enabled.
 type scanner struct {
 	src   io.Reader         // The character source
 	buf   [scanBuf + 1]byte // The read buffer
@@ -53,8 +54,8 @@ type scanner struct {
 }
 
 // NewScanner constructs a new instance of the Scanner.  It returns a
-// CharStream object.
-func NewScanner(r io.Reader, loc common.Location, options ...ScannerOption) CharStream {
+// common.CharStream object.
+func NewScanner(r io.Reader, loc common.Location, options ...ScannerOption) common.CharStream {
 	// Construct the scanner
 	s := &scanner{
 		src:   r,
