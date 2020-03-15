@@ -38,29 +38,6 @@ type FileLocation struct {
 	E    FilePos // The end of the range
 }
 
-// Advance advances a FileLocation in place.  The current range end
-// becomes the range beginning, and the range end is the sum of the
-// new range beginning and the provided offset.  The offset is a
-// FilePos; if the line number is incremented, the column is reset to
-// 1 before offsetting the column number.
-func (l *FileLocation) Advance(offset FilePos) {
-	// Begin by advancing the beginning
-	l.B = l.E
-
-	// Now advance the ending by the offset
-	if offset.L > 0 {
-		l.E.L += offset.L
-		l.E.C = 1
-	}
-	l.E.C += offset.C
-}
-
-// AdvanceTab advances a location in place, as if by a tab character.
-// The argument specifies the size of a tab stop.
-func (l *FileLocation) AdvanceTab(tabstop int) {
-	l.Advance(FilePos{C: 1 + tabstop - l.E.C%tabstop})
-}
-
 // String constructs a string representation of the location.
 func (l FileLocation) String() string {
 	buf := &bytes.Buffer{}
@@ -111,4 +88,45 @@ func (l FileLocation) ThruEnd(other common.Location) (common.Location, error) {
 		B:    l.B,
 		E:    o.E,
 	}, nil
+}
+
+// advance is a helper for Incr that advances the file location by the
+// designated offset, returning a new file location.
+func (l FileLocation) advance(offset FilePos) common.Location {
+	// Begin by advancing the beginning
+	l.B = l.E
+
+	// Advance the ending by the offset
+	if offset.L > 0 {
+		l.E.L += offset.L
+		l.E.C = 1
+	}
+	l.E.C += offset.C
+
+	// Return the new location
+	return l
+}
+
+// Incr increments the location by one character.  It is passed the
+// character (a rune) and the tabstop size (for handling tabs).  It
+// should return a new Location.
+func (l FileLocation) Incr(c rune, tabstop int) common.Location {
+	switch c {
+	case common.EOF: // End of file
+		return l.advance(FilePos{})
+
+	case '\n': // Newline
+		return l.advance(FilePos{L: 1})
+
+	case '\t': // Tab
+		return l.advance(FilePos{C: 1 + tabstop - l.E.C%tabstop})
+
+	case '\f': // Skip formfeeds at the beginning of lines
+		if l.B.C <= 1 {
+			return l
+		}
+		fallthrough
+	default: // Everything else advances by one column
+		return l.advance(FilePos{C: 1})
+	}
 }
