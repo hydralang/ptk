@@ -17,6 +17,7 @@ package lexer
 import (
 	"testing"
 
+	"github.com/klmitch/patcher"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
@@ -69,4 +70,49 @@ func TestMockLexerLexNotNil(t *testing.T) {
 
 	assert.Same(t, stream, result)
 	obj.AssertExpectations(t)
+}
+
+func TestLexerImplementsLexer(t *testing.T) {
+	assert.Implements(t, (*Lexer)(nil), &lexer{})
+}
+
+func TestNew(t *testing.T) {
+	cls := &MockClassifier{}
+
+	result := New(cls)
+
+	assert.Equal(t, &lexer{
+		cls: cls,
+	}, result)
+}
+
+func TestLexerClassifier(t *testing.T) {
+	cls := &MockClassifier{}
+	obj := &lexer{
+		cls: cls,
+	}
+
+	result := obj.Classifier()
+
+	assert.Same(t, cls, result)
+}
+
+func TestLexerLex(t *testing.T) {
+	obj := &lexer{}
+	cs := &common.MockCharStream{}
+	options := []Option{
+		func(s State) {},
+		func(s State) {},
+	}
+	state := &MockState{}
+	defer patcher.SetVar(&newState, func(l Lexer, src common.CharStream, options []Option) State {
+		assert.Same(t, obj, l)
+		assert.Same(t, cs, src)
+		assert.Len(t, options, 2)
+		return state
+	}).Install().Restore()
+
+	result := obj.Lex(cs, options...)
+
+	assert.Same(t, state, result)
 }
