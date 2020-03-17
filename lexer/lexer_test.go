@@ -24,6 +24,16 @@ import (
 	"github.com/hydralang/ptk/common"
 )
 
+func TestAppState(t *testing.T) {
+	s := &MockState{}
+	s.On("PushAppState", "state")
+
+	opt := AppState("state")
+	opt(s)
+
+	s.AssertExpectations(t)
+}
+
 func TestMockLexerImplementsLexer(t *testing.T) {
 	assert.Implements(t, (*Lexer)(nil), &MockLexer{})
 }
