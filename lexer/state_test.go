@@ -340,6 +340,7 @@ func TestStateNextLex(t *testing.T) {
 	tok := &common.Token{}
 	src := &common.MockCharStream{}
 	bt := &MockBackTracker{}
+	bt.On("More").Return(true)
 	bt.On("SetMax", TrackAll)
 	bt.On("BackTrack")
 	bt.On("Accept", 0)
@@ -358,32 +359,9 @@ func TestStateNextLex(t *testing.T) {
 	bt.AssertExpectations(t)
 }
 
-func TestStateNextLexClosed(t *testing.T) {
-	tok := &common.Token{}
-	bt := &MockBackTracker{}
-	bt.On("Len").Return(5)
-	bt.On("Pos").Return(0)
-	bt.On("SetMax", TrackAll)
-	bt.On("BackTrack")
-	bt.On("Accept", 0)
-	obj := &state{
-		bt:   bt,
-		cls:  common.NewStack(),
-		toks: &list.List{},
-	}
-	obj.cls.Push(&fakeClassifier{tok: tok})
-
-	result := obj.Next()
-
-	assert.Same(t, tok, result)
-	assert.Equal(t, 0, obj.toks.Len())
-	bt.AssertExpectations(t)
-}
-
 func TestStateNextClosed(t *testing.T) {
 	bt := &MockBackTracker{}
-	bt.On("Len").Return(6)
-	bt.On("Pos").Return(5)
+	bt.On("More").Return(false)
 	obj := &state{
 		bt:   bt,
 		cls:  common.NewStack(),

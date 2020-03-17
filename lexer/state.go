@@ -269,7 +269,7 @@ func (s *state) Next() *common.Token {
 	// Loop until we have a token or all characters have been
 	// processed
 	for s.toks.Len() <= 0 {
-		if s.src == nil && s.bt.Pos() == s.bt.Len()-1 {
+		if !s.bt.More() {
 			return nil
 		}
 

@@ -31,6 +31,11 @@ const TrackAll = -1
 type BackTracker interface {
 	common.CharStream
 
+	// More is used to determine if there are any more characters
+	// available for Next to return, given the current state of
+	// the BackTracker.
+	More() bool
+
 	// SetMax allows updating the maximum number of characters to
 	// allow backtracking over.  Setting a TrackAll value will
 	// allow all newly returned characters to be backtracked over.
@@ -61,6 +66,15 @@ type BackTracker interface {
 // interface.
 type MockBackTracker struct {
 	common.MockCharStream
+}
+
+// More is used to determine if there are any more characters
+// available for Next to return, given the current state of the
+// BackTracker.
+func (m *MockBackTracker) More() bool {
+	args := m.MethodCalled("More")
+
+	return args.Bool(0)
 }
 
 // SetMax allows updating the maximum number of characters to allow
@@ -179,6 +193,13 @@ func (bt *backTracker) Next() (ch common.Char, err error) {
 
 	// No data to return
 	return bt.last.ch, nil
+}
+
+// More is used to determine if there are any more characters
+// available for Next to return, given the current state of the
+// BackTracker.
+func (bt *backTracker) More() bool {
+	return bt.next != nil || bt.src != nil
 }
 
 // SetMax allows updating the maximum number of characters to allow

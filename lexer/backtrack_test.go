@@ -27,6 +27,16 @@ func TestMockBackTrackerImplementBackTracker(t *testing.T) {
 	assert.Implements(t, (*BackTracker)(nil), &MockBackTracker{})
 }
 
+func TestMockBackTrackerMore(t *testing.T) {
+	obj := &MockBackTracker{}
+	obj.On("More").Return(true)
+
+	result := obj.More()
+
+	assert.True(t, result)
+	obj.AssertExpectations(t)
+}
+
 func TestMockBackTrackerSetMax(t *testing.T) {
 	obj := &MockBackTracker{}
 	obj.On("SetMax", 42)
@@ -298,6 +308,37 @@ func TestBackTrackerNextExtension(t *testing.T) {
 	assert.Equal(t, btElem{
 		ch: common.Char{Rune: 'b'},
 	}, obj.last)
+}
+
+func TestBackTrackerMoreBackTracked(t *testing.T) {
+	obj := &backTracker{
+		saved: &list.List{},
+	}
+	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
+	obj.next = obj.saved.Front()
+
+	result := obj.More()
+
+	assert.True(t, result)
+}
+
+func TestBackTrackerMoreHaveSrc(t *testing.T) {
+	src := &common.MockCharStream{}
+	obj := &backTracker{
+		src: src,
+	}
+
+	result := obj.More()
+
+	assert.True(t, result)
+}
+
+func TestBackTrackerMoreNoMore(t *testing.T) {
+	obj := &backTracker{}
+
+	result := obj.More()
+
+	assert.False(t, result)
 }
 
 func TestBackTrackerSetMaxBase(t *testing.T) {
