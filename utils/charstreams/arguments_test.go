@@ -12,7 +12,7 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package utils
+package charstreams
 
 import (
 	"testing"
@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/hydralang/ptk/common"
+	"github.com/hydralang/ptk/utils/locations"
 )
 
 func TestArgumentJoiner(t *testing.T) {
@@ -90,36 +91,36 @@ func TestNewArgumentCharStream1ElemList(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, common.Char{
 		Rune: 'o',
-		Loc: ArgLocation{
-			B: ArgPos{1, 1},
-			E: ArgPos{1, 2},
+		Loc: locations.ArgLocation{
+			B: locations.ArgPos{I: 1, C: 1},
+			E: locations.ArgPos{I: 1, C: 2},
 		},
 	}, ch)
 	ch, err = result.Next()
 	assert.NoError(t, err)
 	assert.Equal(t, common.Char{
 		Rune: 'n',
-		Loc: ArgLocation{
-			B: ArgPos{1, 2},
-			E: ArgPos{1, 3},
+		Loc: locations.ArgLocation{
+			B: locations.ArgPos{I: 1, C: 2},
+			E: locations.ArgPos{I: 1, C: 3},
 		},
 	}, ch)
 	ch, err = result.Next()
 	assert.NoError(t, err)
 	assert.Equal(t, common.Char{
 		Rune: 'e',
-		Loc: ArgLocation{
-			B: ArgPos{1, 3},
-			E: ArgPos{1, 4},
+		Loc: locations.ArgLocation{
+			B: locations.ArgPos{I: 1, C: 3},
+			E: locations.ArgPos{I: 1, C: 4},
 		},
 	}, ch)
 	ch, err = result.Next()
 	assert.NoError(t, err)
 	assert.Equal(t, common.Char{
 		Rune: common.EOF,
-		Loc: ArgLocation{
-			B: ArgPos{1, 4},
-			E: ArgPos{1, 4},
+		Loc: locations.ArgLocation{
+			B: locations.ArgPos{I: 1, C: 4},
+			E: locations.ArgPos{I: 1, C: 4},
 		},
 	}, ch)
 	assert.NotNil(t, opt1Called)
@@ -147,54 +148,54 @@ func TestNewArgumentCharStream3ElemList(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, common.Char{
 		Rune: 'o',
-		Loc: ArgLocation{
-			B: ArgPos{1, 1},
-			E: ArgPos{1, 2},
+		Loc: locations.ArgLocation{
+			B: locations.ArgPos{I: 1, C: 1},
+			E: locations.ArgPos{I: 1, C: 2},
 		},
 	}, ch)
 	ch, err = result.Next()
 	assert.NoError(t, err)
 	assert.Equal(t, common.Char{
 		Rune: ' ',
-		Loc: ArgLocation{
-			B: ArgPos{0, 1},
-			E: ArgPos{0, 2},
+		Loc: locations.ArgLocation{
+			B: locations.ArgPos{I: 0, C: 1},
+			E: locations.ArgPos{I: 0, C: 2},
 		},
 	}, ch)
 	ch, err = result.Next()
 	assert.NoError(t, err)
 	assert.Equal(t, common.Char{
 		Rune: 'n',
-		Loc: ArgLocation{
-			B: ArgPos{2, 1},
-			E: ArgPos{2, 2},
+		Loc: locations.ArgLocation{
+			B: locations.ArgPos{I: 2, C: 1},
+			E: locations.ArgPos{I: 2, C: 2},
 		},
 	}, ch)
 	ch, err = result.Next()
 	assert.NoError(t, err)
 	assert.Equal(t, common.Char{
 		Rune: ' ',
-		Loc: ArgLocation{
-			B: ArgPos{0, 1},
-			E: ArgPos{0, 2},
+		Loc: locations.ArgLocation{
+			B: locations.ArgPos{I: 0, C: 1},
+			E: locations.ArgPos{I: 0, C: 2},
 		},
 	}, ch)
 	ch, err = result.Next()
 	assert.NoError(t, err)
 	assert.Equal(t, common.Char{
 		Rune: 'e',
-		Loc: ArgLocation{
-			B: ArgPos{3, 1},
-			E: ArgPos{3, 2},
+		Loc: locations.ArgLocation{
+			B: locations.ArgPos{I: 3, C: 1},
+			E: locations.ArgPos{I: 3, C: 2},
 		},
 	}, ch)
 	ch, err = result.Next()
 	assert.NoError(t, err)
 	assert.Equal(t, common.Char{
 		Rune: common.EOF,
-		Loc: ArgLocation{
-			B: ArgPos{3, 2},
-			E: ArgPos{3, 2},
+		Loc: locations.ArgLocation{
+			B: locations.ArgPos{I: 3, C: 2},
+			E: locations.ArgPos{I: 3, C: 2},
 		},
 	}, ch)
 	assert.NotNil(t, opt1Called)

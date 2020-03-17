@@ -12,7 +12,7 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package utils
+package charstreams
 
 import (
 	"bytes"
@@ -20,6 +20,7 @@ import (
 	"github.com/klmitch/kent"
 
 	"github.com/hydralang/ptk/common"
+	"github.com/hydralang/ptk/utils/locations"
 )
 
 // argOptions is a set of options for NewArgumentCharStream.
@@ -66,9 +67,9 @@ func NewArgumentCharStream(args []string, options ...ArgumentOption) common.Char
 	}
 
 	// Construct the joiner character stream
-	loc := ArgLocation{
-		B: ArgPos{0, 1},
-		E: ArgPos{0, 1},
+	loc := locations.ArgLocation{
+		B: locations.ArgPos{I: 0, C: 1},
+		E: locations.ArgPos{I: 0, C: 1},
 	}
 	joiner := NewMemoizingCharStream(NewScanner(bytes.NewBufferString(opts.joiner), loc, opts.opts...))
 
@@ -79,9 +80,9 @@ func NewArgumentCharStream(args []string, options ...ArgumentOption) common.Char
 			streams = append(streams, joiner)
 		}
 
-		loc := ArgLocation{
-			B: ArgPos{i + 1, 1},
-			E: ArgPos{i + 1, 1},
+		loc := locations.ArgLocation{
+			B: locations.ArgPos{I: i + 1, C: 1},
+			E: locations.ArgPos{I: i + 1, C: 1},
 		}
 		streams = append(streams, NewScanner(bytes.NewBufferString(arg), loc, opts.opts...))
 	}

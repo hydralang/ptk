@@ -12,7 +12,7 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package utils
+package charstreams
 
 import (
 	"bytes"
@@ -25,6 +25,35 @@ import (
 
 	"github.com/hydralang/ptk/common"
 )
+
+func TestLineEndings(t *testing.T) {
+	ls := &MockLineStyle{}
+	s := &scanner{}
+
+	opt := LineEndings(ls)
+	opt(s)
+
+	assert.Same(t, ls, s.ls)
+}
+
+func TestTabStop(t *testing.T) {
+	s := &scanner{}
+
+	opt := TabStop(42)
+	opt(s)
+
+	assert.Equal(t, 42, s.ts)
+}
+
+func TestReporter(t *testing.T) {
+	rep := &kent.MockReporter{}
+	s := &scanner{}
+
+	opt := Reporter(rep)
+	opt(s)
+
+	assert.Same(t, rep, s.rep)
+}
 
 func TestScannerImplementsCharStream(t *testing.T) {
 	assert.Implements(t, (*common.CharStream)(nil), &scanner{})

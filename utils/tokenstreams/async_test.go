@@ -12,40 +12,26 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package utils
+package tokenstreams
 
 import (
 	"testing"
 
-	"github.com/klmitch/kent"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/hydralang/ptk/common"
 )
 
-func TestLineEndings(t *testing.T) {
-	ls := &MockLineStyle{}
-	s := &scanner{}
+func TestNewAsyncTokenStream(t *testing.T) {
+	toks := []*common.Token{{}, {}, {}}
+	ts := NewListTokenStream(toks)
 
-	opt := LineEndings(ls)
-	opt(s)
+	result := NewAsyncTokenStream(ts)
 
-	assert.Same(t, ls, s.ls)
-}
-
-func TestTabStop(t *testing.T) {
-	s := &scanner{}
-
-	opt := TabStop(42)
-	opt(s)
-
-	assert.Equal(t, 42, s.ts)
-}
-
-func TestReporter(t *testing.T) {
-	rep := &kent.MockReporter{}
-	s := &scanner{}
-
-	opt := Reporter(rep)
-	opt(s)
-
-	assert.Same(t, rep, s.rep)
+	i := 0
+	for tok := result.Next(); tok != nil; tok = result.Next() {
+		assert.Same(t, toks[i], tok)
+		i++
+	}
+	assert.Equal(t, len(toks), i)
 }

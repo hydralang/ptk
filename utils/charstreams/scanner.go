@@ -12,7 +12,7 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package utils
+package charstreams
 
 import (
 	"io"
@@ -23,8 +23,44 @@ import (
 	"github.com/hydralang/ptk/common"
 )
 
+// Simple errors that may be generated within the package.
+var (
+	ErrBadEncoding = kent.NewWarning("Invalid UTF-8 encoding")
+)
+
 // DefaultTabStop is the default tab stop for the scanner.
 const DefaultTabStop = 8
+
+// ScannerOption is a scanner option that may be passed to the
+// NewScanner function.
+type ScannerOption func(s *scanner)
+
+// LineEndings is a scanner option that may be used to set the
+// preferred line ending style.  A line ending style is an instance of
+// LineStyle that controls how the scanner recognizes newlines.  The
+// scanner always converts line endings into single newlines.
+func LineEndings(ls LineStyle) ScannerOption {
+	return func(s *scanner) {
+		s.ls = ls
+	}
+}
+
+// TabStop is a scanner option that may be used to specify a different
+// tab stop setting than the default of 8.
+func TabStop(ts int) ScannerOption {
+	return func(s *scanner) {
+		s.ts = ts
+	}
+}
+
+// Reporter is a scanner option that may be used to specify a
+// kent.Reporter to use for reporting encoding errors.  By default,
+// encoding errors are not reported.
+func Reporter(rep kent.Reporter) ScannerOption {
+	return func(s *scanner) {
+		s.rep = rep
+	}
+}
 
 // scanBuf is the size of the read buffer to utilize.
 const scanBuf = 4096
