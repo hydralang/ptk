@@ -223,7 +223,7 @@ func TestNewState(t *testing.T) {
 	require.True(t, ok)
 	assert.Same(t, lexer, state.lexer)
 	assert.Same(t, src, state.src)
-	assert.Equal(t, NewBackTracker(src, common.TrackAll), state.bt)
+	assert.Equal(t, NewBackTracker(src, TrackAll), state.bt)
 	assert.Equal(t, 0, state.appState.Len())
 	assert.Equal(t, 1, state.cls.Len())
 	assert.Same(t, cls, state.cls.Get())
@@ -231,8 +231,8 @@ func TestNewState(t *testing.T) {
 }
 
 func TestNextInternalBase(t *testing.T) {
-	bt := &common.MockBackTracker{}
-	bt.On("SetMax", common.TrackAll).Once()
+	bt := &MockBackTracker{}
+	bt.On("SetMax", TrackAll).Once()
 	bt.On("BackTrack").Times(2)
 	bt.On("Accept", 0).Once()
 	obj := &state{
@@ -258,8 +258,8 @@ func TestNextInternalBase(t *testing.T) {
 }
 
 func TestNextInternalUnrecognized(t *testing.T) {
-	bt := &common.MockBackTracker{}
-	bt.On("SetMax", common.TrackAll).Once()
+	bt := &MockBackTracker{}
+	bt.On("SetMax", TrackAll).Once()
 	bt.On("BackTrack").Times(4)
 	bt.On("Accept", 0).Once()
 	obj := &state{
@@ -287,8 +287,8 @@ func TestNextInternalUnrecognized(t *testing.T) {
 }
 
 func TestNextInternalUnclassified(t *testing.T) {
-	bt := &common.MockBackTracker{}
-	bt.On("SetMax", common.TrackAll).Once()
+	bt := &MockBackTracker{}
+	bt.On("SetMax", TrackAll).Once()
 	bt.On("BackTrack").Once()
 	bt.On("Accept", 0).Once()
 	obj := &state{
@@ -310,17 +310,17 @@ type fakeClassifier struct {
 	tok *common.Token
 }
 
-func (f *fakeClassifier) Classify(state State, str common.BackTracker) []Recognizer {
+func (f *fakeClassifier) Classify(state State, str BackTracker) []Recognizer {
 	return []Recognizer{}
 }
 
-func (f *fakeClassifier) Error(state State, str common.BackTracker) {
+func (f *fakeClassifier) Error(state State, str BackTracker) {
 	state.Push(f.tok)
 }
 
 func TestStateNextQueued(t *testing.T) {
 	tok := &common.Token{}
-	bt := &common.MockBackTracker{}
+	bt := &MockBackTracker{}
 	obj := &state{
 		bt:   bt,
 		cls:  common.NewStack(),
@@ -339,8 +339,8 @@ func TestStateNextQueued(t *testing.T) {
 func TestStateNextLex(t *testing.T) {
 	tok := &common.Token{}
 	src := &common.MockCharStream{}
-	bt := &common.MockBackTracker{}
-	bt.On("SetMax", common.TrackAll)
+	bt := &MockBackTracker{}
+	bt.On("SetMax", TrackAll)
 	bt.On("BackTrack")
 	bt.On("Accept", 0)
 	obj := &state{
@@ -360,10 +360,10 @@ func TestStateNextLex(t *testing.T) {
 
 func TestStateNextLexClosed(t *testing.T) {
 	tok := &common.Token{}
-	bt := &common.MockBackTracker{}
+	bt := &MockBackTracker{}
 	bt.On("Len").Return(5)
 	bt.On("Pos").Return(0)
-	bt.On("SetMax", common.TrackAll)
+	bt.On("SetMax", TrackAll)
 	bt.On("BackTrack")
 	bt.On("Accept", 0)
 	obj := &state{
@@ -381,7 +381,7 @@ func TestStateNextLexClosed(t *testing.T) {
 }
 
 func TestStateNextClosed(t *testing.T) {
-	bt := &common.MockBackTracker{}
+	bt := &MockBackTracker{}
 	bt.On("Len").Return(6)
 	bt.On("Pos").Return(5)
 	obj := &state{

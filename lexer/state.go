@@ -210,12 +210,12 @@ func (m *MockState) Push(tok *common.Token) bool {
 
 // state is an implementation of State.
 type state struct {
-	lexer    Lexer              // The lexer being used
-	src      common.CharStream  // The source CharStream
-	bt       common.BackTracker // Backtracker wrapping the source
-	appState common.Stack       // Stack for application state
-	cls      common.Stack       // Stack for classifier
-	toks     *list.List         // List of tokens to produce
+	lexer    Lexer             // The lexer being used
+	src      common.CharStream // The source CharStream
+	bt       BackTracker       // Backtracker wrapping the source
+	appState common.Stack      // Stack for application state
+	cls      common.Stack      // Stack for classifier
+	toks     *list.List        // List of tokens to produce
 }
 
 // NewState constructs and returns a new state, with the specified
@@ -224,7 +224,7 @@ func NewState(lexer Lexer, src common.CharStream, options []Option) State {
 	obj := &state{
 		lexer:    lexer,
 		src:      src,
-		bt:       NewBackTracker(src, common.TrackAll),
+		bt:       NewBackTracker(src, TrackAll),
 		appState: common.NewStack(),
 		cls:      common.NewStack(),
 		toks:     &list.List{},
@@ -246,7 +246,7 @@ func NewState(lexer Lexer, src common.CharStream, options []Option) State {
 // provided by the user.
 func (s *state) next() {
 	// Reset the backtracker
-	s.bt.SetMax(common.TrackAll)
+	s.bt.SetMax(TrackAll)
 
 	// Classify the contents
 	for _, rec := range s.Classifier().Classify(s, s.bt) {
