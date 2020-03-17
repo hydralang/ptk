@@ -40,7 +40,7 @@ func TabStop(ts int) ScannerOption {
 
 // Reporter is a scanner option that may be used to specify a
 // kent.Reporter to use for reporting encoding errors.  By default,
-// encoding errors are reported to standard error.
+// encoding errors are not reported.
 func Reporter(rep kent.Reporter) ScannerOption {
 	return func(s *scanner) {
 		s.rep = rep
