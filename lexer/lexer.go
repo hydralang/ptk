@@ -25,6 +25,17 @@ var (
 	newState func(Lexer, common.CharStream, []Option) State = NewState
 )
 
+// Option is a lexer option that may be passed to the Lex method.
+type Option func(state State)
+
+// AppState is an option allowing an application state to be set when
+// lexing a character stream.
+func AppState(state interface{}) Option {
+	return func(s State) {
+		s.PushAppState(state)
+	}
+}
+
 // Lexer represents the actual lexer.
 type Lexer interface {
 	// Classifier returns the default classifier that will be used

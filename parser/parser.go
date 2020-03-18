@@ -25,6 +25,18 @@ var (
 	newState func(Parser, common.TokenStream, []Option) State = NewState
 )
 
+// Option is a parse option that may be passed to one of the Parser
+// methods.
+type Option func(state State)
+
+// AppState is an option allowing an application state to be set when
+// parsing an expression or statements.
+func AppState(state interface{}) Option {
+	return func(s State) {
+		s.PushAppState(state)
+	}
+}
+
 // Parser represents the actual parser.  This is passed to the parsing
 // functions along with the parsing state.
 type Parser interface {

@@ -12,7 +12,7 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package utils
+package tokenstreams
 
 import "github.com/hydralang/ptk/common"
 
@@ -62,61 +62,4 @@ func (q *ChanTokenStream) Push(tok *common.Token) (ok bool) {
 // pushed onto the queue.
 func (q *ChanTokenStream) Done() {
 	close(q.Chan)
-}
-
-// listTokenStream is an implementation of TokenStream that is
-// initialized with a list of tokens, and simply returns the tokens in
-// sequence.
-type listTokenStream struct {
-	toks    []*common.Token // The list of tokens
-	idx     int             // The index of the current token to return
-	started bool            // A boolean indicating whether the iterator has started
-}
-
-// NewListTokenStream returns a TokenStream that retrieves its tokens
-// from a list passed to the function.  This actually uses a
-// ChanTokenStream under the covers.
-func NewListTokenStream(toks []*common.Token) common.TokenStream {
-	// return obj
-	return &listTokenStream{
-		toks: toks,
-	}
-}
-
-// Next returns the next token.  At the end of the token stream, a nil
-// should be returned.
-func (lts *listTokenStream) Next() *common.Token {
-	// Check the state
-	switch {
-	case !lts.started: // Need to start?
-		lts.started = true
-
-	case lts.idx >= len(lts.toks)-1:
-		return nil
-
-	default:
-		lts.idx++
-	}
-
-	// Return the indexed token
-	return lts.toks[lts.idx]
-}
-
-// NewAsyncTokenStream wraps another token stream and uses the
-// ChanTokenStream to allow running that other token stream in a
-// separate goroutine.
-func NewAsyncTokenStream(ts common.TokenStream) common.TokenStream {
-	// Construct the ChanTokenStream
-	obj := NewChanTokenStream()
-
-	// Run the other token stream in a goroutine and push all its
-	// tokens
-	go func() {
-		for tok := ts.Next(); tok != nil; tok = ts.Next() {
-			obj.Push(tok)
-		}
-		obj.Done()
-	}()
-
-	return obj
 }

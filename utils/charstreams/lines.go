@@ -12,7 +12,7 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package utils
+package charstreams
 
 import "github.com/stretchr/testify/mock"
 
@@ -164,3 +164,22 @@ func (ls *unknownLineStyle) Handle(chs []rune) (LineDis, LineStyle) {
 // from the first line ending encountered, then switches to the
 // appropriate line ending style.
 var UnknownLineStyle = &unknownLineStyle{}
+
+// noLineStyle is a style for handling the case of no newlines
+// recognized.  Use this when the newlines in the source should not
+// result in any newlines at all; this line style substitutes spaces
+// for both carriage returns and newlines.
+type noLineStyle struct{}
+
+// Handle checks to see if a line ending sequence has been
+// encountered.  It returns a LineDis value, which indicates the
+// disposition of the character; and a LineStyle object to use next
+// time around.
+func (ls *noLineStyle) Handle(chs []rune) (LineDis, LineStyle) {
+	return LineDisSpace, ls
+}
+
+// NoLineStyle is a style for handling the case when no newlines in
+// the source should be recognized.  All carriage returns and newlines
+// will be substituted with spaces.
+var NoLineStyle = &noLineStyle{}

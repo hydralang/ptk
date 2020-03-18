@@ -23,8 +23,69 @@ import (
 	"github.com/hydralang/ptk/common"
 )
 
+func TestMockBackTrackerImplementBackTracker(t *testing.T) {
+	assert.Implements(t, (*BackTracker)(nil), &MockBackTracker{})
+}
+
+func TestMockBackTrackerMore(t *testing.T) {
+	obj := &MockBackTracker{}
+	obj.On("More").Return(true)
+
+	result := obj.More()
+
+	assert.True(t, result)
+	obj.AssertExpectations(t)
+}
+
+func TestMockBackTrackerSetMax(t *testing.T) {
+	obj := &MockBackTracker{}
+	obj.On("SetMax", 42)
+
+	obj.SetMax(42)
+
+	obj.AssertExpectations(t)
+}
+
+func TestMockBackTrackerAccept(t *testing.T) {
+	obj := &MockBackTracker{}
+	obj.On("Accept", 42)
+
+	obj.Accept(42)
+
+	obj.AssertExpectations(t)
+}
+
+func TestMockBackTrackerLen(t *testing.T) {
+	obj := &MockBackTracker{}
+	obj.On("Len").Return(42)
+
+	result := obj.Len()
+
+	assert.Equal(t, 42, result)
+	obj.AssertExpectations(t)
+}
+
+func TestMockBackTrackerPos(t *testing.T) {
+	obj := &MockBackTracker{}
+	obj.On("Pos").Return(42)
+
+	result := obj.Pos()
+
+	assert.Equal(t, 42, result)
+	obj.AssertExpectations(t)
+}
+
+func TestMockBackTrackerBackTrack(t *testing.T) {
+	obj := &MockBackTracker{}
+	obj.On("BackTrack")
+
+	obj.BackTrack()
+
+	obj.AssertExpectations(t)
+}
+
 func TestBackTrackerImplementsBackTracker(t *testing.T) {
-	assert.Implements(t, (*common.BackTracker)(nil), &backTracker{})
+	assert.Implements(t, (*BackTracker)(nil), &backTracker{})
 }
 
 func TestNewBackTracker(t *testing.T) {
@@ -47,7 +108,7 @@ func TestBackTrackerNextBase(t *testing.T) {
 	src.On("Next").Return(common.Char{Rune: 't'}, assert.AnError)
 	obj := &backTracker{
 		src:   src,
-		max:   common.TrackAll,
+		max:   TrackAll,
 		saved: &list.List{},
 		last: btElem{
 			ch: common.Char{Rune: 'b'},
@@ -167,7 +228,7 @@ func TestBackTrackerNextSaveEOF(t *testing.T) {
 	src.On("Next").Return(common.Char{Rune: common.EOF}, assert.AnError)
 	obj := &backTracker{
 		src:   src,
-		max:   common.TrackAll,
+		max:   TrackAll,
 		saved: &list.List{},
 		last: btElem{
 			ch: common.Char{Rune: 'b'},
@@ -195,7 +256,7 @@ func TestBackTrackerNextBackTracked(t *testing.T) {
 	src := &common.MockCharStream{}
 	obj := &backTracker{
 		src:   src,
-		max:   common.TrackAll,
+		max:   TrackAll,
 		saved: &list.List{},
 		last: btElem{
 			ch: common.Char{Rune: 'b'},
@@ -228,7 +289,7 @@ func TestBackTrackerNextExtension(t *testing.T) {
 	src := &common.MockCharStream{}
 	src.On("Next").Return(common.Char{Rune: 't'}, assert.AnError)
 	obj := &backTracker{
-		max:   common.TrackAll,
+		max:   TrackAll,
 		saved: &list.List{},
 		last: btElem{
 			ch: common.Char{Rune: 'b'},
@@ -249,6 +310,37 @@ func TestBackTrackerNextExtension(t *testing.T) {
 	}, obj.last)
 }
 
+func TestBackTrackerMoreBackTracked(t *testing.T) {
+	obj := &backTracker{
+		saved: &list.List{},
+	}
+	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
+	obj.next = obj.saved.Front()
+
+	result := obj.More()
+
+	assert.True(t, result)
+}
+
+func TestBackTrackerMoreHaveSrc(t *testing.T) {
+	src := &common.MockCharStream{}
+	obj := &backTracker{
+		src: src,
+	}
+
+	result := obj.More()
+
+	assert.True(t, result)
+}
+
+func TestBackTrackerMoreNoMore(t *testing.T) {
+	obj := &backTracker{}
+
+	result := obj.More()
+
+	assert.False(t, result)
+}
+
 func TestBackTrackerSetMaxBase(t *testing.T) {
 	obj := &backTracker{
 		max:   42,
@@ -260,9 +352,9 @@ func TestBackTrackerSetMaxBase(t *testing.T) {
 	obj.saved.PushBack(btElem{ch: common.Char{Rune: 's'}})
 	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
 
-	obj.SetMax(common.TrackAll)
+	obj.SetMax(TrackAll)
 
-	assert.Equal(t, common.TrackAll, obj.max)
+	assert.Equal(t, TrackAll, obj.max)
 	assert.Equal(t, 4, obj.saved.Len())
 	assert.Equal(t, 4, obj.pos)
 }
@@ -337,7 +429,7 @@ func TestBackTrackerAcceptUnsaved(t *testing.T) {
 
 func TestBackTrackerAccept0Current(t *testing.T) {
 	obj := &backTracker{
-		max:   common.TrackAll,
+		max:   TrackAll,
 		saved: &list.List{},
 		pos:   4,
 	}
@@ -354,7 +446,7 @@ func TestBackTrackerAccept0Current(t *testing.T) {
 
 func TestBackTrackerAccept2Current(t *testing.T) {
 	obj := &backTracker{
-		max:   common.TrackAll,
+		max:   TrackAll,
 		saved: &list.List{},
 		pos:   4,
 	}
@@ -373,7 +465,7 @@ func TestBackTrackerAccept2Current(t *testing.T) {
 
 func TestBackTrackerAccept10Current(t *testing.T) {
 	obj := &backTracker{
-		max:   common.TrackAll,
+		max:   TrackAll,
 		saved: &list.List{},
 		pos:   4,
 	}
@@ -394,7 +486,7 @@ func TestBackTrackerAccept10Current(t *testing.T) {
 
 func TestBackTrackerAccept0Point(t *testing.T) {
 	obj := &backTracker{
-		max:   common.TrackAll,
+		max:   TrackAll,
 		saved: &list.List{},
 		pos:   3,
 	}
@@ -413,7 +505,7 @@ func TestBackTrackerAccept0Point(t *testing.T) {
 
 func TestBackTrackerAccept2Point(t *testing.T) {
 	obj := &backTracker{
-		max:   common.TrackAll,
+		max:   TrackAll,
 		saved: &list.List{},
 		pos:   3,
 	}
@@ -434,7 +526,7 @@ func TestBackTrackerAccept2Point(t *testing.T) {
 
 func TestBackTrackerAccept10Point(t *testing.T) {
 	obj := &backTracker{
-		max:   common.TrackAll,
+		max:   TrackAll,
 		saved: &list.List{},
 		pos:   3,
 	}

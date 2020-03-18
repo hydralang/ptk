@@ -12,11 +12,25 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package utils
+package tokenstreams
 
-import "github.com/klmitch/kent"
+import "github.com/hydralang/ptk/common"
 
-// Simple errors that may be generated within the package.
-var (
-	ErrBadEncoding = kent.NewWarning("Invalid UTF-8 encoding")
-)
+// NewAsyncTokenStream wraps another token stream and uses the
+// ChanTokenStream to allow running that other token stream in a
+// separate goroutine.
+func NewAsyncTokenStream(ts common.TokenStream) common.TokenStream {
+	// Construct the ChanTokenStream
+	obj := NewChanTokenStream()
+
+	// Run the other token stream in a goroutine and push all its
+	// tokens
+	go func() {
+		for tok := ts.Next(); tok != nil; tok = ts.Next() {
+			obj.Push(tok)
+		}
+		obj.Done()
+	}()
+
+	return obj
+}

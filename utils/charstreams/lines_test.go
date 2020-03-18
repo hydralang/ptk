@@ -12,7 +12,7 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package utils
+package charstreams
 
 import (
 	"testing"
@@ -49,6 +49,10 @@ func TestMockLineStyleHandleNotNil(t *testing.T) {
 	obj.AssertExpectations(t)
 }
 
+func TestUNIXLineStyleImplementsLineStyle(t *testing.T) {
+	assert.Implements(t, (*LineStyle)(nil), UNIXLineStyle)
+}
+
 func TestUNIXLineStyleHandleCR(t *testing.T) {
 	dis, next := UNIXLineStyle.Handle([]rune{'\r'})
 
@@ -63,6 +67,10 @@ func TestUNIXLineStyleHandleNL(t *testing.T) {
 	assert.Same(t, UNIXLineStyle, next)
 }
 
+func TestMacLineStyleImplementsLineStyle(t *testing.T) {
+	assert.Implements(t, (*LineStyle)(nil), MacLineStyle)
+}
+
 func TestMacLineStyleHandleCR(t *testing.T) {
 	dis, next := MacLineStyle.Handle([]rune{'\r'})
 
@@ -75,6 +83,10 @@ func TestMacLineStyleHandleNL(t *testing.T) {
 
 	assert.Equal(t, LineDisSpace, dis)
 	assert.Same(t, MacLineStyle, next)
+}
+
+func TestDOSLineStyleImplementsLineStyle(t *testing.T) {
+	assert.Implements(t, (*LineStyle)(nil), DOSLineStyle)
 }
 
 func TestDOSLineStyleHandleCR(t *testing.T) {
@@ -112,6 +124,10 @@ func TestDOSLineStyleHandleCREOF(t *testing.T) {
 	assert.Same(t, DOSLineStyle, next)
 }
 
+func TestUnknownLineStyleImplementsLineStyle(t *testing.T) {
+	assert.Implements(t, (*LineStyle)(nil), UnknownLineStyle)
+}
+
 func TestUnknownLineStyleHandleCR(t *testing.T) {
 	dis, next := UnknownLineStyle.Handle([]rune{'\r'})
 
@@ -145,4 +161,22 @@ func TestUnknownLineStyleHandleCREOF(t *testing.T) {
 
 	assert.Equal(t, LineDisNewlineSave, dis)
 	assert.Same(t, MacLineStyle, next)
+}
+
+func TestNoLineStyleImplementsLineStyle(t *testing.T) {
+	assert.Implements(t, (*LineStyle)(nil), NoLineStyle)
+}
+
+func TestNoLineStyleHandleCR(t *testing.T) {
+	dis, next := NoLineStyle.Handle([]rune{'\r'})
+
+	assert.Equal(t, LineDisSpace, dis)
+	assert.Same(t, NoLineStyle, next)
+}
+
+func TestNoLineStyleHandleNL(t *testing.T) {
+	dis, next := NoLineStyle.Handle([]rune{'\n'})
+
+	assert.Equal(t, LineDisSpace, dis)
+	assert.Same(t, NoLineStyle, next)
 }

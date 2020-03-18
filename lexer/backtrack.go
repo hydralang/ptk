@@ -20,6 +20,99 @@ import (
 	"github.com/hydralang/ptk/common"
 )
 
+// TrackAll is a special value for the max argument to
+// BackTracker.SetMax that indicates the desire to track all
+// characters.
+const TrackAll = -1
+
+// BackTracker is an interface for a backtracker, a CharStream that
+// also provides the ability to back up to an earlier character in the
+// stream.
+type BackTracker interface {
+	common.CharStream
+
+	// More is used to determine if there are any more characters
+	// available for Next to return, given the current state of
+	// the BackTracker.
+	More() bool
+
+	// SetMax allows updating the maximum number of characters to
+	// allow backtracking over.  Setting a TrackAll value will
+	// allow all newly returned characters to be backtracked over.
+	// If the new value for max is less than the previous value,
+	// characters at the front of the backtracking queue will be
+	// discarded to bring the size down to max.
+	SetMax(max int)
+
+	// Accept accepts characters from the backtracking queue,
+	// leaving only the specified number of characters on the
+	// queue.
+	Accept(leave int)
+
+	// Len returns the number of characters saved so far on the
+	// backtracking queue.
+	Len() int
+
+	// Pos returns the position of the most recently returned
+	// character within the saved character list.
+	Pos() int
+
+	// BackTrack resets to the beginning of the backtracking
+	// queue.
+	BackTrack()
+}
+
+// MockBackTracker is a mock implementation of the BackTracker
+// interface.
+type MockBackTracker struct {
+	common.MockCharStream
+}
+
+// More is used to determine if there are any more characters
+// available for Next to return, given the current state of the
+// BackTracker.
+func (m *MockBackTracker) More() bool {
+	args := m.MethodCalled("More")
+
+	return args.Bool(0)
+}
+
+// SetMax allows updating the maximum number of characters to allow
+// backtracking over.  Setting a TrackAll value will allow all newly
+// returned characters to be backtracked over.  If the new value for
+// max is less than the previous value, characters at the front of the
+// backtracking queue will be discarded to bring the size down to max.
+func (m *MockBackTracker) SetMax(max int) {
+	m.MethodCalled("SetMax", max)
+}
+
+// Accept accepts characters from the backtracking queue, leaving only
+// the specified number of characters on the queue.
+func (m *MockBackTracker) Accept(leave int) {
+	m.MethodCalled("Accept", leave)
+}
+
+// Len returns the number of characters saved so far on the
+// backtracking queue.
+func (m *MockBackTracker) Len() int {
+	args := m.MethodCalled("Len")
+
+	return args.Int(0)
+}
+
+// Pos returns the position of the most recently returned character
+// within the saved character list.
+func (m *MockBackTracker) Pos() int {
+	args := m.MethodCalled("Pos")
+
+	return args.Int(0)
+}
+
+// BackTrack resets to the beginning of the backtracking queue.
+func (m *MockBackTracker) BackTrack() {
+	m.MethodCalled("BackTrack")
+}
+
 // btElem is a struct type containing the returned character and error
 // from the source character stream.
 type btElem struct {
@@ -44,7 +137,7 @@ type backTracker struct {
 // BackTracker, if desired) in a BackTracker.  The max parameter
 // indicates the maximum number of characters to track; use 0 to track
 // no characters, and TrackAll to track all characters.
-func NewBackTracker(src common.CharStream, max int) common.BackTracker {
+func NewBackTracker(src common.CharStream, max int) BackTracker {
 	return &backTracker{
 		src:   src,
 		max:   max,
@@ -80,7 +173,7 @@ func (bt *backTracker) Next() (ch common.Char, err error) {
 			})
 
 			// Do any required trimming
-			if bt.max > common.TrackAll && bt.saved.Len() > bt.max {
+			if bt.max > TrackAll && bt.saved.Len() > bt.max {
 				bt.saved.Remove(bt.saved.Front())
 			} else {
 				bt.pos++
@@ -102,6 +195,13 @@ func (bt *backTracker) Next() (ch common.Char, err error) {
 	return bt.last.ch, nil
 }
 
+// More is used to determine if there are any more characters
+// available for Next to return, given the current state of the
+// BackTracker.
+func (bt *backTracker) More() bool {
+	return bt.next != nil || bt.src != nil
+}
+
 // SetMax allows updating the maximum number of characters to allow
 // backtracking over.  Setting a TrackAll value will allow all newly
 // returned characters to be backtracked over.  If the new value for
@@ -115,7 +215,7 @@ func (bt *backTracker) SetMax(max int) {
 		bt.saved = &list.List{}
 		bt.pos = 0
 	} else {
-		for bt.max > common.TrackAll && bt.saved.Len() > bt.max {
+		for bt.max > TrackAll && bt.saved.Len() > bt.max {
 			bt.saved.Remove(bt.saved.Front())
 			bt.pos--
 		}

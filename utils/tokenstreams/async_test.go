@@ -12,18 +12,26 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package lexer
+package tokenstreams
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/hydralang/ptk/common"
 )
 
-func TestAppState(t *testing.T) {
-	s := &MockState{}
-	s.On("PushAppState", "state")
+func TestNewAsyncTokenStream(t *testing.T) {
+	toks := []*common.Token{{}, {}, {}}
+	ts := NewListTokenStream(toks)
 
-	opt := AppState("state")
-	opt(s)
+	result := NewAsyncTokenStream(ts)
 
-	s.AssertExpectations(t)
+	i := 0
+	for tok := result.Next(); tok != nil; tok = result.Next() {
+		assert.Same(t, toks[i], tok)
+		i++
+	}
+	assert.Equal(t, len(toks), i)
 }

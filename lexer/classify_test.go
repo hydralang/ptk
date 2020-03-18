@@ -18,8 +18,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/hydralang/ptk/common"
 )
 
 func TestMockClassifierImplementsClassifier(t *testing.T) {
@@ -28,7 +26,7 @@ func TestMockClassifierImplementsClassifier(t *testing.T) {
 
 func TestMockClassifierClassifyNil(t *testing.T) {
 	s := &MockState{}
-	str := &common.MockBackTracker{}
+	str := &MockBackTracker{}
 	obj := &MockClassifier{}
 	obj.On("Classify", s, str).Return(nil)
 
@@ -41,7 +39,7 @@ func TestMockClassifierClassifyNil(t *testing.T) {
 func TestMockClassifierClassifyNotNil(t *testing.T) {
 	recs := []Recognizer{&MockRecognizer{}, &MockRecognizer{}}
 	s := &MockState{}
-	str := &common.MockBackTracker{}
+	str := &MockBackTracker{}
 	obj := &MockClassifier{}
 	obj.On("Classify", s, str).Return(recs)
 
@@ -53,7 +51,7 @@ func TestMockClassifierClassifyNotNil(t *testing.T) {
 
 func TestMockClassifierError(t *testing.T) {
 	s := &MockState{}
-	str := &common.MockBackTracker{}
+	str := &MockBackTracker{}
 	obj := &MockClassifier{}
 	obj.On("Error", s, str)
 
