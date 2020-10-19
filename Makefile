@@ -1,17 +1,3 @@
-## Copyright (c) 2020 Kevin L. Mitchell
-##
-## Licensed under the Apache License, Version 2.0 (the "License"); you
-## may not use this file except in compliance with the License.  You
-## may obtain a copy of the License at
-##
-##      http://www.apache.org/licenses/LICENSE-2.0
-##
-## Unless required by applicable law or agreed to in writing, software
-## distributed under the License is distributed on an "AS IS" BASIS,
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-## implied.  See the License for the specific language governing
-## permissions and limitations under the License.
-
 # Packages to test; can be overridden at the command line
 PACKAGES    = ./...
 
@@ -44,6 +30,18 @@ COV_CONF    = .overcover.yaml
 # Additional arguments to pass to overcover
 COVER_ARGS  = --summary
 
+# CI-linked variables; these set up read-only behavior within a CI
+# system
+ifeq ($(CI),true)
+FORMAT_TARG = format-test
+MOD_ARG     = -mod=readonly
+COV_ARG     = --readonly
+else
+FORMAT_TARG = format
+MOD_ARG     =
+COV_ARG     =
+endif
+
 # Coverage data and report files
 COVER_OUT   = coverage.out
 COVER_HTML  = coverage.html
@@ -66,18 +64,6 @@ BINS        = $(call BINNAME,$(BINSRC))
 
 # Files to be cleaned up on "make clean"
 CLEAN       = $(BINS) $(COVER_OUT) $(COVER_HTML) $(IGNORE).tmp
-
-# CI-linked variables; these set up read-only behavior within a CI
-# system
-ifeq ($(CI),true)
-FORMAT_TARG = format-test
-MOD_ARG     = -mod=readonly
-COV_ARG     = --readonly
-else
-FORMAT_TARG = format
-MOD_ARG     =
-COV_ARG     =
-endif
 
 # Compute the dependencies for the "all" target
 ALL_TARG    = $(IGNORE) test
@@ -127,11 +113,13 @@ vet: ## Vet source files
 	$(GO) vet $(MOD_ARG) $(PACKAGES)
 
 test-only: ## Run tests only
-	$(GO) test $(MOD_ARG) -race -coverprofile=$(COVER_OUT) $(PACKAGES)
+	$(GO) test $(MOD_ARG) -race -coverprofile=$(COVER_OUT) -coverpkg=./... $(PACKAGES)
 
 test: $(TEST_TARG) cover-test ## Run all tests
 
-cover: $(TEST_TARG) $(COVER_HTML) cover-test ## Run tests and generate a coverage report
+cover: $(TEST_TARG) cover-report cover-test ## Run tests and generate a coverage report
+
+cover-report: $(COVER_HTML) ## Generate a coverage report, running tests only if required
 
 cover-test: $(COVER_OUT) $(OVERCOVER) ## Test that coverage meets minimum configured threshold
 	$(OVERCOVER) --config $(COV_CONF) $(COV_ARG) --coverprofile $(COVER_OUT) $(COVER_ARGS) $(PACKAGES)
@@ -219,4 +207,4 @@ help: ## Emit help for the Makefile
 			} \
 		}'
 
-.PHONY: all build tidy format-test format lint vet test-only test cover cover-test goveralls clean help
+.PHONY: all build tidy format-test format lint vet test-only test cover cover-report cover-test goveralls clean help
