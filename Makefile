@@ -14,6 +14,8 @@ TOOLS         =
 
 # Names of the various commands
 GO            = go
+GOIMPORTS     = ./$(TOOLDIR)/goimports
+TOOLS         += golang.org/x/tools/cmd/goimports
 GOLANGCI_LINT = ./$(TOOLDIR)/golangci-lint
 OVERCOVER     = ./$(TOOLDIR)/overcover
 TOOLS         += github.com/klmitch/overcover
@@ -91,6 +93,9 @@ build: $(BINS) ## Build binaries (if any)
 
 tidy: ## Ensure go.mod matches the source code
 	$(GO) mod tidy
+
+imports: $(GOIMPORTS) ## Maintain the source imports
+	$(GOIMPORTS) -l -local $(PKG_ROOT) -w $(SOURCES)
 
 lint: $(GOLANGCI_LINT) $(LINT_CONF) ## Lint-check source files; may fix some lint issues
 	$(GOLANGCI_LINT) run -c $(LINT_CONF) $(LINT_ARG) $(PACKAGES)
@@ -211,4 +216,4 @@ help: ## Emit help for the Makefile
 			} \
 		}'
 
-.PHONY: all build tidy lint test-only test cover cover-report cover-test goveralls clean help
+.PHONY: all build tidy imports lint test-only test cover cover-report cover-test goveralls clean help
