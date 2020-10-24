@@ -25,10 +25,10 @@ import (
 // characters.
 const TrackAll = -1
 
-// BackTracker is an interface for a backtracker, a CharStream that
-// also provides the ability to back up to an earlier character in the
-// stream.
-type BackTracker interface {
+// IBackTracker is an interface for a backtracker, a scanner.Scanner
+// that also provides the ability to back up to an earlier character
+// in the stream.
+type IBackTracker interface {
 	scanner.Scanner
 
 	// More is used to determine if there are any more characters
@@ -63,18 +63,18 @@ type BackTracker interface {
 }
 
 // btElem is a struct type containing the returned character and error
-// from the source character stream.
+// from the source scanner.
 type btElem struct {
 	ch  scanner.Char // The character returned
 	err error        // The error returned
 }
 
-// backTracker is an implementation of scanner.Scanner that includes
-// backtracking capability.  A backTracker wraps another character
-// stream (including another instance of backTracker), but provides
-// additional methods for controlling backtracking.
-type backTracker struct {
-	src   scanner.Scanner // The source character stream
+// BackTracker is an implementation of scanner.Scanner that includes
+// backtracking capability.  A BackTracker wraps another
+// scanner.Scanner (including another instance of BackTracker), but
+// provides additional methods for controlling backtracking.
+type BackTracker struct {
+	Src   scanner.Scanner // The source scanner
 	max   int             // Maximum length to backtrack by
 	saved *list.List      // Saved characters
 	next  *list.Element   // Next character to return
@@ -82,13 +82,13 @@ type backTracker struct {
 	last  btElem          // Last return from source
 }
 
-// NewBackTracker wraps another character stream (which may also be a
+// NewBackTracker wraps another scanner (which may also be a
 // BackTracker, if desired) in a BackTracker.  The max parameter
 // indicates the maximum number of characters to track; use 0 to track
 // no characters, and TrackAll to track all characters.
-func NewBackTracker(src scanner.Scanner, max int) BackTracker {
-	return &backTracker{
-		src:   src,
+func NewBackTracker(src scanner.Scanner, max int) *BackTracker {
+	return &BackTracker{
+		Src:   src,
 		max:   max,
 		saved: &list.List{},
 		last: btElem{
@@ -100,7 +100,7 @@ func NewBackTracker(src scanner.Scanner, max int) BackTracker {
 // Next returns the next character from the stream as a Char, which
 // will include the character's location.  If an error was
 // encountered, that will also be returned.
-func (bt *backTracker) Next() (ch scanner.Char, err error) {
+func (bt *BackTracker) Next() (ch scanner.Char, err error) {
 	// Check if we're revisiting old friends
 	if bt.next != nil {
 		ch = bt.next.Value.(btElem).ch
@@ -111,8 +111,8 @@ func (bt *backTracker) Next() (ch scanner.Char, err error) {
 	}
 
 	// Need to get a new one from the source
-	if bt.src != nil {
-		ch, err = bt.src.Next()
+	if bt.Src != nil {
+		ch, err = bt.Src.Next()
 
 		// Save if we need to
 		if bt.max != 0 {
@@ -130,7 +130,7 @@ func (bt *backTracker) Next() (ch scanner.Char, err error) {
 
 			// See if the source is exhausted
 			if ch.Rune == scanner.EOF {
-				bt.src = nil
+				bt.Src = nil
 				bt.last = btElem{
 					ch: ch,
 				}
@@ -147,8 +147,8 @@ func (bt *backTracker) Next() (ch scanner.Char, err error) {
 // More is used to determine if there are any more characters
 // available for Next to return, given the current state of the
 // BackTracker.
-func (bt *backTracker) More() bool {
-	return bt.next != nil || bt.src != nil
+func (bt *BackTracker) More() bool {
+	return bt.next != nil || bt.Src != nil
 }
 
 // SetMax allows updating the maximum number of characters to allow
@@ -156,7 +156,7 @@ func (bt *backTracker) More() bool {
 // returned characters to be backtracked over.  If the new value for
 // max is less than the previous value, characters at the front of the
 // backtracking queue will be discarded to bring the size down to max.
-func (bt *backTracker) SetMax(max int) {
+func (bt *BackTracker) SetMax(max int) {
 	bt.max = max
 
 	// Do any required trimming
@@ -173,7 +173,7 @@ func (bt *backTracker) SetMax(max int) {
 
 // Accept accepts characters from the backtracking queue, leaving only
 // the specified number of characters on the queue.
-func (bt *backTracker) Accept(leave int) {
+func (bt *BackTracker) Accept(leave int) {
 	if bt.max == 0 {
 		// Nothing saved
 		return
@@ -214,18 +214,18 @@ func (bt *backTracker) Accept(leave int) {
 
 // Len returns the number of characters saved so far on the
 // backtracking queue.
-func (bt *backTracker) Len() int {
+func (bt *BackTracker) Len() int {
 	return bt.saved.Len()
 }
 
 // Pos returns the position of the most recently returned character
 // within the saved character list.
-func (bt *backTracker) Pos() int {
+func (bt *BackTracker) Pos() int {
 	return bt.pos - 1
 }
 
 // BackTrack resets to the beginning of the backtracking queue.
-func (bt *backTracker) BackTrack() {
+func (bt *BackTracker) BackTrack() {
 	bt.next = bt.saved.Front()
 	bt.pos = 0
 }

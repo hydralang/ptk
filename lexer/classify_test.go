@@ -14,48 +14,22 @@
 
 package lexer
 
-import (
-	"testing"
+import "github.com/stretchr/testify/mock"
 
-	"github.com/stretchr/testify/assert"
-)
-
-func TestMockClassifierImplementsClassifier(t *testing.T) {
-	assert.Implements(t, (*Classifier)(nil), &MockClassifier{})
+type mockClassifier struct {
+	mock.Mock
 }
 
-func TestMockClassifierClassifyNil(t *testing.T) {
-	s := &MockState{}
-	str := &mockBackTracker{}
-	obj := &MockClassifier{}
-	obj.On("Classify", s, str).Return(nil)
+func (m *mockClassifier) Classify(lexer *Lexer, state State, str IBackTracker) []Recognizer {
+	args := m.MethodCalled("Classify", lexer, state, str)
 
-	result := obj.Classify(s, str)
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.([]Recognizer)
+	}
 
-	assert.Nil(t, result)
-	obj.AssertExpectations(t)
+	return nil
 }
 
-func TestMockClassifierClassifyNotNil(t *testing.T) {
-	recs := []Recognizer{&MockRecognizer{}, &MockRecognizer{}}
-	s := &MockState{}
-	str := &mockBackTracker{}
-	obj := &MockClassifier{}
-	obj.On("Classify", s, str).Return(recs)
-
-	result := obj.Classify(s, str)
-
-	assert.Equal(t, recs, result)
-	obj.AssertExpectations(t)
-}
-
-func TestMockClassifierError(t *testing.T) {
-	s := &MockState{}
-	str := &mockBackTracker{}
-	obj := &MockClassifier{}
-	obj.On("Error", s, str)
-
-	obj.Error(s, str)
-
-	obj.AssertExpectations(t)
+func (m *mockClassifier) Error(lexer *Lexer, state State, str IBackTracker) {
+	m.MethodCalled("Error", lexer, state, str)
 }

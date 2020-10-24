@@ -19,7 +19,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/hydralang/ptk/common"
+	"github.com/hydralang/ptk/lexer"
 )
 
 func TestExpectedTypesNil(t *testing.T) {
@@ -53,7 +53,7 @@ func TestExpectedTypesThree(t *testing.T) {
 }
 
 func TestUnknownTokenTypeNoTypes(t *testing.T) {
-	tok := &common.Token{
+	tok := &lexer.Token{
 		Type: "type",
 	}
 
@@ -63,7 +63,7 @@ func TestUnknownTokenTypeNoTypes(t *testing.T) {
 }
 
 func TestUnknownTokenTypeWithTypes(t *testing.T) {
-	tok := &common.Token{
+	tok := &lexer.Token{
 		Type: "type",
 	}
 
@@ -85,7 +85,7 @@ func TestExpectedTokenWithTypes(t *testing.T) {
 }
 
 func TestUnexpectedTokenNoTypes(t *testing.T) {
-	tok := &common.Token{
+	tok := &lexer.Token{
 		Type: "type",
 	}
 
@@ -95,7 +95,7 @@ func TestUnexpectedTokenNoTypes(t *testing.T) {
 }
 
 func TestUnexpectedTokenWithTypes(t *testing.T) {
-	tok := &common.Token{
+	tok := &lexer.Token{
 		Type: "type",
 	}
 

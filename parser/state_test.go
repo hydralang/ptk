@@ -22,6 +22,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/hydralang/ptk/common"
+	"github.com/hydralang/ptk/internal"
+	"github.com/hydralang/ptk/lexer"
 	"github.com/hydralang/ptk/scanner"
 )
 
@@ -181,7 +183,7 @@ func TestMockStateStreamNil(t *testing.T) {
 }
 
 func TestMockStateStreamNotNil(t *testing.T) {
-	expected := &common.MockTokenStream{}
+	expected := &mockLexer{}
 	obj := &MockState{}
 	obj.On("Stream").Return(expected)
 
@@ -192,7 +194,7 @@ func TestMockStateStreamNotNil(t *testing.T) {
 }
 
 func TestMockStatePushStream(t *testing.T) {
-	stream := &common.MockTokenStream{}
+	stream := &mockLexer{}
 	obj := &MockState{}
 	obj.On("PushStream", stream)
 
@@ -212,7 +214,7 @@ func TestMockStatePopStreamNil(t *testing.T) {
 }
 
 func TestMockStatePopStreamNotNil(t *testing.T) {
-	expected := &common.MockTokenStream{}
+	expected := &mockLexer{}
 	obj := &MockState{}
 	obj.On("PopStream").Return(expected)
 
@@ -223,7 +225,7 @@ func TestMockStatePopStreamNotNil(t *testing.T) {
 }
 
 func TestMockStateSetStreamNil(t *testing.T) {
-	stream := &common.MockTokenStream{}
+	stream := &mockLexer{}
 	obj := &MockState{}
 	obj.On("SetStream", stream).Return(nil)
 
@@ -234,8 +236,8 @@ func TestMockStateSetStreamNil(t *testing.T) {
 }
 
 func TestMockStateSetStreamNotNil(t *testing.T) {
-	stream := &common.MockTokenStream{}
-	expected := &common.MockTokenStream{}
+	stream := &mockLexer{}
+	expected := &mockLexer{}
 	obj := &MockState{}
 	obj.On("SetStream", stream).Return(expected)
 
@@ -256,7 +258,7 @@ func TestMockStateTokenNil(t *testing.T) {
 }
 
 func TestMockStateTokenNotNil(t *testing.T) {
-	expected := &common.Token{}
+	expected := &lexer.Token{}
 	obj := &MockState{}
 	obj.On("Token").Return(expected)
 
@@ -277,7 +279,7 @@ func TestMockStateNextTokenNil(t *testing.T) {
 }
 
 func TestMockStateNextTokenNotNil(t *testing.T) {
-	expected := &common.Token{}
+	expected := &lexer.Token{}
 	obj := &MockState{}
 	obj.On("NextToken").Return(expected)
 
@@ -298,7 +300,7 @@ func TestMockStateMoreTokens(t *testing.T) {
 }
 
 func TestPushToken(t *testing.T) {
-	tok := &common.Token{}
+	tok := &lexer.Token{}
 	obj := &MockState{}
 	obj.On("PushToken", tok)
 
@@ -363,7 +365,7 @@ func TestNewState(t *testing.T) {
 	}
 	parser := &MockParser{}
 	parser.On("Table").Return(tab)
-	stream := &common.MockTokenStream{}
+	stream := &mockLexer{}
 	var opt1Called State
 	var opt2Called State
 	options := []Option{
@@ -403,7 +405,7 @@ func TestStateParser(t *testing.T) {
 }
 
 func TestStateAppState(t *testing.T) {
-	appStack := &common.MockStack{}
+	appStack := &internal.MockStack{}
 	appStack.On("Get").Return("state")
 	obj := &state{
 		appState: appStack,
@@ -416,7 +418,7 @@ func TestStateAppState(t *testing.T) {
 }
 
 func TestStatePushAppState(t *testing.T) {
-	appStack := &common.MockStack{}
+	appStack := &internal.MockStack{}
 	appStack.On("Push", "state")
 	obj := &state{
 		appState: appStack,
@@ -428,7 +430,7 @@ func TestStatePushAppState(t *testing.T) {
 }
 
 func TestStatePopAppState(t *testing.T) {
-	appStack := &common.MockStack{}
+	appStack := &internal.MockStack{}
 	appStack.On("Pop").Return("state")
 	obj := &state{
 		appState: appStack,
@@ -441,7 +443,7 @@ func TestStatePopAppState(t *testing.T) {
 }
 
 func TestStateSetAppState(t *testing.T) {
-	appStack := &common.MockStack{}
+	appStack := &internal.MockStack{}
 	appStack.On("Set", "new").Return("old")
 	obj := &state{
 		appState: appStack,
@@ -457,7 +459,7 @@ func TestStateTableBase(t *testing.T) {
 	tab := Table{
 		"foo": Entry{},
 	}
-	tableStack := &common.MockStack{}
+	tableStack := &internal.MockStack{}
 	tableStack.On("Get").Return(tab)
 	obj := &state{
 		table: tableStack,
@@ -470,7 +472,7 @@ func TestStateTableBase(t *testing.T) {
 }
 
 func TestStateTableNil(t *testing.T) {
-	tableStack := &common.MockStack{}
+	tableStack := &internal.MockStack{}
 	tableStack.On("Get").Return(nil)
 	obj := &state{
 		table: tableStack,
@@ -486,7 +488,7 @@ func TestStatePushTable(t *testing.T) {
 	tab := Table{
 		"foo": Entry{},
 	}
-	tableStack := &common.MockStack{}
+	tableStack := &internal.MockStack{}
 	tableStack.On("Push", tab)
 	obj := &state{
 		table: tableStack,
@@ -501,7 +503,7 @@ func TestStatePopTableBase(t *testing.T) {
 	tab := Table{
 		"foo": Entry{},
 	}
-	tableStack := &common.MockStack{}
+	tableStack := &internal.MockStack{}
 	tableStack.On("Pop").Return(tab)
 	obj := &state{
 		table: tableStack,
@@ -514,7 +516,7 @@ func TestStatePopTableBase(t *testing.T) {
 }
 
 func TestStatePopTableNil(t *testing.T) {
-	tableStack := &common.MockStack{}
+	tableStack := &internal.MockStack{}
 	tableStack.On("Pop").Return(nil)
 	obj := &state{
 		table: tableStack,
@@ -533,7 +535,7 @@ func TestStateSetTableBase(t *testing.T) {
 	newTab := Table{
 		"bar": Entry{},
 	}
-	tableStack := &common.MockStack{}
+	tableStack := &internal.MockStack{}
 	tableStack.On("Set", newTab).Return(tab)
 	obj := &state{
 		table: tableStack,
@@ -549,7 +551,7 @@ func TestStateSetTableNil(t *testing.T) {
 	newTab := Table{
 		"bar": Entry{},
 	}
-	tableStack := &common.MockStack{}
+	tableStack := &internal.MockStack{}
 	tableStack.On("Set", newTab).Return(nil)
 	obj := &state{
 		table: tableStack,
@@ -562,8 +564,8 @@ func TestStateSetTableNil(t *testing.T) {
 }
 
 func TestStateStreamBase(t *testing.T) {
-	stream := &common.MockTokenStream{}
-	streamStack := &common.MockStack{}
+	stream := &mockLexer{}
+	streamStack := &internal.MockStack{}
 	streamStack.On("Get").Return(stream)
 	obj := &state{
 		stream: streamStack,
@@ -576,7 +578,7 @@ func TestStateStreamBase(t *testing.T) {
 }
 
 func TestStateStreamNil(t *testing.T) {
-	streamStack := &common.MockStack{}
+	streamStack := &internal.MockStack{}
 	streamStack.On("Get").Return(nil)
 	obj := &state{
 		stream: streamStack,
@@ -589,8 +591,8 @@ func TestStateStreamNil(t *testing.T) {
 }
 
 func TestStatePushStream(t *testing.T) {
-	stream := &common.MockTokenStream{}
-	streamStack := &common.MockStack{}
+	stream := &mockLexer{}
+	streamStack := &internal.MockStack{}
 	streamStack.On("Push", stream)
 	obj := &state{
 		stream: streamStack,
@@ -602,8 +604,8 @@ func TestStatePushStream(t *testing.T) {
 }
 
 func TestStatePopStreamBase(t *testing.T) {
-	stream := &common.MockTokenStream{}
-	streamStack := &common.MockStack{}
+	stream := &mockLexer{}
+	streamStack := &internal.MockStack{}
 	streamStack.On("Pop").Return(stream)
 	obj := &state{
 		stream: streamStack,
@@ -616,7 +618,7 @@ func TestStatePopStreamBase(t *testing.T) {
 }
 
 func TestStatePopStreamNil(t *testing.T) {
-	streamStack := &common.MockStack{}
+	streamStack := &internal.MockStack{}
 	streamStack.On("Pop").Return(nil)
 	obj := &state{
 		stream: streamStack,
@@ -629,9 +631,9 @@ func TestStatePopStreamNil(t *testing.T) {
 }
 
 func TestStateSetStreamBase(t *testing.T) {
-	stream := &common.MockTokenStream{}
-	newStream := &common.MockTokenStream{}
-	streamStack := &common.MockStack{}
+	stream := &mockLexer{}
+	newStream := &mockLexer{}
+	streamStack := &internal.MockStack{}
 	streamStack.On("Set", newStream).Return(stream)
 	obj := &state{
 		stream: streamStack,
@@ -644,8 +646,8 @@ func TestStateSetStreamBase(t *testing.T) {
 }
 
 func TestStateSetStreamNil(t *testing.T) {
-	newStream := &common.MockTokenStream{}
-	streamStack := &common.MockStack{}
+	newStream := &mockLexer{}
+	streamStack := &internal.MockStack{}
 	streamStack.On("Set", newStream).Return(nil)
 	obj := &state{
 		stream: streamStack,
@@ -658,7 +660,7 @@ func TestStateSetStreamNil(t *testing.T) {
 }
 
 func TestStateToken(t *testing.T) {
-	tok := &common.Token{}
+	tok := &lexer.Token{}
 	obj := &state{
 		tok: tok,
 	}
@@ -669,10 +671,10 @@ func TestStateToken(t *testing.T) {
 }
 
 func TestStateGetTokenBase(t *testing.T) {
-	tok := &common.Token{}
-	stream := &common.MockTokenStream{}
+	tok := &lexer.Token{}
+	stream := &mockLexer{}
 	stream.On("Next").Return(tok)
-	streamStack := &common.MockStack{}
+	streamStack := &internal.MockStack{}
 	streamStack.On("Get").Return(stream)
 	obj := &state{
 		stream: streamStack,
@@ -686,12 +688,12 @@ func TestStateGetTokenBase(t *testing.T) {
 }
 
 func TestStateGetTokenPopStream(t *testing.T) {
-	tok := &common.Token{}
-	stream1 := &common.MockTokenStream{}
+	tok := &lexer.Token{}
+	stream1 := &mockLexer{}
 	stream1.On("Next").Return(tok)
-	stream2 := &common.MockTokenStream{}
+	stream2 := &mockLexer{}
 	stream2.On("Next").Return(nil)
-	streamStack := &common.MockStack{}
+	streamStack := &internal.MockStack{}
 	streamStack.On("Get").Return(stream2).Once()
 	streamStack.On("Pop").Return(stream2)
 	streamStack.On("Get").Return(stream1)
@@ -708,7 +710,7 @@ func TestStateGetTokenPopStream(t *testing.T) {
 }
 
 func TestStateGetTokenExhausted(t *testing.T) {
-	streamStack := &common.MockStack{}
+	streamStack := &internal.MockStack{}
 	streamStack.On("Get").Return(nil)
 	obj := &state{
 		stream: streamStack,
@@ -721,12 +723,12 @@ func TestStateGetTokenExhausted(t *testing.T) {
 }
 
 func TestStateNextTokenBase(t *testing.T) {
-	tok := &common.Token{}
-	stream := &common.MockTokenStream{}
+	tok := &lexer.Token{}
+	stream := &mockLexer{}
 	stream.On("Next").Return(tok)
-	streamStack := &common.MockStack{}
+	streamStack := &internal.MockStack{}
 	streamStack.On("Get").Return(stream)
-	tokenStack := &common.MockStack{}
+	tokenStack := &internal.MockStack{}
 	tokenStack.On("Len").Return(0)
 	obj := &state{
 		stream: streamStack,
@@ -743,10 +745,10 @@ func TestStateNextTokenBase(t *testing.T) {
 }
 
 func TestStateNextTokenPushed(t *testing.T) {
-	tok := &common.Token{}
-	stream := &common.MockTokenStream{}
-	streamStack := &common.MockStack{}
-	tokenStack := &common.MockStack{}
+	tok := &lexer.Token{}
+	stream := &mockLexer{}
+	streamStack := &internal.MockStack{}
+	tokenStack := &internal.MockStack{}
 	tokenStack.On("Len").Return(1)
 	tokenStack.On("Pop").Return(tok)
 	obj := &state{
@@ -764,9 +766,9 @@ func TestStateNextTokenPushed(t *testing.T) {
 }
 
 func TestStateNextTokenExhausted(t *testing.T) {
-	streamStack := &common.MockStack{}
+	streamStack := &internal.MockStack{}
 	streamStack.On("Get").Return(nil)
-	tokenStack := &common.MockStack{}
+	tokenStack := &internal.MockStack{}
 	tokenStack.On("Len").Return(0)
 	obj := &state{
 		stream: streamStack,
@@ -782,12 +784,12 @@ func TestStateNextTokenExhausted(t *testing.T) {
 }
 
 func TestStateMoreTokensBase(t *testing.T) {
-	tok := &common.Token{}
-	stream := &common.MockTokenStream{}
+	tok := &lexer.Token{}
+	stream := &mockLexer{}
 	stream.On("Next").Return(tok)
-	streamStack := &common.MockStack{}
+	streamStack := &internal.MockStack{}
 	streamStack.On("Get").Return(stream)
-	tokenStack := &common.MockStack{}
+	tokenStack := &internal.MockStack{}
 	tokenStack.On("Len").Return(0)
 	tokenStack.On("Push", tok)
 	obj := &state{
@@ -805,9 +807,9 @@ func TestStateMoreTokensBase(t *testing.T) {
 }
 
 func TestStateMoreTokensPushed(t *testing.T) {
-	stream := &common.MockTokenStream{}
-	streamStack := &common.MockStack{}
-	tokenStack := &common.MockStack{}
+	stream := &mockLexer{}
+	streamStack := &internal.MockStack{}
+	tokenStack := &internal.MockStack{}
 	tokenStack.On("Len").Return(1)
 	obj := &state{
 		stream: streamStack,
@@ -824,9 +826,9 @@ func TestStateMoreTokensPushed(t *testing.T) {
 }
 
 func TestStateMoreTokensExhausted(t *testing.T) {
-	streamStack := &common.MockStack{}
+	streamStack := &internal.MockStack{}
 	streamStack.On("Get").Return(nil)
-	tokenStack := &common.MockStack{}
+	tokenStack := &internal.MockStack{}
 	tokenStack.On("Len").Return(0)
 	obj := &state{
 		stream: streamStack,
@@ -842,8 +844,8 @@ func TestStateMoreTokensExhausted(t *testing.T) {
 }
 
 func TestStatePushToken(t *testing.T) {
-	tok := &common.Token{}
-	tokenStream := &common.MockStack{}
+	tok := &lexer.Token{}
+	tokenStream := &internal.MockStack{}
 	tokenStream.On("Push", tok)
 	obj := &state{
 		tokens: tokenStream,
@@ -855,11 +857,11 @@ func TestStatePushToken(t *testing.T) {
 }
 
 func TestStateGetEntryBase(t *testing.T) {
-	tok := &common.Token{Type: "type"}
+	tok := &lexer.Token{Type: "type"}
 	tab := Table{
 		"type": Entry{Power: 42},
 	}
-	tableStack := &common.MockStack{}
+	tableStack := &internal.MockStack{}
 	tableStack.On("Get").Return(tab)
 	obj := &state{
 		table: tableStack,
@@ -873,8 +875,8 @@ func TestStateGetEntryBase(t *testing.T) {
 }
 
 func TestStateGetEntryNoTable(t *testing.T) {
-	tok := &common.Token{Type: "type"}
-	tableStack := &common.MockStack{}
+	tok := &lexer.Token{Type: "type"}
+	tableStack := &internal.MockStack{}
 	tableStack.On("Get").Return(nil)
 	obj := &state{
 		table: tableStack,
@@ -888,9 +890,9 @@ func TestStateGetEntryNoTable(t *testing.T) {
 }
 
 func TestStateGetEntryNoEntry(t *testing.T) {
-	tok := &common.Token{Type: "type"}
+	tok := &lexer.Token{Type: "type"}
 	tab := Table{}
-	tableStack := &common.MockStack{}
+	tableStack := &internal.MockStack{}
 	tableStack.On("Get").Return(tab)
 	obj := &state{
 		table: tableStack,
@@ -906,7 +908,7 @@ func TestStateGetEntryNoEntry(t *testing.T) {
 type binaryNode struct {
 	L  common.Node
 	R  common.Node
-	Op *common.Token
+	Op *lexer.Token
 }
 
 func (bn *binaryNode) Location() scanner.Location {
@@ -922,27 +924,27 @@ func (bn *binaryNode) String() string {
 }
 
 func TestStateExpressionBase(t *testing.T) {
-	tableStack := &common.MockStack{}
-	streamStack := &common.MockStack{}
-	tokensStack := common.NewStack()
+	tableStack := &internal.MockStack{}
+	streamStack := &internal.MockStack{}
+	tokensStack := internal.NewStack()
 	obj := &state{
 		table:  tableStack,
 		stream: streamStack,
 		tokens: tokensStack,
 	}
-	tokens := []*common.Token{
+	tokens := []*lexer.Token{
 		{Type: "n", Value: 1},
 		{Type: "+"},
 		{Type: "n", Value: 2},
 		{Type: "+"},
 		{Type: "n", Value: 3},
 	}
-	var first ExprFirst = func(s State, pow int, tok *common.Token) (common.Node, error) {
+	var first ExprFirst = func(s State, pow int, tok *lexer.Token) (common.Node, error) {
 		assert.Same(t, obj, s)
 		assert.Equal(t, 0, pow)
-		return tok, nil
+		return &common.TokenNode{Token: *tok}, nil
 	}
-	var next ExprNext = func(s State, pow int, l common.Node, tok *common.Token) (common.Node, error) {
+	var next ExprNext = func(s State, pow int, l common.Node, tok *lexer.Token) (common.Node, error) {
 		assert.Same(t, obj, s)
 		assert.Equal(t, 10, pow)
 		r, _ := s.Expression(pow)
@@ -973,28 +975,28 @@ func TestStateExpressionBase(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, &binaryNode{
-		Op: &common.Token{Type: "+"},
+		Op: &lexer.Token{Type: "+"},
 		L: &binaryNode{
-			Op: &common.Token{Type: "+"},
-			L:  &common.Token{Type: "n", Value: 1},
-			R:  &common.Token{Type: "n", Value: 2},
+			Op: &lexer.Token{Type: "+"},
+			L:  &common.TokenNode{Token: lexer.Token{Type: "n", Value: 1}},
+			R:  &common.TokenNode{Token: lexer.Token{Type: "n", Value: 2}},
 		},
-		R: &common.Token{Type: "n", Value: 3},
+		R: &common.TokenNode{Token: lexer.Token{Type: "n", Value: 3}},
 	}, result)
 	tableStack.AssertExpectations(t)
 	streamStack.AssertExpectations(t)
 }
 
 func TestStateExpressionPrecedence(t *testing.T) {
-	tableStack := &common.MockStack{}
-	streamStack := &common.MockStack{}
-	tokensStack := common.NewStack()
+	tableStack := &internal.MockStack{}
+	streamStack := &internal.MockStack{}
+	tokensStack := internal.NewStack()
 	obj := &state{
 		table:  tableStack,
 		stream: streamStack,
 		tokens: tokensStack,
 	}
-	tokens := []*common.Token{
+	tokens := []*lexer.Token{
 		{Type: "n", Value: 1},
 		{Type: "+"},
 		{Type: "n", Value: 2},
@@ -1003,12 +1005,12 @@ func TestStateExpressionPrecedence(t *testing.T) {
 		{Type: "+"},
 		{Type: "n", Value: 4},
 	}
-	var first ExprFirst = func(s State, pow int, tok *common.Token) (common.Node, error) {
+	var first ExprFirst = func(s State, pow int, tok *lexer.Token) (common.Node, error) {
 		assert.Same(t, obj, s)
 		assert.Equal(t, 0, pow)
-		return tok, nil
+		return &common.TokenNode{Token: *tok}, nil
 	}
-	var next ExprNext = func(s State, pow int, l common.Node, tok *common.Token) (common.Node, error) {
+	var next ExprNext = func(s State, pow int, l common.Node, tok *lexer.Token) (common.Node, error) {
 		assert.Same(t, obj, s)
 		switch tok.Type {
 		case "+":
@@ -1048,26 +1050,26 @@ func TestStateExpressionPrecedence(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, &binaryNode{
-		Op: &common.Token{Type: "+"},
+		Op: &lexer.Token{Type: "+"},
 		L: &binaryNode{
-			Op: &common.Token{Type: "+"},
-			L:  &common.Token{Type: "n", Value: 1},
+			Op: &lexer.Token{Type: "+"},
+			L:  &common.TokenNode{Token: lexer.Token{Type: "n", Value: 1}},
 			R: &binaryNode{
-				Op: &common.Token{Type: "*"},
-				L:  &common.Token{Type: "n", Value: 2},
-				R:  &common.Token{Type: "n", Value: 3},
+				Op: &lexer.Token{Type: "*"},
+				L:  &common.TokenNode{Token: lexer.Token{Type: "n", Value: 2}},
+				R:  &common.TokenNode{Token: lexer.Token{Type: "n", Value: 3}},
 			},
 		},
-		R: &common.Token{Type: "n", Value: 4},
+		R: &common.TokenNode{Token: lexer.Token{Type: "n", Value: 4}},
 	}, result)
 	tableStack.AssertExpectations(t)
 	streamStack.AssertExpectations(t)
 }
 
 func TestStateExpressionNoTokens(t *testing.T) {
-	tableStack := &common.MockStack{}
-	streamStack := &common.MockStack{}
-	tokensStack := common.NewStack()
+	tableStack := &internal.MockStack{}
+	streamStack := &internal.MockStack{}
+	tokensStack := internal.NewStack()
 	obj := &state{
 		table:  tableStack,
 		stream: streamStack,
@@ -1084,15 +1086,15 @@ func TestStateExpressionNoTokens(t *testing.T) {
 }
 
 func TestStateExpressionFirstEntryMissing(t *testing.T) {
-	tableStack := &common.MockStack{}
-	streamStack := &common.MockStack{}
-	tokensStack := common.NewStack()
+	tableStack := &internal.MockStack{}
+	streamStack := &internal.MockStack{}
+	tokensStack := internal.NewStack()
 	obj := &state{
 		table:  tableStack,
 		stream: streamStack,
 		tokens: tokensStack,
 	}
-	tokens := []*common.Token{
+	tokens := []*lexer.Token{
 		{Type: "n", Value: 1},
 		{Type: "+"},
 		{Type: "n", Value: 2},
@@ -1115,27 +1117,27 @@ func TestStateExpressionFirstEntryMissing(t *testing.T) {
 }
 
 func TestStateExpressionFirstFails(t *testing.T) {
-	tableStack := &common.MockStack{}
-	streamStack := &common.MockStack{}
-	tokensStack := common.NewStack()
+	tableStack := &internal.MockStack{}
+	streamStack := &internal.MockStack{}
+	tokensStack := internal.NewStack()
 	obj := &state{
 		table:  tableStack,
 		stream: streamStack,
 		tokens: tokensStack,
 	}
-	tokens := []*common.Token{
+	tokens := []*lexer.Token{
 		{Type: "n", Value: 1},
 		{Type: "+"},
 		{Type: "n", Value: 2},
 		{Type: "+"},
 		{Type: "n", Value: 3},
 	}
-	var first ExprFirst = func(s State, pow int, tok *common.Token) (common.Node, error) {
+	var first ExprFirst = func(s State, pow int, tok *lexer.Token) (common.Node, error) {
 		assert.Same(t, obj, s)
 		assert.Equal(t, 0, pow)
 		return nil, assert.AnError
 	}
-	var next ExprNext = func(s State, pow int, l common.Node, tok *common.Token) (common.Node, error) {
+	var next ExprNext = func(s State, pow int, l common.Node, tok *lexer.Token) (common.Node, error) {
 		assert.Same(t, obj, s)
 		assert.Equal(t, 10, pow)
 		r, _ := s.Expression(pow)
@@ -1170,25 +1172,25 @@ func TestStateExpressionFirstFails(t *testing.T) {
 }
 
 func TestStateExpressionNextEntryMissing(t *testing.T) {
-	tableStack := &common.MockStack{}
-	streamStack := &common.MockStack{}
-	tokensStack := common.NewStack()
+	tableStack := &internal.MockStack{}
+	streamStack := &internal.MockStack{}
+	tokensStack := internal.NewStack()
 	obj := &state{
 		table:  tableStack,
 		stream: streamStack,
 		tokens: tokensStack,
 	}
-	tokens := []*common.Token{
+	tokens := []*lexer.Token{
 		{Type: "n", Value: 1},
 		{Type: "+"},
 		{Type: "n", Value: 2},
 		{Type: "+"},
 		{Type: "n", Value: 3},
 	}
-	var first ExprFirst = func(s State, pow int, tok *common.Token) (common.Node, error) {
+	var first ExprFirst = func(s State, pow int, tok *lexer.Token) (common.Node, error) {
 		assert.Same(t, obj, s)
 		assert.Equal(t, 0, pow)
-		return tok, nil
+		return &common.TokenNode{Token: *tok}, nil
 	}
 	tab := Table{
 		"n": Entry{
@@ -1211,27 +1213,27 @@ func TestStateExpressionNextEntryMissing(t *testing.T) {
 }
 
 func TestStateExpressionNextFails(t *testing.T) {
-	tableStack := &common.MockStack{}
-	streamStack := &common.MockStack{}
-	tokensStack := common.NewStack()
+	tableStack := &internal.MockStack{}
+	streamStack := &internal.MockStack{}
+	tokensStack := internal.NewStack()
 	obj := &state{
 		table:  tableStack,
 		stream: streamStack,
 		tokens: tokensStack,
 	}
-	tokens := []*common.Token{
+	tokens := []*lexer.Token{
 		{Type: "n", Value: 1},
 		{Type: "+"},
 		{Type: "n", Value: 2},
 		{Type: "+"},
 		{Type: "n", Value: 3},
 	}
-	var first ExprFirst = func(s State, pow int, tok *common.Token) (common.Node, error) {
+	var first ExprFirst = func(s State, pow int, tok *lexer.Token) (common.Node, error) {
 		assert.Same(t, obj, s)
 		assert.Equal(t, 0, pow)
-		return tok, nil
+		return &common.TokenNode{Token: *tok}, nil
 	}
-	var next ExprNext = func(s State, pow int, l common.Node, tok *common.Token) (common.Node, error) {
+	var next ExprNext = func(s State, pow int, l common.Node, tok *lexer.Token) (common.Node, error) {
 		assert.Same(t, obj, s)
 		assert.Equal(t, 10, pow)
 		return nil, assert.AnError
@@ -1261,7 +1263,7 @@ func TestStateExpressionNextFails(t *testing.T) {
 }
 
 type stmtNode struct {
-	toks []*common.Token
+	toks []*lexer.Token
 }
 
 func (sn *stmtNode) Location() scanner.Location {
@@ -1271,7 +1273,7 @@ func (sn *stmtNode) Location() scanner.Location {
 func (sn *stmtNode) Children() []common.Node {
 	children := []common.Node{}
 	for _, tok := range sn.toks[1:] {
-		children = append(children, tok)
+		children = append(children, &common.TokenNode{Token: *tok})
 	}
 	return children
 }
@@ -1281,25 +1283,25 @@ func (sn *stmtNode) String() string {
 }
 
 func TestStateStatementBase(t *testing.T) {
-	tableStack := &common.MockStack{}
-	streamStack := &common.MockStack{}
-	tokensStack := common.NewStack()
+	tableStack := &internal.MockStack{}
+	streamStack := &internal.MockStack{}
+	tokensStack := internal.NewStack()
 	obj := &state{
 		table:  tableStack,
 		stream: streamStack,
 		tokens: tokensStack,
 	}
-	tokens := []*common.Token{
+	tokens := []*lexer.Token{
 		{Type: "stmt"},
 		{Type: "kw", Value: "kw1"},
 		{Type: "kw", Value: "kw2"},
 		{Type: "kw", Value: "kw3"},
 		{Type: "end"},
 	}
-	var stmt Statement = func(s State, tok *common.Token) (common.Node, error) {
+	var stmt Statement = func(s State, tok *lexer.Token) (common.Node, error) {
 		assert.Same(t, obj, s)
 		node := &stmtNode{
-			toks: []*common.Token{tok},
+			toks: []*lexer.Token{tok},
 		}
 		for nextTok := s.NextToken(); nextTok != nil; nextTok = s.NextToken() {
 			node.toks = append(node.toks, nextTok)
@@ -1332,9 +1334,9 @@ func TestStateStatementBase(t *testing.T) {
 }
 
 func TestStateStatementNoTokens(t *testing.T) {
-	tableStack := &common.MockStack{}
-	streamStack := &common.MockStack{}
-	tokensStack := common.NewStack()
+	tableStack := &internal.MockStack{}
+	streamStack := &internal.MockStack{}
+	tokensStack := internal.NewStack()
 	obj := &state{
 		table:  tableStack,
 		stream: streamStack,
@@ -1351,15 +1353,15 @@ func TestStateStatementNoTokens(t *testing.T) {
 }
 
 func TestStateStatementNoEntry(t *testing.T) {
-	tableStack := &common.MockStack{}
-	streamStack := &common.MockStack{}
-	tokensStack := common.NewStack()
+	tableStack := &internal.MockStack{}
+	streamStack := &internal.MockStack{}
+	tokensStack := internal.NewStack()
 	obj := &state{
 		table:  tableStack,
 		stream: streamStack,
 		tokens: tokensStack,
 	}
-	tokens := []*common.Token{
+	tokens := []*lexer.Token{
 		{Type: "stmt"},
 		{Type: "kw", Value: "kw1"},
 		{Type: "kw", Value: "kw2"},
@@ -1382,22 +1384,22 @@ func TestStateStatementNoEntry(t *testing.T) {
 }
 
 func TestStateStatementStmtFailed(t *testing.T) {
-	tableStack := &common.MockStack{}
-	streamStack := &common.MockStack{}
-	tokensStack := common.NewStack()
+	tableStack := &internal.MockStack{}
+	streamStack := &internal.MockStack{}
+	tokensStack := internal.NewStack()
 	obj := &state{
 		table:  tableStack,
 		stream: streamStack,
 		tokens: tokensStack,
 	}
-	tokens := []*common.Token{
+	tokens := []*lexer.Token{
 		{Type: "stmt"},
 		{Type: "kw", Value: "kw1"},
 		{Type: "kw", Value: "kw2"},
 		{Type: "kw", Value: "kw3"},
 		{Type: "end"},
 	}
-	var stmt Statement = func(s State, tok *common.Token) (common.Node, error) {
+	var stmt Statement = func(s State, tok *lexer.Token) (common.Node, error) {
 		assert.Same(t, obj, s)
 		return nil, assert.AnError
 	}

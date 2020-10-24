@@ -14,24 +14,14 @@
 
 package lexer
 
-import (
-	"testing"
+import "github.com/stretchr/testify/mock"
 
-	"github.com/stretchr/testify/assert"
-)
-
-func TestMockRecognizerImplementsRecognizer(t *testing.T) {
-	assert.Implements(t, (*Recognizer)(nil), &MockRecognizer{})
+type mockRecognizer struct {
+	mock.Mock
 }
 
-func TestMockRecognizerRecognize(t *testing.T) {
-	s := &MockState{}
-	str := &mockBackTracker{}
-	obj := &MockRecognizer{}
-	obj.On("Recognize", s, str).Return(true)
+func (m *mockRecognizer) Recognize(lexer *Lexer, state State, str IBackTracker) bool {
+	args := m.MethodCalled("Recognize", lexer, state, str)
 
-	result := obj.Recognize(s, str)
-
-	assert.True(t, result)
-	obj.AssertExpectations(t)
+	return args.Bool(0)
 }

@@ -14,36 +14,19 @@
 
 package lexer
 
-import (
-	"testing"
+// NewAsyncLexer wraps another lexer and uses the ChanLexer to allow
+// running that other lexer in a separate goroutine.
+func NewAsyncLexer(ts ILexer) ILexer {
+	// Construct the ChanLexer
+	obj := NewChanLexer()
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-)
+	// Run the other lexer in a goroutine and push all its tokens
+	go func() {
+		for tok := ts.Next(); tok != nil; tok = ts.Next() {
+			obj.Push(tok)
+		}
+		obj.Done()
+	}()
 
-type mockState struct {
-	mock.Mock
-}
-
-func (m *mockState) Classifier() Classifier {
-	args := m.MethodCalled("Classifier")
-
-	if tmp := args.Get(0); tmp != nil {
-		return tmp.(Classifier)
-	}
-
-	return nil
-}
-
-func TestBaseStateImplementsState(t *testing.T) {
-	assert.Implements(t, (*State)(nil), &BaseState{})
-}
-
-func TestBaseStateClassifier(t *testing.T) {
-	cls := &mockClassifier{}
-	obj := &BaseState{Cls: cls}
-
-	result := obj.Classifier()
-
-	assert.Same(t, cls, result)
+	return obj
 }

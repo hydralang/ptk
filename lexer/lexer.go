@@ -15,96 +15,81 @@
 package lexer
 
 import (
-	"github.com/stretchr/testify/mock"
+	"container/list"
 
-	"github.com/hydralang/ptk/common"
 	"github.com/hydralang/ptk/scanner"
 )
 
-// Patch points to enable testing functions below in isolation.
-var (
-	newState func(Lexer, scanner.Scanner, []Option) State = NewState
-)
+// ILexer presents a stream of tokens.  The basic lexer does not
+// provide token pushback.
+type ILexer interface {
+	// Next returns the next token.  At the end of the lexer, a
+	// nil should be returned.
+	Next() *Token
+}
 
-// Option is a lexer option that may be passed to the Lex method.
-type Option func(state State)
+// Lexer is an implementation of ILexer.
+type Lexer struct {
+	Scanner IBackTracker // The character source, wrapped in a BackTracker
+	State   State        // The state of the lexer
+	toks    *list.List   // List of tokens to produce
+}
 
-// AppState is an option allowing an application state to be set when
-// lexing a character stream.
-func AppState(state interface{}) Option {
-	return func(s State) {
-		s.PushAppState(state)
+// New constructs a new Lexer using the provided source and state.
+func New(src scanner.Scanner, state State) *Lexer {
+	return &Lexer{
+		Scanner: NewBackTracker(src, TrackAll),
+		State:   state,
+		toks:    &list.List{},
 	}
 }
 
-// Lexer represents the actual lexer.
-type Lexer interface {
-	// Classifier returns the default classifier that will be used
-	// to initialize the state.
-	Classifier() Classifier
+// next is the actual implementation of the lexer.  This is the
+// routine that calls the Classify, Recognize, and Error methods
+// provided by the state.
+func (l *Lexer) next() {
+	// Reset the backtracker
+	l.Scanner.SetMax(TrackAll)
 
-	// Lex returns an object that satisfies the common.TokenStream
-	// interface and which reads the specified io.Reader and
-	// converts it to tokens.  Tokens represent the "words" of the
-	// language being parsed.
-	Lex(cs scanner.Scanner, options ...Option) common.TokenStream
-}
-
-// MockLexer is a mock implementation of the Lexer interface.
-type MockLexer struct {
-	mock.Mock
-}
-
-// Classifier returns the default classifier that will be used to
-// initialize the state.
-func (m *MockLexer) Classifier() Classifier {
-	args := m.MethodCalled("Classifier")
-
-	if tmp := args.Get(0); tmp != nil {
-		return tmp.(Classifier)
+	// Classify the contents
+	for _, rec := range l.State.Classifier().Classify(l, l.State, l.Scanner) {
+		l.Scanner.BackTrack()
+		if rec.Recognize(l, l.State, l.Scanner) {
+			l.Scanner.Accept(0)
+			return
+		}
 	}
 
-	return nil
+	// None of the recognizers recognized the contents
+	l.Scanner.BackTrack()
+	l.State.Classifier().Error(l, l.State, l.Scanner)
+	l.Scanner.Accept(0)
 }
 
-// Lex returns an object that satisfies the common.TokenStream
-// interface and which reads the specified io.Reader and converts it
-// to tokens.  Tokens represent the "words" of the language being
-// parsed.
-func (m *MockLexer) Lex(cs scanner.Scanner, options ...Option) common.TokenStream {
-	args := m.MethodCalled("Lex", cs, options)
+// Next returns the next token.  At the end of the lexer, a nil should
+// be returned.
+func (l *Lexer) Next() *Token {
+	// Loop until we have a token or all characters have been
+	// processed
+	for l.toks.Len() <= 0 {
+		if !l.Scanner.More() {
+			return nil
+		}
 
-	if tmp := args.Get(0); tmp != nil {
-		return tmp.(common.TokenStream)
+		l.next()
 	}
 
-	return nil
+	// Return a token off the token queue
+	defer func() {
+		l.toks.Remove(l.toks.Front())
+	}()
+	return l.toks.Front().Value.(*Token)
 }
 
-// lexer is an implementation of Lexer.
-type lexer struct {
-	cls Classifier // The initial classifier for constructing a state
-}
-
-// New constructs a new lexer, with the specified classifier.
-func New(cls Classifier) Lexer {
-	return &lexer{
-		cls: cls,
-	}
-}
-
-// Classifier returns the default classifier that will be used to
-// initialize the state.
-func (l *lexer) Classifier() Classifier {
-	return l.cls
-}
-
-// Lex returns an object that satisfies the common.TokenStream
-// interface and which reads the specified io.Reader and converts it
-// to tokens.  Tokens represent the "words" of the language being
-// parsed.
-func (l *lexer) Lex(cs scanner.Scanner, options ...Option) common.TokenStream {
-	// Construct and return a state, which implements the
-	// TokenStream interface
-	return newState(l, cs, options)
+// Push pushes a token onto the list of tokens to be returned by the
+// lexer.  Recognizers should call this method with the token or
+// tokens that they recognize from the input.
+func (l *Lexer) Push(tok *Token) bool {
+	l.toks.PushBack(tok)
+	return true
 }

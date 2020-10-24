@@ -75,3 +75,15 @@ func TestMockNodeString(t *testing.T) {
 	assert.Equal(t, "string", result)
 	obj.AssertExpectations(t)
 }
+
+func TestTokenNodeImplementsNode(t *testing.T) {
+	assert.Implements(t, (*Node)(nil), &TokenNode{})
+}
+
+func TestTokenNodeChildren(t *testing.T) {
+	obj := &TokenNode{}
+
+	result := obj.Children()
+
+	assert.Equal(t, []Node{}, result)
+}

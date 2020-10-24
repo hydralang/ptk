@@ -12,29 +12,27 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package tokenstreams
+package lexer
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/hydralang/ptk/common"
 )
 
-func TestChanTokenStreamImplementsTokenStream(t *testing.T) {
-	assert.Implements(t, (*common.TokenStream)(nil), &ChanTokenStream{})
+func TestChanLexerImplementsLexer(t *testing.T) {
+	assert.Implements(t, (*ILexer)(nil), &ChanLexer{})
 }
 
-func TestNewChanTokenStream(t *testing.T) {
-	result := NewChanTokenStream()
+func TestNewChanLexer(t *testing.T) {
+	result := NewChanLexer()
 
 	assert.NotNil(t, result.Chan)
 }
 
-func TestChanTokenStreamNextOpen(t *testing.T) {
-	tok := &common.Token{}
-	obj := NewChanTokenStream()
+func TestChanLexerNextOpen(t *testing.T) {
+	tok := &Token{}
+	obj := NewChanLexer()
 	obj.Chan <- tok
 
 	result := obj.Next()
@@ -42,8 +40,8 @@ func TestChanTokenStreamNextOpen(t *testing.T) {
 	assert.Same(t, tok, result)
 }
 
-func TestChanTokenStreamNextClosed(t *testing.T) {
-	obj := NewChanTokenStream()
+func TestChanLexerNextClosed(t *testing.T) {
+	obj := NewChanLexer()
 	close(obj.Chan)
 
 	result := obj.Next()
@@ -51,9 +49,9 @@ func TestChanTokenStreamNextClosed(t *testing.T) {
 	assert.Nil(t, result)
 }
 
-func TestChanTokenStreamPushBase(t *testing.T) {
-	obj := NewChanTokenStream()
-	tok := &common.Token{}
+func TestChanLexerPushBase(t *testing.T) {
+	obj := NewChanLexer()
+	tok := &Token{}
 
 	result := obj.Push(tok)
 
@@ -61,18 +59,18 @@ func TestChanTokenStreamPushBase(t *testing.T) {
 	assert.Same(t, tok, <-obj.Chan)
 }
 
-func TestChanTokenStreamPushDone(t *testing.T) {
-	obj := NewChanTokenStream()
+func TestChanLexerPushDone(t *testing.T) {
+	obj := NewChanLexer()
 	close(obj.Chan)
-	tok := &common.Token{}
+	tok := &Token{}
 
 	result := obj.Push(tok)
 
 	assert.False(t, result)
 }
 
-func TestChanTokenStreamDone(t *testing.T) {
-	obj := NewChanTokenStream()
+func TestChanLexerDone(t *testing.T) {
+	obj := NewChanLexer()
 
 	obj.Done()
 

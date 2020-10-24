@@ -14,47 +14,17 @@
 
 package lexer
 
-import (
-	"github.com/stretchr/testify/mock"
-)
-
 // Classifier represents a character classification tool.  A
-// classifier has a Classify method that takes the lexer state and
-// returns a list of recognizers, which the lexer then runs in order
-// until one of them succeeds.
+// classifier has a Classify method that takes the lexer, the state,
+// and a backtracker, and returns a list of recognizers, which the
+// lexer then runs in order until one of them succeeds.
 type Classifier interface {
-	// Classify takes a lexer state and the character stream
-	// wrapped in a BackTracker and determines one or more
-	// recognizers to extract a token or a set of tokens from the
-	// lexer input.
-	Classify(state State, str BackTracker) []Recognizer
+	// Classify takes a lexer, a state, and a backtracking scanner
+	// and determines one or more recognizers to extract a token
+	// or a set of tokens from the lexer input.
+	Classify(lexer *Lexer, state State, str IBackTracker) []Recognizer
 
-	// Error is called by the lexer state if all recognizers
-	// returned by Classify return without success.
-	Error(state State, str BackTracker)
-}
-
-// MockClassifier is a mock implementation of the Classifier
-// interface.
-type MockClassifier struct {
-	mock.Mock
-}
-
-// Classify takes a lexer state and the character stream wrapped in a
-// BackTracker and determines one or more recognizers to extract a
-// token or a set of tokens from the lexer input.
-func (m *MockClassifier) Classify(state State, str BackTracker) []Recognizer {
-	args := m.MethodCalled("Classify", state, str)
-
-	if tmp := args.Get(0); tmp != nil {
-		return tmp.([]Recognizer)
-	}
-
-	return nil
-}
-
-// Error is called by the lexer state if all recognizers returned by
-// Classify return without success.
-func (m *MockClassifier) Error(state State, str BackTracker) {
-	m.MethodCalled("Error", state, str)
+	// Error is called by the lexer if all recognizers returned by
+	// Classify return without success.
+	Error(lexer *Lexer, state State, str IBackTracker)
 }

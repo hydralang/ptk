@@ -12,25 +12,24 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package tokenstreams
+package parser
 
-import "github.com/hydralang/ptk/common"
+import (
+	"github.com/stretchr/testify/mock"
 
-// NewAsyncTokenStream wraps another token stream and uses the
-// ChanTokenStream to allow running that other token stream in a
-// separate goroutine.
-func NewAsyncTokenStream(ts common.TokenStream) common.TokenStream {
-	// Construct the ChanTokenStream
-	obj := NewChanTokenStream()
+	"github.com/hydralang/ptk/lexer"
+)
 
-	// Run the other token stream in a goroutine and push all its
-	// tokens
-	go func() {
-		for tok := ts.Next(); tok != nil; tok = ts.Next() {
-			obj.Push(tok)
-		}
-		obj.Done()
-	}()
+type mockLexer struct {
+	mock.Mock
+}
 
-	return obj
+func (m *mockLexer) Next() *lexer.Token {
+	args := m.MethodCalled("Next")
+
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(*lexer.Token)
+	}
+
+	return nil
 }
