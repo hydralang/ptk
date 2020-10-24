@@ -226,11 +226,11 @@ type fakeClassifier struct {
 	tok *Token
 }
 
-func (f *fakeClassifier) Classify(state State, str BackTracker) []Recognizer {
+func (f *fakeClassifier) Classify(state State, str IBackTracker) []Recognizer {
 	return []Recognizer{}
 }
 
-func (f *fakeClassifier) Error(state State, str BackTracker) {
+func (f *fakeClassifier) Error(state State, str IBackTracker) {
 	state.Push(f.tok)
 }
 

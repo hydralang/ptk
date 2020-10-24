@@ -20,7 +20,7 @@ type mockRecognizer struct {
 	mock.Mock
 }
 
-func (m *mockRecognizer) Recognize(state State, str BackTracker) bool {
+func (m *mockRecognizer) Recognize(state State, str IBackTracker) bool {
 	args := m.MethodCalled("Recognize", state, str)
 
 	return args.Bool(0)

@@ -89,7 +89,7 @@ type State interface {
 type state struct {
 	lexer    Lexer           // The lexer being used
 	src      scanner.Scanner // The source CharStream
-	bt       BackTracker     // Backtracker wrapping the source
+	bt       IBackTracker    // Backtracker wrapping the source
 	appState internal.Stack  // Stack for application state
 	cls      internal.Stack  // Stack for classifier
 	toks     *list.List      // List of tokens to produce
