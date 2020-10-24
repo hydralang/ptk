@@ -17,7 +17,7 @@ package lexer
 import (
 	"container/list"
 
-	"github.com/hydralang/ptk/common"
+	"github.com/hydralang/ptk/scanner"
 )
 
 // TrackAll is a special value for the max argument to
@@ -29,7 +29,7 @@ const TrackAll = -1
 // also provides the ability to back up to an earlier character in the
 // stream.
 type BackTracker interface {
-	common.CharStream
+	scanner.Scanner
 
 	// More is used to determine if there are any more characters
 	// available for Next to return, given the current state of
@@ -62,88 +62,37 @@ type BackTracker interface {
 	BackTrack()
 }
 
-// MockBackTracker is a mock implementation of the BackTracker
-// interface.
-type MockBackTracker struct {
-	common.MockCharStream
-}
-
-// More is used to determine if there are any more characters
-// available for Next to return, given the current state of the
-// BackTracker.
-func (m *MockBackTracker) More() bool {
-	args := m.MethodCalled("More")
-
-	return args.Bool(0)
-}
-
-// SetMax allows updating the maximum number of characters to allow
-// backtracking over.  Setting a TrackAll value will allow all newly
-// returned characters to be backtracked over.  If the new value for
-// max is less than the previous value, characters at the front of the
-// backtracking queue will be discarded to bring the size down to max.
-func (m *MockBackTracker) SetMax(max int) {
-	m.MethodCalled("SetMax", max)
-}
-
-// Accept accepts characters from the backtracking queue, leaving only
-// the specified number of characters on the queue.
-func (m *MockBackTracker) Accept(leave int) {
-	m.MethodCalled("Accept", leave)
-}
-
-// Len returns the number of characters saved so far on the
-// backtracking queue.
-func (m *MockBackTracker) Len() int {
-	args := m.MethodCalled("Len")
-
-	return args.Int(0)
-}
-
-// Pos returns the position of the most recently returned character
-// within the saved character list.
-func (m *MockBackTracker) Pos() int {
-	args := m.MethodCalled("Pos")
-
-	return args.Int(0)
-}
-
-// BackTrack resets to the beginning of the backtracking queue.
-func (m *MockBackTracker) BackTrack() {
-	m.MethodCalled("BackTrack")
-}
-
 // btElem is a struct type containing the returned character and error
 // from the source character stream.
 type btElem struct {
-	ch  common.Char // The character returned
-	err error       // The error returned
+	ch  scanner.Char // The character returned
+	err error        // The error returned
 }
 
-// backTracker is an implementation of common.CharStream that includes
+// backTracker is an implementation of scanner.Scanner that includes
 // backtracking capability.  A backTracker wraps another character
 // stream (including another instance of backTracker), but provides
 // additional methods for controlling backtracking.
 type backTracker struct {
-	src   common.CharStream // The source character stream
-	max   int               // Maximum length to backtrack by
-	saved *list.List        // Saved characters
-	next  *list.Element     // Next character to return
-	pos   int               // Position within the saved characters
-	last  btElem            // Last return from source
+	src   scanner.Scanner // The source character stream
+	max   int             // Maximum length to backtrack by
+	saved *list.List      // Saved characters
+	next  *list.Element   // Next character to return
+	pos   int             // Position within the saved characters
+	last  btElem          // Last return from source
 }
 
 // NewBackTracker wraps another character stream (which may also be a
 // BackTracker, if desired) in a BackTracker.  The max parameter
 // indicates the maximum number of characters to track; use 0 to track
 // no characters, and TrackAll to track all characters.
-func NewBackTracker(src common.CharStream, max int) BackTracker {
+func NewBackTracker(src scanner.Scanner, max int) BackTracker {
 	return &backTracker{
 		src:   src,
 		max:   max,
 		saved: &list.List{},
 		last: btElem{
-			ch: common.Char{Rune: common.EOF},
+			ch: scanner.Char{Rune: scanner.EOF},
 		},
 	}
 }
@@ -151,7 +100,7 @@ func NewBackTracker(src common.CharStream, max int) BackTracker {
 // Next returns the next character from the stream as a Char, which
 // will include the character's location.  If an error was
 // encountered, that will also be returned.
-func (bt *backTracker) Next() (ch common.Char, err error) {
+func (bt *backTracker) Next() (ch scanner.Char, err error) {
 	// Check if we're revisiting old friends
 	if bt.next != nil {
 		ch = bt.next.Value.(btElem).ch
@@ -180,7 +129,7 @@ func (bt *backTracker) Next() (ch common.Char, err error) {
 			}
 
 			// See if the source is exhausted
-			if ch.Rune == common.EOF {
+			if ch.Rune == scanner.EOF {
 				bt.src = nil
 				bt.last = btElem{
 					ch: ch,

@@ -19,6 +19,8 @@ import (
 	"fmt"
 
 	"github.com/stretchr/testify/mock"
+
+	"github.com/hydralang/ptk/scanner"
 )
 
 // Token represents a single token emitted by the lexical analyzer.  A
@@ -26,14 +28,14 @@ import (
 // original text and a semantic value.  It also implements the Node
 // interface, allowing a Token to be a leaf Node in an AST.
 type Token struct {
-	Type  string      // The type of token
-	Loc   Location    // The location of the token
-	Value interface{} // The semantic value of the token; optional
-	Text  string      // The original text of the token; optional
+	Type  string           // The type of token
+	Loc   scanner.Location // The location of the token
+	Value interface{}      // The semantic value of the token; optional
+	Text  string           // The original text of the token; optional
 }
 
 // Location returns the node's location range.
-func (t *Token) Location() Location {
+func (t *Token) Location() scanner.Location {
 	return t.Loc
 }
 

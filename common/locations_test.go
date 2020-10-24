@@ -15,92 +15,47 @@
 package common
 
 import (
-	"testing"
+	"github.com/stretchr/testify/mock"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/hydralang/ptk/scanner"
 )
 
-func TestMockLocationImplementsLocation(t *testing.T) {
-	assert.Implements(t, (*Location)(nil), &MockLocation{})
+type mockLocation struct {
+	mock.Mock
 }
 
-func TestMockLocationString(t *testing.T) {
-	obj := &MockLocation{}
-	obj.On("String").Return("location")
+func (m *mockLocation) String() string {
+	args := m.MethodCalled("String")
 
-	result := obj.String()
-
-	assert.Equal(t, "location", result)
-	obj.AssertExpectations(t)
+	return args.String(0)
 }
 
-func TestMockLocationThruNil(t *testing.T) {
-	other := &MockLocation{}
-	obj := &MockLocation{}
-	obj.On("Thru", other).Return(nil, assert.AnError)
+func (m *mockLocation) Thru(other scanner.Location) (scanner.Location, error) {
+	args := m.MethodCalled("Thru", other)
 
-	result, err := obj.Thru(other)
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(scanner.Location), args.Error(1)
+	}
 
-	assert.Same(t, assert.AnError, err)
-	assert.Nil(t, result)
-	obj.AssertExpectations(t)
+	return nil, args.Error(1)
 }
 
-func TestMockLocationThruNotNil(t *testing.T) {
-	expected := &MockLocation{}
-	other := &MockLocation{}
-	obj := &MockLocation{}
-	obj.On("Thru", other).Return(expected, assert.AnError)
+func (m *mockLocation) ThruEnd(other scanner.Location) (scanner.Location, error) {
+	args := m.MethodCalled("ThruEnd", other)
 
-	result, err := obj.Thru(other)
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(scanner.Location), args.Error(1)
+	}
 
-	assert.Same(t, assert.AnError, err)
-	assert.Same(t, expected, result)
-	obj.AssertExpectations(t)
+	return nil, args.Error(1)
 }
 
-func TestMockLocationThruEndNil(t *testing.T) {
-	other := &MockLocation{}
-	obj := &MockLocation{}
-	obj.On("ThruEnd", other).Return(nil, assert.AnError)
+func (m *mockLocation) Incr(c rune, tabstop int) scanner.Location {
+	args := m.MethodCalled("Incr", c, tabstop)
 
-	result, err := obj.ThruEnd(other)
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(scanner.Location)
+	}
 
-	assert.Same(t, assert.AnError, err)
-	assert.Nil(t, result)
-	obj.AssertExpectations(t)
-}
-
-func TestMockLocationThruEndNotNil(t *testing.T) {
-	expected := &MockLocation{}
-	other := &MockLocation{}
-	obj := &MockLocation{}
-	obj.On("ThruEnd", other).Return(expected, assert.AnError)
-
-	result, err := obj.ThruEnd(other)
-
-	assert.Same(t, assert.AnError, err)
-	assert.Same(t, expected, result)
-	obj.AssertExpectations(t)
-}
-
-func TestMockLocationIncrNil(t *testing.T) {
-	obj := &MockLocation{}
-	obj.On("Incr", 'c', 8).Return(nil)
-
-	result := obj.Incr('c', 8)
-
-	assert.Nil(t, result)
-	obj.AssertExpectations(t)
-}
-
-func TestMockLocationIncrNotNil(t *testing.T) {
-	expected := &MockLocation{}
-	obj := &MockLocation{}
-	obj.On("Incr", 'c', 8).Return(expected)
-
-	result := obj.Incr('c', 8)
-
-	assert.Same(t, expected, result)
-	obj.AssertExpectations(t)
+	return nil
 }

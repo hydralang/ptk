@@ -25,7 +25,7 @@ func TestTokenImplementsNode(t *testing.T) {
 }
 
 func TestTokenLocation(t *testing.T) {
-	loc := &MockLocation{}
+	loc := &mockLocation{}
 	obj := &Token{
 		Loc: loc,
 	}
@@ -44,7 +44,7 @@ func TestTokenChildren(t *testing.T) {
 }
 
 func TestTokenStringBase(t *testing.T) {
-	loc := &MockLocation{}
+	loc := &mockLocation{}
 	loc.On("String").Return("location")
 	obj := &Token{
 		Type: "type",
@@ -67,7 +67,7 @@ func TestTokenStringNoLocation(t *testing.T) {
 }
 
 func TestTokenStringValue(t *testing.T) {
-	loc := &MockLocation{}
+	loc := &mockLocation{}
 	loc.On("String").Return("location")
 	obj := &Token{
 		Type:  "type",

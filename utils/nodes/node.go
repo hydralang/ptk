@@ -19,6 +19,7 @@ import (
 
 	"github.com/hydralang/ptk/common"
 	"github.com/hydralang/ptk/parser"
+	"github.com/hydralang/ptk/scanner"
 )
 
 // AnnotatedNode is a wrapper for Node that implements Node.  The
@@ -42,7 +43,7 @@ func NewAnnotatedNode(node common.Node, annotation string) *AnnotatedNode {
 }
 
 // Location returns the node's location range.
-func (an *AnnotatedNode) Location() common.Location {
+func (an *AnnotatedNode) Location() scanner.Location {
 	return an.node.Location()
 }
 
@@ -67,9 +68,9 @@ func (an *AnnotatedNode) Unwrap() common.Node {
 // UnaryOperator is a Node implementation that describes the use of a
 // unary operator, e.g., "~".
 type UnaryOperator struct {
-	Loc common.Location // The location of the expression
-	Op  *common.Token   // The unary operator
-	Exp common.Node     // The expression acted upon
+	Loc scanner.Location // The location of the expression
+	Op  *common.Token    // The unary operator
+	Exp common.Node      // The expression acted upon
 }
 
 // UnaryFactory is a factory function that may be passed to Prefix,
@@ -94,7 +95,7 @@ func UnaryFactory(s parser.State, op *common.Token, exp common.Node) (common.Nod
 }
 
 // Location returns the node's location range.
-func (u *UnaryOperator) Location() common.Location {
+func (u *UnaryOperator) Location() scanner.Location {
 	return u.Loc
 }
 
@@ -112,10 +113,10 @@ func (u *UnaryOperator) String() string {
 // BinaryOperator is a Node implementation that describes the use of a
 // binary operator, e.g., "*".
 type BinaryOperator struct {
-	Loc common.Location // The location of the expression
-	Op  *common.Token   // The unary operator
-	L   common.Node     // The left-hand side expression
-	R   common.Node     // The right-hand side expression
+	Loc scanner.Location // The location of the expression
+	Op  *common.Token    // The unary operator
+	L   common.Node      // The left-hand side expression
+	R   common.Node      // The right-hand side expression
 }
 
 // BinaryFactory is a factory function that may be passed to Infix or
@@ -142,7 +143,7 @@ func BinaryFactory(s parser.State, l, r common.Node, op *common.Token) (common.N
 }
 
 // Location returns the node's location range.
-func (b *BinaryOperator) Location() common.Location {
+func (b *BinaryOperator) Location() scanner.Location {
 	return b.Loc
 }
 
