@@ -19,7 +19,7 @@ import "github.com/hydralang/ptk/lexer"
 // NewAsyncTokenStream wraps another token stream and uses the
 // ChanTokenStream to allow running that other token stream in a
 // separate goroutine.
-func NewAsyncTokenStream(ts lexer.TokenStream) lexer.TokenStream {
+func NewAsyncTokenStream(ts lexer.ILexer) lexer.ILexer {
 	// Construct the ChanTokenStream
 	obj := NewChanTokenStream()
 

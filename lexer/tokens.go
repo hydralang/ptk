@@ -18,8 +18,6 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/stretchr/testify/mock"
-
 	"github.com/hydralang/ptk/scanner"
 )
 
@@ -57,31 +55,4 @@ func (t *Token) String() string {
 	}
 
 	return buf.String()
-}
-
-// TokenStream is an interface for an object that yields a sequence of
-// tokens that will be parsed by the parser.  This will typically be a
-// lexical analyzer.
-type TokenStream interface {
-	// Next returns the next token.  At the end of the token
-	// stream, a nil should be returned.
-	Next() *Token
-}
-
-// MockTokenStream is a mock implementation of the TokenStream
-// interface.
-type MockTokenStream struct {
-	mock.Mock
-}
-
-// Next returns the next token.  At the end of the token stream, a nil
-// should be returned.
-func (m *MockTokenStream) Next() *Token {
-	args := m.MethodCalled("Next")
-
-	if tmp := args.Get(0); tmp != nil {
-		return tmp.(*Token)
-	}
-
-	return nil
 }

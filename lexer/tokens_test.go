@@ -110,28 +110,3 @@ func TestTokenStringValue(t *testing.T) {
 
 	assert.Equal(t, "location: <type> token: 42", result)
 }
-
-func TestMockTokenStreamImplementsTokenStream(t *testing.T) {
-	assert.Implements(t, (*TokenStream)(nil), &MockTokenStream{})
-}
-
-func TestMockTokenStreamNextNil(t *testing.T) {
-	obj := &MockTokenStream{}
-	obj.On("Next").Return(nil)
-
-	result := obj.Next()
-
-	assert.Nil(t, result)
-	obj.AssertExpectations(t)
-}
-
-func TestMockTokenStreamNextNotNil(t *testing.T) {
-	tok := &Token{}
-	obj := &MockTokenStream{}
-	obj.On("Next").Return(tok)
-
-	result := obj.Next()
-
-	assert.Same(t, tok, result)
-	obj.AssertExpectations(t)
-}

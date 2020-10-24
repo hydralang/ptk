@@ -23,7 +23,7 @@ import (
 )
 
 func TestListTokenStreamImplementsTokenStream(t *testing.T) {
-	assert.Implements(t, (*lexer.TokenStream)(nil), &listTokenStream{})
+	assert.Implements(t, (*lexer.ILexer)(nil), &listTokenStream{})
 }
 
 func TestNewListTokenStream(t *testing.T) {

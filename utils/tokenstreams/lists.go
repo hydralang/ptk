@@ -28,7 +28,7 @@ type listTokenStream struct {
 // NewListTokenStream returns a TokenStream that retrieves its tokens
 // from a list passed to the function.  This actually uses a
 // ChanTokenStream under the covers.
-func NewListTokenStream(toks []*lexer.Token) lexer.TokenStream {
+func NewListTokenStream(toks []*lexer.Token) lexer.ILexer {
 	// return obj
 	return &listTokenStream{
 		toks: toks,

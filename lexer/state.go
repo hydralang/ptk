@@ -14,242 +14,26 @@
 
 package lexer
 
-import (
-	"container/list"
-
-	"github.com/hydralang/ptk/internal"
-	"github.com/hydralang/ptk/scanner"
-)
-
-// State represents the state of the lexer.
+// State represents the state of the lexer.  This is an interface; an
+// implementation must be provided by the user.  A base implementation
+// is available as BaseState.
 type State interface {
-	TokenStream
-
-	// Lexer returns the lexer object.
-	Lexer() Lexer
-
-	// CharStream retrieves the character stream stored in the
-	// state.  Most applications should prefer to utilize the
-	// BackTracker instance passed to the Classify, Recognize, or
-	// Error methods, but this can be used to obtain a reference
-	// to the underlying scanner.Scanner, if that is desired.
-	CharStream() scanner.Scanner
-
-	// AppState returns the current application state.
-	AppState() interface{}
-
-	// PushAppState allows pushing an alternative application
-	// state onto the application state stack.  Use this, paired
-	// with PopAppState, when your grammar needs different state
-	// in particular sections of the file.
-	PushAppState(state interface{})
-
-	// PopAppState allows popping an application state pushed with
-	// PushAppState off the application state stack.  Use this,
-	// paired with PushAppState, when your grammar needs different
-	// state in particular sections of the file.
-	PopAppState() interface{}
-
-	// SetAppState allows changing the current application state
-	// on the fly.  Its action is similar to a PopAppState
-	// followed by a PushAppState, so the number of entries in the
-	// application state stack remains the same.
-	SetAppState(state interface{}) interface{}
-
-	// Classifier returns the classifier currently in use.
+	// Classifier must return the classifier to use.  It is safe
+	// for the application to return different Classifier
+	// implementations depending on the lexer state.
 	Classifier() Classifier
-
-	// PushClassifier allows pushing an alternative classifier
-	// onto the classifier stack.  Use this, paired with
-	// PopClassifier, when your lexer must accommodate multiple
-	// classes of tokens in particular sections of the file, e.g.,
-	// like PHP embedded in a web page template.
-	PushClassifier(cls Classifier)
-
-	// PopClassifier allows popping a classifier pushed with
-	// PushClassifier off the classifier stack.  Use this, paired
-	// with PushClassifier, when your lexer must accommodate
-	// multiple classes of takens in particular sections of the
-	// file, e.g., like PHP embedded in a web page template.
-	PopClassifier() Classifier
-
-	// SetClassifier allows changing the current classifier on the
-	// fly.  Its action is similar to a PopClassifier followed by
-	// a PushClassifier, so the number of entries in the
-	// classifier stack remains the same.
-	SetClassifier(cls Classifier) Classifier
-
-	// Push pushes a token onto the list of tokens to be returned
-	// by the lexer.  Recognizers should call this method with the
-	// token or tokens that they recognize from the input.
-	Push(tok *Token) bool
 }
 
-// state is an implementation of State.
-type state struct {
-	lexer    Lexer           // The lexer being used
-	src      scanner.Scanner // The source CharStream
-	bt       IBackTracker    // Backtracker wrapping the source
-	appState internal.Stack  // Stack for application state
-	cls      internal.Stack  // Stack for classifier
-	toks     *list.List      // List of tokens to produce
+// BaseState is a basic implementation of the State interface.  It
+// assumes a fixed Classifier for the lifetime of the lexer's
+// operation.
+type BaseState struct {
+	Cls Classifier // The classifier for the lex
 }
 
-// NewState constructs and returns a new state, with the specified
-// classifier and character stream.
-func NewState(lexer Lexer, src scanner.Scanner, options []Option) State {
-	obj := &state{
-		lexer:    lexer,
-		src:      src,
-		bt:       NewBackTracker(src, TrackAll),
-		appState: internal.NewStack(),
-		cls:      internal.NewStack(),
-		toks:     &list.List{},
-	}
-
-	// Push the initial classifier
-	obj.cls.Push(lexer.Classifier())
-
-	// Apply options
-	for _, opt := range options {
-		opt(obj)
-	}
-
-	return obj
-}
-
-// next is the actual implementation of the lexer.  This is the
-// routine that calls the Classify, Recognize, and Error methods
-// provided by the user.
-func (s *state) next() {
-	// Reset the backtracker
-	s.bt.SetMax(TrackAll)
-
-	// Classify the contents
-	for _, rec := range s.Classifier().Classify(s, s.bt) {
-		s.bt.BackTrack()
-		if rec.Recognize(s, s.bt) {
-			s.bt.Accept(0)
-			return
-		}
-	}
-
-	// None of the recognizers recognized the contents
-	s.bt.BackTrack()
-	s.Classifier().Error(s, s.bt)
-	s.bt.Accept(0)
-}
-
-// Next returns the next token.  At the end of the token stream, a nil
-// should be returned.
-func (s *state) Next() *Token {
-	// Loop until we have a token or all characters have been
-	// processed
-	for s.toks.Len() <= 0 {
-		if !s.bt.More() {
-			return nil
-		}
-
-		s.next()
-	}
-
-	// Return a token off the token queue
-	defer func() {
-		s.toks.Remove(s.toks.Front())
-	}()
-	return s.toks.Front().Value.(*Token)
-}
-
-// Lexer returns the lexer object.
-func (s *state) Lexer() Lexer {
-	return s.lexer
-}
-
-// CharStream retrieves the character stream stored in the state.
-// Most applications should prefer to utilize the BackTracker instance
-// passed to the Classify, Recognize, or Error methods, but this can
-// be used to obtain a reference to the underlying scanner.Scanner,
-// if that is desired.
-func (s *state) CharStream() scanner.Scanner {
-	return s.src
-}
-
-// AppState returns the current application state.
-func (s *state) AppState() interface{} {
-	return s.appState.Get()
-}
-
-// PushAppState allows pushing an alternative application state onto
-// the application state stack.  Use this, paired with PopAppState,
-// when your grammar needs different state in particular sections of
-// the file.
-func (s *state) PushAppState(state interface{}) {
-	s.appState.Push(state)
-}
-
-// PopAppState allows popping an application state pushed with
-// PushAppState off the application state stack.  Use this, paired
-// with PushAppState, when your grammar needs different state in
-// particular sections of the file.
-func (s *state) PopAppState() interface{} {
-	return s.appState.Pop()
-}
-
-// SetAppState allows changing the current application state on the
-// fly.  Its action is similar to a PopAppState followed by a
-// PushAppState, so the number of entries in the application state
-// stack remains the same.
-func (s *state) SetAppState(state interface{}) interface{} {
-	return s.appState.Set(state)
-}
-
-// Classifier returns the classifier currently in use.
-func (s *state) Classifier() Classifier {
-	if tmp := s.cls.Get(); tmp != nil {
-		return tmp.(Classifier)
-	}
-
-	return nil
-}
-
-// PushClassifier allows pushing an alternative classifier onto the
-// classifier stack.  Use this, paired with PopClassifier, when your
-// lexer must accommodate multiple classes of tokens in particular
-// sections of the file, e.g., like PHP embedded in a web page
-// template.
-func (s *state) PushClassifier(cls Classifier) {
-	s.cls.Push(cls)
-}
-
-// PopClassifier allows popping a classifier pushed with
-// PushClassifier off the classifier stack.  Use this, paired with
-// PushClassifier, when your lexer must accommodate multiple classes
-// of takens in particular sections of the file, e.g., like PHP
-// embedded in a web page template.
-func (s *state) PopClassifier() Classifier {
-	if tmp := s.cls.Pop(); tmp != nil {
-		return tmp.(Classifier)
-	}
-
-	return nil
-}
-
-// SetClassifier allows changing the current classifier on the fly.
-// Its action is similar to a PopClassifier followed by a
-// PushClassifier, so the number of entries in the classifier stack
-// remains the same.
-func (s *state) SetClassifier(cls Classifier) Classifier {
-	if tmp := s.cls.Set(cls); tmp != nil {
-		return tmp.(Classifier)
-	}
-
-	return nil
-}
-
-// Push pushes a token onto the list of tokens to be returned by the
-// lexer.  Recognizers should call this method with the token or
-// tokens that they recognize from the input.
-func (s *state) Push(tok *Token) bool {
-	s.toks.PushBack(tok)
-	return true
+// Classifier must return the classifier to use.  It is safe
+// for the application to return different Classifier
+// implementations depending on the lexer state.
+func (bs *BaseState) Classifier() Classifier {
+	return bs.Cls
 }

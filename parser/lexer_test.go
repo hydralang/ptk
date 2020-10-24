@@ -12,38 +12,24 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package lexer
+package parser
 
 import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+
+	"github.com/hydralang/ptk/lexer"
 )
 
-type mockState struct {
+type mockLexer struct {
 	mock.Mock
 }
 
-func (m *mockState) Classifier() Classifier {
-	args := m.MethodCalled("Classifier")
+func (m *mockLexer) Next() *lexer.Token {
+	args := m.MethodCalled("Next")
 
 	if tmp := args.Get(0); tmp != nil {
-		return tmp.(Classifier)
+		return tmp.(*lexer.Token)
 	}
 
 	return nil
-}
-
-func TestBaseStateImplementsState(t *testing.T) {
-	assert.Implements(t, (*State)(nil), &BaseState{})
-}
-
-func TestBaseStateClassifier(t *testing.T) {
-	cls := &mockClassifier{}
-	obj := &BaseState{Cls: cls}
-
-	result := obj.Classifier()
-
-	assert.Same(t, cls, result)
 }

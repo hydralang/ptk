@@ -74,27 +74,27 @@ type State interface {
 	SetTable(tab Table) Table
 
 	// Stream returns the token stream currently in use.
-	Stream() lexer.TokenStream
+	Stream() lexer.ILexer
 
 	// PushStream allows pushing an alternative token stream onto
 	// the token stream stack.  Use this, paired with PopStream,
 	// when your grammar allows inclusion of alternate files.
 	// Note that if the current token stream returns a nil, an
 	// implicit PopStream will be performed.
-	PushStream(ts lexer.TokenStream)
+	PushStream(ts lexer.ILexer)
 
 	// PopStream allows popping a token stream off the token
 	// stream stack.  Use this, paired with PushStream, when your
 	// grammar allows inclusion of alternate files.  Note that
 	// PopStream is called implicitly if the token stream returns
 	// a nil.
-	PopStream() lexer.TokenStream
+	PopStream() lexer.ILexer
 
 	// SetStream allows changing the current token stream on the
 	// fly.  Its action is similar to a PopStream followed by a
 	// PushStream, so the number of entries in the token stream
 	// stack remains the same.
-	SetStream(ts lexer.TokenStream) lexer.TokenStream
+	SetStream(ts lexer.ILexer) lexer.ILexer
 
 	// Token returns the token currently being processed.  It will
 	// be nil if NextToken has not been called, or if NextToken
@@ -225,11 +225,11 @@ func (m *MockState) SetTable(tab Table) Table {
 }
 
 // Stream returns the token stream currently in use.
-func (m *MockState) Stream() lexer.TokenStream {
+func (m *MockState) Stream() lexer.ILexer {
 	args := m.MethodCalled("Stream")
 
 	if tmp := args.Get(0); tmp != nil {
-		return tmp.(lexer.TokenStream)
+		return tmp.(lexer.ILexer)
 	}
 
 	return nil
@@ -240,7 +240,7 @@ func (m *MockState) Stream() lexer.TokenStream {
 // grammar allows inclusion of alternate files.  Note that if the
 // current token stream returns a nil, an implicit PopStream will be
 // performed.
-func (m *MockState) PushStream(ts lexer.TokenStream) {
+func (m *MockState) PushStream(ts lexer.ILexer) {
 	m.MethodCalled("PushStream", ts)
 }
 
@@ -248,11 +248,11 @@ func (m *MockState) PushStream(ts lexer.TokenStream) {
 // Use this, paired with PushStream, when your grammar allows
 // inclusion of alternate files.  Note that PopStream is called
 // implicitly if the token stream returns a nil.
-func (m *MockState) PopStream() lexer.TokenStream {
+func (m *MockState) PopStream() lexer.ILexer {
 	args := m.MethodCalled("PopStream")
 
 	if tmp := args.Get(0); tmp != nil {
-		return tmp.(lexer.TokenStream)
+		return tmp.(lexer.ILexer)
 	}
 
 	return nil
@@ -261,11 +261,11 @@ func (m *MockState) PopStream() lexer.TokenStream {
 // SetStream allows changing the current token stream on the fly.  Its
 // action is similar to a PopStream followed by a PushStream, so the
 // number of entries in the token stream stack remains the same.
-func (m *MockState) SetStream(ts lexer.TokenStream) lexer.TokenStream {
+func (m *MockState) SetStream(ts lexer.ILexer) lexer.ILexer {
 	args := m.MethodCalled("SetStream", ts)
 
 	if tmp := args.Get(0); tmp != nil {
-		return tmp.(lexer.TokenStream)
+		return tmp.(lexer.ILexer)
 	}
 
 	return nil
@@ -349,7 +349,7 @@ type state struct {
 
 // NewState constructs and returns a new state, with the specified
 // table and stream.
-func NewState(parser Parser, stream lexer.TokenStream, options []Option) State {
+func NewState(parser Parser, stream lexer.ILexer, options []Option) State {
 	obj := &state{
 		parser:   parser,
 		appState: internal.NewStack(),
@@ -445,9 +445,9 @@ func (s *state) SetTable(tab Table) Table {
 }
 
 // Stream returns the token stream currently in use.
-func (s *state) Stream() lexer.TokenStream {
+func (s *state) Stream() lexer.ILexer {
 	if tmp := s.stream.Get(); tmp != nil {
-		return tmp.(lexer.TokenStream)
+		return tmp.(lexer.ILexer)
 	}
 
 	return nil
@@ -458,7 +458,7 @@ func (s *state) Stream() lexer.TokenStream {
 // grammar allows inclusion of alternate files.  Note that if the
 // current token stream returns a nil, an implicit PopStream will be
 // performed.
-func (s *state) PushStream(ts lexer.TokenStream) {
+func (s *state) PushStream(ts lexer.ILexer) {
 	s.stream.Push(ts)
 }
 
@@ -466,9 +466,9 @@ func (s *state) PushStream(ts lexer.TokenStream) {
 // Use this, paired with PushStream, when your grammar allows
 // inclusion of alternate files.  Note that PopStream is called
 // implicitly if the token stream returns a nil.
-func (s *state) PopStream() lexer.TokenStream {
+func (s *state) PopStream() lexer.ILexer {
 	if tmp := s.stream.Pop(); tmp != nil {
-		return tmp.(lexer.TokenStream)
+		return tmp.(lexer.ILexer)
 	}
 
 	return nil
@@ -477,9 +477,9 @@ func (s *state) PopStream() lexer.TokenStream {
 // SetStream allows changing the current token stream on the fly.  Its
 // action is similar to a PopStream followed by a PushStream, so the
 // number of entries in the token stream stack remains the same.
-func (s *state) SetStream(ts lexer.TokenStream) lexer.TokenStream {
+func (s *state) SetStream(ts lexer.ILexer) lexer.ILexer {
 	if tmp := s.stream.Set(ts); tmp != nil {
-		return tmp.(lexer.TokenStream)
+		return tmp.(lexer.ILexer)
 	}
 
 	return nil
@@ -496,7 +496,7 @@ func (s *state) Token() *lexer.Token {
 func (s *state) getToken() *lexer.Token {
 	// Loop while we have a stream
 	for tmp := s.stream.Get(); tmp != nil; tmp = s.stream.Get() {
-		stream := tmp.(lexer.TokenStream)
+		stream := tmp.(lexer.ILexer)
 
 		// Get the next token from it
 		tok := stream.Next()

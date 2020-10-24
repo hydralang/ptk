@@ -30,5 +30,5 @@ type Recognizer interface {
 	// declared, after which the character will be discarded.  The
 	// Recognize method will be called with the lexer state and
 	// the character stream wrapped in a BackTracker.
-	Recognize(state State, str IBackTracker) bool
+	Recognize(lexer *Lexer, state State, str IBackTracker) bool
 }

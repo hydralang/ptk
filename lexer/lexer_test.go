@@ -15,90 +15,190 @@
 package lexer
 
 import (
+	"container/list"
 	"testing"
 
-	"github.com/klmitch/patcher"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-
-	"github.com/hydralang/ptk/scanner"
+	"github.com/stretchr/testify/require"
 )
 
-func TestAppState(t *testing.T) {
-	s := &mockState{}
-	s.On("PushAppState", "state")
-
-	opt := AppState("state")
-	opt(s)
-
-	s.AssertExpectations(t)
-}
-
-type mockLexer struct {
-	mock.Mock
-}
-
-func (m *mockLexer) Classifier() Classifier {
-	args := m.MethodCalled("Classifier")
-
-	if tmp := args.Get(0); tmp != nil {
-		return tmp.(Classifier)
-	}
-
-	return nil
-}
-
-func (m *mockLexer) Lex(cs scanner.Scanner, options ...Option) TokenStream {
-	args := m.MethodCalled("Lex", cs, options)
-
-	if tmp := args.Get(0); tmp != nil {
-		return tmp.(TokenStream)
-	}
-
-	return nil
-}
-
-func TestLexerImplementsLexer(t *testing.T) {
-	assert.Implements(t, (*Lexer)(nil), &lexer{})
+func TestLexerImplementsILexer(t *testing.T) {
+	assert.Implements(t, (*ILexer)(nil), &Lexer{})
 }
 
 func TestNew(t *testing.T) {
-	cls := &mockClassifier{}
-
-	result := New(cls)
-
-	assert.Equal(t, &lexer{
-		cls: cls,
-	}, result)
-}
-
-func TestLexerClassifier(t *testing.T) {
-	cls := &mockClassifier{}
-	obj := &lexer{
-		cls: cls,
-	}
-
-	result := obj.Classifier()
-
-	assert.Same(t, cls, result)
-}
-
-func TestLexerLex(t *testing.T) {
-	obj := &lexer{}
-	cs := &mockScanner{}
-	options := []Option{
-		func(s State) {},
-		func(s State) {},
-	}
+	src := &mockScanner{}
 	state := &mockState{}
-	defer patcher.SetVar(&newState, func(l Lexer, src scanner.Scanner, options []Option) State {
-		assert.Same(t, obj, l)
-		assert.Same(t, cs, src)
-		assert.Len(t, options, 2)
-		return state
-	}).Install().Restore()
 
-	result := obj.Lex(cs, options...)
+	result := New(src, state)
 
-	assert.Same(t, state, result)
+	require.NotNil(t, result.Scanner)
+	assert.Same(t, src, result.Scanner.(*BackTracker).Src)
+	assert.Same(t, state, result.State)
+	assert.Equal(t, &list.List{}, result.toks)
+}
+
+func TestLexerNextInternalBase(t *testing.T) {
+	bt := &mockBackTracker{}
+	state := &mockState{}
+	obj := &Lexer{
+		Scanner: bt,
+		State:   state,
+		toks:    &list.List{},
+	}
+	bt.On("SetMax", TrackAll).Once()
+	bt.On("BackTrack").Times(2)
+	bt.On("Accept", 0).Once()
+	rec1 := &mockRecognizer{}
+	rec1.On("Recognize", obj, state, bt).Return(false)
+	rec2 := &mockRecognizer{}
+	rec2.On("Recognize", obj, state, bt).Return(true)
+	rec3 := &mockRecognizer{}
+	cls := &mockClassifier{}
+	cls.On("Classify", obj, state, bt).Return([]Recognizer{rec1, rec2, rec3})
+	state.On("Classifier").Return(cls)
+
+	obj.next()
+
+	bt.AssertExpectations(t)
+	rec1.AssertExpectations(t)
+	rec2.AssertExpectations(t)
+	rec3.AssertExpectations(t)
+	cls.AssertExpectations(t)
+	state.AssertExpectations(t)
+}
+
+func TestLexerNextInternalUnrecognized(t *testing.T) {
+	bt := &mockBackTracker{}
+	state := &mockState{}
+	obj := &Lexer{
+		Scanner: bt,
+		State:   state,
+		toks:    &list.List{},
+	}
+	bt.On("SetMax", TrackAll).Once()
+	bt.On("BackTrack").Times(4)
+	bt.On("Accept", 0).Once()
+	rec1 := &mockRecognizer{}
+	rec1.On("Recognize", obj, state, bt).Return(false)
+	rec2 := &mockRecognizer{}
+	rec2.On("Recognize", obj, state, bt).Return(false)
+	rec3 := &mockRecognizer{}
+	rec3.On("Recognize", obj, state, bt).Return(false)
+	cls := &mockClassifier{}
+	cls.On("Classify", obj, state, bt).Return([]Recognizer{rec1, rec2, rec3})
+	cls.On("Error", obj, state, bt)
+	state.On("Classifier").Return(cls)
+
+	obj.next()
+
+	bt.AssertExpectations(t)
+	rec1.AssertExpectations(t)
+	rec2.AssertExpectations(t)
+	rec3.AssertExpectations(t)
+	cls.AssertExpectations(t)
+	state.AssertExpectations(t)
+}
+
+func TestLexerNextInternalUnclassified(t *testing.T) {
+	bt := &mockBackTracker{}
+	state := &mockState{}
+	obj := &Lexer{
+		Scanner: bt,
+		State:   state,
+		toks:    &list.List{},
+	}
+	bt.On("SetMax", TrackAll).Once()
+	bt.On("BackTrack").Once()
+	bt.On("Accept", 0).Once()
+	cls := &mockClassifier{}
+	cls.On("Classify", obj, state, bt).Return([]Recognizer{})
+	cls.On("Error", obj, state, bt)
+	state.On("Classifier").Return(cls)
+
+	obj.next()
+
+	bt.AssertExpectations(t)
+	cls.AssertExpectations(t)
+	state.AssertExpectations(t)
+}
+
+func TestLexerNextQueued(t *testing.T) {
+	tok := &Token{}
+	bt := &mockBackTracker{}
+	state := &mockState{}
+	obj := &Lexer{
+		Scanner: bt,
+		State:   state,
+		toks:    &list.List{},
+	}
+	obj.toks.PushBack(tok)
+
+	result := obj.Next()
+
+	assert.Same(t, tok, result)
+	assert.Equal(t, 0, obj.toks.Len())
+	bt.AssertExpectations(t)
+	state.AssertExpectations(t)
+}
+
+func TestLexerNextLex(t *testing.T) {
+	tok := &Token{}
+	bt := &mockBackTracker{}
+	state := &mockState{}
+	obj := &Lexer{
+		Scanner: bt,
+		State:   state,
+		toks:    &list.List{},
+	}
+	bt.On("More").Return(true)
+	bt.On("SetMax", TrackAll).Once()
+	bt.On("BackTrack").Once()
+	bt.On("Accept", 0).Once()
+	cls := &mockClassifier{}
+	cls.On("Classify", obj, state, bt).Return([]Recognizer{}).Once()
+	cls.On("Error", obj, state, bt).Run(func(args mock.Arguments) {
+		obj.toks.PushBack(tok)
+	}).Once()
+	state.On("Classifier").Return(cls)
+
+	result := obj.Next()
+
+	assert.Same(t, tok, result)
+	assert.Equal(t, 0, obj.toks.Len())
+	bt.AssertExpectations(t)
+	state.AssertExpectations(t)
+	cls.AssertExpectations(t)
+}
+
+func TestLexerNextClosed(t *testing.T) {
+	bt := &mockBackTracker{}
+	state := &mockState{}
+	obj := &Lexer{
+		Scanner: bt,
+		State:   state,
+		toks:    &list.List{},
+	}
+	bt.On("More").Return(false)
+
+	result := obj.Next()
+
+	assert.Nil(t, result)
+	assert.Equal(t, 0, obj.toks.Len())
+	bt.AssertExpectations(t)
+	state.AssertExpectations(t)
+}
+
+func TestLexerPush(t *testing.T) {
+	tok := &Token{}
+	obj := &Lexer{
+		toks: &list.List{},
+	}
+
+	result := obj.Push(tok)
+
+	assert.True(t, result)
+	assert.Equal(t, 1, obj.toks.Len())
+	assert.Same(t, tok, obj.toks.Front().Value)
 }

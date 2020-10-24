@@ -23,7 +23,7 @@ import (
 )
 
 func TestChanTokenStreamImplementsTokenStream(t *testing.T) {
-	assert.Implements(t, (*lexer.TokenStream)(nil), &ChanTokenStream{})
+	assert.Implements(t, (*lexer.ILexer)(nil), &ChanTokenStream{})
 }
 
 func TestNewChanTokenStream(t *testing.T) {

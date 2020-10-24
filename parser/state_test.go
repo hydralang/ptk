@@ -183,7 +183,7 @@ func TestMockStateStreamNil(t *testing.T) {
 }
 
 func TestMockStateStreamNotNil(t *testing.T) {
-	expected := &lexer.MockTokenStream{}
+	expected := &mockLexer{}
 	obj := &MockState{}
 	obj.On("Stream").Return(expected)
 
@@ -194,7 +194,7 @@ func TestMockStateStreamNotNil(t *testing.T) {
 }
 
 func TestMockStatePushStream(t *testing.T) {
-	stream := &lexer.MockTokenStream{}
+	stream := &mockLexer{}
 	obj := &MockState{}
 	obj.On("PushStream", stream)
 
@@ -214,7 +214,7 @@ func TestMockStatePopStreamNil(t *testing.T) {
 }
 
 func TestMockStatePopStreamNotNil(t *testing.T) {
-	expected := &lexer.MockTokenStream{}
+	expected := &mockLexer{}
 	obj := &MockState{}
 	obj.On("PopStream").Return(expected)
 
@@ -225,7 +225,7 @@ func TestMockStatePopStreamNotNil(t *testing.T) {
 }
 
 func TestMockStateSetStreamNil(t *testing.T) {
-	stream := &lexer.MockTokenStream{}
+	stream := &mockLexer{}
 	obj := &MockState{}
 	obj.On("SetStream", stream).Return(nil)
 
@@ -236,8 +236,8 @@ func TestMockStateSetStreamNil(t *testing.T) {
 }
 
 func TestMockStateSetStreamNotNil(t *testing.T) {
-	stream := &lexer.MockTokenStream{}
-	expected := &lexer.MockTokenStream{}
+	stream := &mockLexer{}
+	expected := &mockLexer{}
 	obj := &MockState{}
 	obj.On("SetStream", stream).Return(expected)
 
@@ -365,7 +365,7 @@ func TestNewState(t *testing.T) {
 	}
 	parser := &MockParser{}
 	parser.On("Table").Return(tab)
-	stream := &lexer.MockTokenStream{}
+	stream := &mockLexer{}
 	var opt1Called State
 	var opt2Called State
 	options := []Option{
@@ -564,7 +564,7 @@ func TestStateSetTableNil(t *testing.T) {
 }
 
 func TestStateStreamBase(t *testing.T) {
-	stream := &lexer.MockTokenStream{}
+	stream := &mockLexer{}
 	streamStack := &internal.MockStack{}
 	streamStack.On("Get").Return(stream)
 	obj := &state{
@@ -591,7 +591,7 @@ func TestStateStreamNil(t *testing.T) {
 }
 
 func TestStatePushStream(t *testing.T) {
-	stream := &lexer.MockTokenStream{}
+	stream := &mockLexer{}
 	streamStack := &internal.MockStack{}
 	streamStack.On("Push", stream)
 	obj := &state{
@@ -604,7 +604,7 @@ func TestStatePushStream(t *testing.T) {
 }
 
 func TestStatePopStreamBase(t *testing.T) {
-	stream := &lexer.MockTokenStream{}
+	stream := &mockLexer{}
 	streamStack := &internal.MockStack{}
 	streamStack.On("Pop").Return(stream)
 	obj := &state{
@@ -631,8 +631,8 @@ func TestStatePopStreamNil(t *testing.T) {
 }
 
 func TestStateSetStreamBase(t *testing.T) {
-	stream := &lexer.MockTokenStream{}
-	newStream := &lexer.MockTokenStream{}
+	stream := &mockLexer{}
+	newStream := &mockLexer{}
 	streamStack := &internal.MockStack{}
 	streamStack.On("Set", newStream).Return(stream)
 	obj := &state{
@@ -646,7 +646,7 @@ func TestStateSetStreamBase(t *testing.T) {
 }
 
 func TestStateSetStreamNil(t *testing.T) {
-	newStream := &lexer.MockTokenStream{}
+	newStream := &mockLexer{}
 	streamStack := &internal.MockStack{}
 	streamStack.On("Set", newStream).Return(nil)
 	obj := &state{
@@ -672,7 +672,7 @@ func TestStateToken(t *testing.T) {
 
 func TestStateGetTokenBase(t *testing.T) {
 	tok := &lexer.Token{}
-	stream := &lexer.MockTokenStream{}
+	stream := &mockLexer{}
 	stream.On("Next").Return(tok)
 	streamStack := &internal.MockStack{}
 	streamStack.On("Get").Return(stream)
@@ -689,9 +689,9 @@ func TestStateGetTokenBase(t *testing.T) {
 
 func TestStateGetTokenPopStream(t *testing.T) {
 	tok := &lexer.Token{}
-	stream1 := &lexer.MockTokenStream{}
+	stream1 := &mockLexer{}
 	stream1.On("Next").Return(tok)
-	stream2 := &lexer.MockTokenStream{}
+	stream2 := &mockLexer{}
 	stream2.On("Next").Return(nil)
 	streamStack := &internal.MockStack{}
 	streamStack.On("Get").Return(stream2).Once()
@@ -724,7 +724,7 @@ func TestStateGetTokenExhausted(t *testing.T) {
 
 func TestStateNextTokenBase(t *testing.T) {
 	tok := &lexer.Token{}
-	stream := &lexer.MockTokenStream{}
+	stream := &mockLexer{}
 	stream.On("Next").Return(tok)
 	streamStack := &internal.MockStack{}
 	streamStack.On("Get").Return(stream)
@@ -746,7 +746,7 @@ func TestStateNextTokenBase(t *testing.T) {
 
 func TestStateNextTokenPushed(t *testing.T) {
 	tok := &lexer.Token{}
-	stream := &lexer.MockTokenStream{}
+	stream := &mockLexer{}
 	streamStack := &internal.MockStack{}
 	tokenStack := &internal.MockStack{}
 	tokenStack.On("Len").Return(1)
@@ -785,7 +785,7 @@ func TestStateNextTokenExhausted(t *testing.T) {
 
 func TestStateMoreTokensBase(t *testing.T) {
 	tok := &lexer.Token{}
-	stream := &lexer.MockTokenStream{}
+	stream := &mockLexer{}
 	stream.On("Next").Return(tok)
 	streamStack := &internal.MockStack{}
 	streamStack.On("Get").Return(stream)
@@ -807,7 +807,7 @@ func TestStateMoreTokensBase(t *testing.T) {
 }
 
 func TestStateMoreTokensPushed(t *testing.T) {
-	stream := &lexer.MockTokenStream{}
+	stream := &mockLexer{}
 	streamStack := &internal.MockStack{}
 	tokenStack := &internal.MockStack{}
 	tokenStack.On("Len").Return(1)
