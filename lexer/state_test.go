@@ -22,177 +22,93 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/hydralang/ptk/internal"
+	"github.com/hydralang/ptk/scanner"
 )
 
-func TestMockStateImplementsState(t *testing.T) {
-	assert.Implements(t, (*State)(nil), &MockState{})
+type mockState struct {
+	MockTokenStream
 }
 
-func TestMockStateLexerNil(t *testing.T) {
-	obj := &MockState{}
-	obj.On("Lexer").Return(nil)
+func (m *mockState) Lexer() Lexer {
+	args := m.MethodCalled("Lexer")
 
-	result := obj.Lexer()
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(Lexer)
+	}
 
-	assert.Nil(t, result)
-	obj.AssertExpectations(t)
+	return nil
 }
 
-func TestMockStateLexerNotNil(t *testing.T) {
-	lex := &MockLexer{}
-	obj := &MockState{}
-	obj.On("Lexer").Return(lex)
+func (m *mockState) CharStream() scanner.Scanner {
+	args := m.MethodCalled("CharStream")
 
-	result := obj.Lexer()
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(scanner.Scanner)
+	}
 
-	assert.Same(t, lex, result)
-	obj.AssertExpectations(t)
+	return nil
 }
 
-func TestMockStateCharStreamNil(t *testing.T) {
-	obj := &MockState{}
-	obj.On("CharStream").Return(nil)
+func (m *mockState) AppState() interface{} {
+	args := m.MethodCalled("AppState")
 
-	result := obj.CharStream()
-
-	assert.Nil(t, result)
-	obj.AssertExpectations(t)
+	return args.Get(0)
 }
 
-func TestMockStateCharStreamNotNil(t *testing.T) {
-	cs := &mockScanner{}
-	obj := &MockState{}
-	obj.On("CharStream").Return(cs)
-
-	result := obj.CharStream()
-
-	assert.Same(t, cs, result)
-	obj.AssertExpectations(t)
+func (m *mockState) PushAppState(state interface{}) {
+	m.MethodCalled("PushAppState", state)
 }
 
-func TestMockStateAppState(t *testing.T) {
-	obj := &MockState{}
-	obj.On("AppState").Return("state")
+func (m *mockState) PopAppState() interface{} {
+	args := m.MethodCalled("PopAppState")
 
-	result := obj.AppState()
-
-	assert.Equal(t, "state", result)
-	obj.AssertExpectations(t)
+	return args.Get(0)
 }
 
-func TestMockStatePushAppState(t *testing.T) {
-	obj := &MockState{}
-	obj.On("PushAppState", "state")
+func (m *mockState) SetAppState(state interface{}) interface{} {
+	args := m.MethodCalled("SetAppState", state)
 
-	obj.PushAppState("state")
-
-	obj.AssertExpectations(t)
+	return args.Get(0)
 }
 
-func TestMockStatePopAppState(t *testing.T) {
-	obj := &MockState{}
-	obj.On("PopAppState").Return("state")
+func (m *mockState) Classifier() Classifier {
+	args := m.MethodCalled("Classifier")
 
-	result := obj.PopAppState()
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(Classifier)
+	}
 
-	assert.Equal(t, "state", result)
-	obj.AssertExpectations(t)
+	return nil
 }
 
-func TestMockStateSetAppState(t *testing.T) {
-	obj := &MockState{}
-	obj.On("SetAppState", "new").Return("old")
-
-	result := obj.SetAppState("new")
-
-	assert.Equal(t, "old", result)
-	obj.AssertExpectations(t)
+func (m *mockState) PushClassifier(cls Classifier) {
+	m.MethodCalled("PushClassifier", cls)
 }
 
-func TestMockStateClassifierNil(t *testing.T) {
-	obj := &MockState{}
-	obj.On("Classifier").Return(nil)
+func (m *mockState) PopClassifier() Classifier {
+	args := m.MethodCalled("PopClassifier")
 
-	result := obj.Classifier()
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(Classifier)
+	}
 
-	assert.Nil(t, result)
-	obj.AssertExpectations(t)
+	return nil
 }
 
-func TestMockStateClassifierNotNil(t *testing.T) {
-	expected := &MockClassifier{}
-	obj := &MockState{}
-	obj.On("Classifier").Return(expected)
+func (m *mockState) SetClassifier(cls Classifier) Classifier {
+	args := m.MethodCalled("SetClassifier", cls)
 
-	result := obj.Classifier()
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(Classifier)
+	}
 
-	assert.Same(t, expected, result)
-	obj.AssertExpectations(t)
+	return nil
 }
 
-func TestMockStatePushClassifier(t *testing.T) {
-	cls := &MockClassifier{}
-	obj := &MockState{}
-	obj.On("PushClassifier", cls)
+func (m *mockState) Push(tok *Token) bool {
+	args := m.MethodCalled("Push", tok)
 
-	obj.PushClassifier(cls)
-
-	obj.AssertExpectations(t)
-}
-
-func TestMockStatePopClassifierNil(t *testing.T) {
-	obj := &MockState{}
-	obj.On("PopClassifier").Return(nil)
-
-	result := obj.PopClassifier()
-
-	assert.Nil(t, result)
-	obj.AssertExpectations(t)
-}
-
-func TestMockStatePopClassifierNotNil(t *testing.T) {
-	expected := &MockClassifier{}
-	obj := &MockState{}
-	obj.On("PopClassifier").Return(expected)
-
-	result := obj.PopClassifier()
-
-	assert.Same(t, expected, result)
-	obj.AssertExpectations(t)
-}
-
-func TestMockStateSetClassifierNil(t *testing.T) {
-	cls := &MockClassifier{}
-	obj := &MockState{}
-	obj.On("SetClassifier", cls).Return(nil)
-
-	result := obj.SetClassifier(cls)
-
-	assert.Nil(t, result)
-	obj.AssertExpectations(t)
-}
-
-func TestMockStateSetClassifierNotNil(t *testing.T) {
-	cls := &MockClassifier{}
-	expected := &MockClassifier{}
-	obj := &MockState{}
-	obj.On("SetClassifier", cls).Return(expected)
-
-	result := obj.SetClassifier(cls)
-
-	assert.Same(t, expected, result)
-	obj.AssertExpectations(t)
-}
-
-func TestMockStatePush(t *testing.T) {
-	tok := &Token{}
-	obj := &MockState{}
-	obj.On("Push", tok).Return(true)
-
-	result := obj.Push(tok)
-
-	assert.True(t, result)
-	obj.AssertExpectations(t)
+	return args.Bool(0)
 }
 
 func TestStateImplementsState(t *testing.T) {
@@ -200,8 +116,8 @@ func TestStateImplementsState(t *testing.T) {
 }
 
 func TestNewState(t *testing.T) {
-	cls := &MockClassifier{}
-	lexer := &MockLexer{}
+	cls := &mockClassifier{}
+	lexer := &mockLexer{}
 	lexer.On("Classifier").Return(cls)
 	src := &mockScanner{}
 	var opt1Called State
@@ -239,12 +155,12 @@ func TestNextInternalBase(t *testing.T) {
 		bt:  bt,
 		cls: internal.NewStack(),
 	}
-	rec1 := &MockRecognizer{}
+	rec1 := &mockRecognizer{}
 	rec1.On("Recognize", obj, bt).Return(false)
-	rec2 := &MockRecognizer{}
+	rec2 := &mockRecognizer{}
 	rec2.On("Recognize", obj, bt).Return(true)
-	rec3 := &MockRecognizer{}
-	cls := &MockClassifier{}
+	rec3 := &mockRecognizer{}
+	cls := &mockClassifier{}
 	cls.On("Classify", obj, bt).Return([]Recognizer{rec1, rec2, rec3})
 	obj.cls.Push(cls)
 
@@ -266,13 +182,13 @@ func TestNextInternalUnrecognized(t *testing.T) {
 		bt:  bt,
 		cls: internal.NewStack(),
 	}
-	rec1 := &MockRecognizer{}
+	rec1 := &mockRecognizer{}
 	rec1.On("Recognize", obj, bt).Return(false)
-	rec2 := &MockRecognizer{}
+	rec2 := &mockRecognizer{}
 	rec2.On("Recognize", obj, bt).Return(false)
-	rec3 := &MockRecognizer{}
+	rec3 := &mockRecognizer{}
 	rec3.On("Recognize", obj, bt).Return(false)
-	cls := &MockClassifier{}
+	cls := &mockClassifier{}
 	cls.On("Classify", obj, bt).Return([]Recognizer{rec1, rec2, rec3})
 	cls.On("Error", obj, bt)
 	obj.cls.Push(cls)
@@ -295,7 +211,7 @@ func TestNextInternalUnclassified(t *testing.T) {
 		bt:  bt,
 		cls: internal.NewStack(),
 	}
-	cls := &MockClassifier{}
+	cls := &mockClassifier{}
 	cls.On("Classify", obj, bt).Return([]Recognizer{})
 	cls.On("Error", obj, bt)
 	obj.cls.Push(cls)
@@ -377,7 +293,7 @@ func TestStateNextClosed(t *testing.T) {
 }
 
 func TestStateLexer(t *testing.T) {
-	l := &MockLexer{}
+	l := &mockLexer{}
 	obj := &state{
 		lexer: l,
 	}
@@ -452,7 +368,7 @@ func TestStateSetAppState(t *testing.T) {
 // XXX
 
 func TestStateClassifierBase(t *testing.T) {
-	cls := &MockClassifier{}
+	cls := &mockClassifier{}
 	clsStack := &internal.MockStack{}
 	clsStack.On("Get").Return(cls)
 	obj := &state{
@@ -479,7 +395,7 @@ func TestStateClassifierNil(t *testing.T) {
 }
 
 func TestStatePushClassifier(t *testing.T) {
-	cls := &MockClassifier{}
+	cls := &mockClassifier{}
 	clsStack := &internal.MockStack{}
 	clsStack.On("Push", cls)
 	obj := &state{
@@ -492,7 +408,7 @@ func TestStatePushClassifier(t *testing.T) {
 }
 
 func TestStatePopClassifierBase(t *testing.T) {
-	cls := &MockClassifier{}
+	cls := &mockClassifier{}
 	clsStack := &internal.MockStack{}
 	clsStack.On("Pop").Return(cls)
 	obj := &state{
@@ -519,8 +435,8 @@ func TestStatePopClassifierNil(t *testing.T) {
 }
 
 func TestStateSetClassifierBase(t *testing.T) {
-	cls := &MockClassifier{}
-	newCls := &MockClassifier{}
+	cls := &mockClassifier{}
+	newCls := &mockClassifier{}
 	clsStack := &internal.MockStack{}
 	clsStack.On("Set", newCls).Return(cls)
 	obj := &state{
@@ -534,7 +450,7 @@ func TestStateSetClassifierBase(t *testing.T) {
 }
 
 func TestStateSetClassifierNil(t *testing.T) {
-	newCls := &MockClassifier{}
+	newCls := &mockClassifier{}
 	clsStack := &internal.MockStack{}
 	clsStack.On("Set", newCls).Return(nil)
 	obj := &state{

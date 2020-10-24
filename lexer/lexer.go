@@ -15,8 +15,6 @@
 package lexer
 
 import (
-	"github.com/stretchr/testify/mock"
-
 	"github.com/hydralang/ptk/scanner"
 )
 
@@ -47,37 +45,6 @@ type Lexer interface {
 	// converts it to tokens.  Tokens represent the "words" of the
 	// language being parsed.
 	Lex(cs scanner.Scanner, options ...Option) TokenStream
-}
-
-// MockLexer is a mock implementation of the Lexer interface.
-type MockLexer struct {
-	mock.Mock
-}
-
-// Classifier returns the default classifier that will be used to
-// initialize the state.
-func (m *MockLexer) Classifier() Classifier {
-	args := m.MethodCalled("Classifier")
-
-	if tmp := args.Get(0); tmp != nil {
-		return tmp.(Classifier)
-	}
-
-	return nil
-}
-
-// Lex returns an object that satisfies the TokenStream
-// interface and which reads the specified io.Reader and converts it
-// to tokens.  Tokens represent the "words" of the language being
-// parsed.
-func (m *MockLexer) Lex(cs scanner.Scanner, options ...Option) TokenStream {
-	args := m.MethodCalled("Lex", cs, options)
-
-	if tmp := args.Get(0); tmp != nil {
-		return tmp.(TokenStream)
-	}
-
-	return nil
 }
 
 // lexer is an implementation of Lexer.

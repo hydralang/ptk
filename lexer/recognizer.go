@@ -14,10 +14,6 @@
 
 package lexer
 
-import (
-	"github.com/stretchr/testify/mock"
-)
-
 // Recognizer describes a recognizer.  A recognizer is an object
 // returned by the Classify method of a Classifier; its Recognize
 // method will be passed the lexer state, and it should read input
@@ -35,23 +31,4 @@ type Recognizer interface {
 	// Recognize method will be called with the lexer state and
 	// the character stream wrapped in a BackTracker.
 	Recognize(state State, str BackTracker) bool
-}
-
-// MockRecognizer is a mock implementation of the Recognizer
-// interface.
-type MockRecognizer struct {
-	mock.Mock
-}
-
-// Recognize is called by the lexer on the objects returned by the
-// Classifier.  Each will be called in turn until one of the methods
-// returns a boolean true value.  If no recognizer returns true, or if
-// the Classifier returns an empty list, then the Error recognizer
-// will be called, if one is declared, after which the character will
-// be discarded.  The Recognize method will be called with the lexer
-// state and the character stream wrapped in a BackTracker.
-func (m *MockRecognizer) Recognize(state State, str BackTracker) bool {
-	args := m.MethodCalled("Recognize", state, str)
-
-	return args.Bool(0)
 }

@@ -25,7 +25,7 @@ import (
 )
 
 func TestAppState(t *testing.T) {
-	s := &MockState{}
+	s := &mockState{}
 	s.On("PushAppState", "state")
 
 	opt := AppState("state")
@@ -34,52 +34,28 @@ func TestAppState(t *testing.T) {
 	s.AssertExpectations(t)
 }
 
-func TestMockLexerImplementsLexer(t *testing.T) {
-	assert.Implements(t, (*Lexer)(nil), &MockLexer{})
+type mockLexer struct {
+	mock.Mock
 }
 
-func TestMockLexerClassifierNil(t *testing.T) {
-	obj := &MockLexer{}
-	obj.On("Classifier").Return(nil)
+func (m *mockLexer) Classifier() Classifier {
+	args := m.MethodCalled("Classifier")
 
-	result := obj.Classifier()
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(Classifier)
+	}
 
-	assert.Nil(t, result)
-	obj.AssertExpectations(t)
+	return nil
 }
 
-func TestMockLexerClassifierNotNil(t *testing.T) {
-	cls := &MockClassifier{}
-	obj := &MockLexer{}
-	obj.On("Classifier").Return(cls)
+func (m *mockLexer) Lex(cs scanner.Scanner, options ...Option) TokenStream {
+	args := m.MethodCalled("Lex", cs, options)
 
-	result := obj.Classifier()
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(TokenStream)
+	}
 
-	assert.Equal(t, cls, result)
-	obj.AssertExpectations(t)
-}
-
-func TestMockLexerLexNil(t *testing.T) {
-	cs := &mockScanner{}
-	obj := &MockLexer{}
-	obj.On("Lex", cs, mock.Anything).Return(nil)
-
-	result := obj.Lex(cs)
-
-	assert.Nil(t, result)
-	obj.AssertExpectations(t)
-}
-
-func TestMockLexerLexNotNil(t *testing.T) {
-	stream := &MockTokenStream{}
-	cs := &mockScanner{}
-	obj := &MockLexer{}
-	obj.On("Lex", cs, mock.Anything).Return(stream)
-
-	result := obj.Lex(cs)
-
-	assert.Same(t, stream, result)
-	obj.AssertExpectations(t)
+	return nil
 }
 
 func TestLexerImplementsLexer(t *testing.T) {
@@ -87,7 +63,7 @@ func TestLexerImplementsLexer(t *testing.T) {
 }
 
 func TestNew(t *testing.T) {
-	cls := &MockClassifier{}
+	cls := &mockClassifier{}
 
 	result := New(cls)
 
@@ -97,7 +73,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestLexerClassifier(t *testing.T) {
-	cls := &MockClassifier{}
+	cls := &mockClassifier{}
 	obj := &lexer{
 		cls: cls,
 	}
@@ -114,7 +90,7 @@ func TestLexerLex(t *testing.T) {
 		func(s State) {},
 		func(s State) {},
 	}
-	state := &MockState{}
+	state := &mockState{}
 	defer patcher.SetVar(&newState, func(l Lexer, src scanner.Scanner, options []Option) State {
 		assert.Same(t, obj, l)
 		assert.Same(t, cs, src)
