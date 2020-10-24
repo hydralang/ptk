@@ -23,8 +23,8 @@ import (
 // ILexer presents a stream of tokens.  The basic lexer does not
 // provide token pushback.
 type ILexer interface {
-	// Next returns the next token.  At the end of the token
-	// stream, a nil should be returned.
+	// Next returns the next token.  At the end of the lexer, a
+	// nil should be returned.
 	Next() *Token
 }
 
@@ -66,8 +66,8 @@ func (l *Lexer) next() {
 	l.Scanner.Accept(0)
 }
 
-// Next returns the next token.  At the end of the token stream, a nil
-// should be returned.
+// Next returns the next token.  At the end of the lexer, a nil should
+// be returned.
 func (l *Lexer) Next() *Token {
 	// Loop until we have a token or all characters have been
 	// processed

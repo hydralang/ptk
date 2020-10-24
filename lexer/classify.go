@@ -15,17 +15,16 @@
 package lexer
 
 // Classifier represents a character classification tool.  A
-// classifier has a Classify method that takes the lexer state and
-// returns a list of recognizers, which the lexer then runs in order
-// until one of them succeeds.
+// classifier has a Classify method that takes the lexer, the state,
+// and a backtracker, and returns a list of recognizers, which the
+// lexer then runs in order until one of them succeeds.
 type Classifier interface {
-	// Classify takes a lexer state and the character stream
-	// wrapped in a BackTracker and determines one or more
-	// recognizers to extract a token or a set of tokens from the
-	// lexer input.
+	// Classify takes a lexer, a state, and a backtracking scanner
+	// and determines one or more recognizers to extract a token
+	// or a set of tokens from the lexer input.
 	Classify(lexer *Lexer, state State, str IBackTracker) []Recognizer
 
-	// Error is called by the lexer state if all recognizers
-	// returned by Classify return without success.
+	// Error is called by the lexer if all recognizers returned by
+	// Classify return without success.
 	Error(lexer *Lexer, state State, str IBackTracker)
 }

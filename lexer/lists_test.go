@@ -12,48 +12,46 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package tokenstreams
+package lexer
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/hydralang/ptk/lexer"
 )
 
-func TestListTokenStreamImplementsTokenStream(t *testing.T) {
-	assert.Implements(t, (*lexer.ILexer)(nil), &listTokenStream{})
+func TestListLexerImplementsLexer(t *testing.T) {
+	assert.Implements(t, (*ILexer)(nil), &ListLexer{})
 }
 
-func TestNewListTokenStream(t *testing.T) {
-	toks := []*lexer.Token{{}, {}, {}}
+func TestNewListLexer(t *testing.T) {
+	toks := []*Token{{}, {}, {}}
 
-	result := NewListTokenStream(toks)
+	result := NewListLexer(toks)
 
-	assert.Equal(t, &listTokenStream{
+	assert.Equal(t, &ListLexer{
 		toks: toks,
 	}, result)
 }
 
-func TestListTokenStreamNextUnstarted(t *testing.T) {
-	toks := []*lexer.Token{{}, {}, {}}
-	obj := &listTokenStream{
+func TestListLexerNextUnstarted(t *testing.T) {
+	toks := []*Token{{}, {}, {}}
+	obj := &ListLexer{
 		toks: toks,
 	}
 
 	result := obj.Next()
 
 	assert.Same(t, toks[0], result)
-	assert.Equal(t, &listTokenStream{
+	assert.Equal(t, &ListLexer{
 		toks:    toks,
 		started: true,
 	}, obj)
 }
 
-func TestListTokenStreamNextStarted(t *testing.T) {
-	toks := []*lexer.Token{{}, {}, {}}
-	obj := &listTokenStream{
+func TestListLexerNextStarted(t *testing.T) {
+	toks := []*Token{{}, {}, {}}
+	obj := &ListLexer{
 		toks:    toks,
 		started: true,
 	}
@@ -61,16 +59,16 @@ func TestListTokenStreamNextStarted(t *testing.T) {
 	result := obj.Next()
 
 	assert.Same(t, toks[1], result)
-	assert.Equal(t, &listTokenStream{
+	assert.Equal(t, &ListLexer{
 		toks:    toks,
 		idx:     1,
 		started: true,
 	}, obj)
 }
 
-func TestListTokenStreamNextEnding(t *testing.T) {
-	toks := []*lexer.Token{{}, {}, {}}
-	obj := &listTokenStream{
+func TestListLexerNextEnding(t *testing.T) {
+	toks := []*Token{{}, {}, {}}
+	obj := &ListLexer{
 		toks:    toks,
 		idx:     2,
 		started: true,
@@ -79,7 +77,7 @@ func TestListTokenStreamNextEnding(t *testing.T) {
 	result := obj.Next()
 
 	assert.Nil(t, result)
-	assert.Equal(t, &listTokenStream{
+	assert.Equal(t, &ListLexer{
 		toks:    toks,
 		idx:     2,
 		started: true,

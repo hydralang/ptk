@@ -16,11 +16,12 @@ package lexer
 
 // Recognizer describes a recognizer.  A recognizer is an object
 // returned by the Classify method of a Classifier; its Recognize
-// method will be passed the lexer state, and it should read input
-// from the state until it has a complete lexeme (think "word" in your
-// grammar).  Assuming that lexeme is a valid token (a comment or a
-// run of whitespace would not be), the Recognize method should then
-// use State.Push to push one or more tokens.
+// method will be passed the lexer, the state, and a backtracker, and
+// it should read input from the backtracker until it has a complete
+// lexeme (think "word" in your grammar).  Assuming that lexeme is a
+// valid token (a comment or a run of whitespace would not be), the
+// Recognize method should then use Lexer.Push to push one or more
+// tokens.
 type Recognizer interface {
 	// Recognize is called by the lexer on the objects returned by
 	// the Classifier.  Each will be called in turn until one of
@@ -28,7 +29,7 @@ type Recognizer interface {
 	// returns true, or if the Classifier returns an empty list,
 	// then the Error recognizer will be called, if one is
 	// declared, after which the character will be discarded.  The
-	// Recognize method will be called with the lexer state and
-	// the character stream wrapped in a BackTracker.
+	// Recognize method will be called with the lexer, the state,
+	// and a backtracking scanner.
 	Recognize(lexer *Lexer, state State, str IBackTracker) bool
 }

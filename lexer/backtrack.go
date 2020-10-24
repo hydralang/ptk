@@ -25,9 +25,9 @@ import (
 // characters.
 const TrackAll = -1
 
-// IBackTracker is an interface for a backtracker, a CharStream that
-// also provides the ability to back up to an earlier character in the
-// stream.
+// IBackTracker is an interface for a backtracker, a scanner.Scanner
+// that also provides the ability to back up to an earlier character
+// in the stream.
 type IBackTracker interface {
 	scanner.Scanner
 
@@ -63,18 +63,18 @@ type IBackTracker interface {
 }
 
 // btElem is a struct type containing the returned character and error
-// from the source character stream.
+// from the source scanner.
 type btElem struct {
 	ch  scanner.Char // The character returned
 	err error        // The error returned
 }
 
 // BackTracker is an implementation of scanner.Scanner that includes
-// backtracking capability.  A BackTracker wraps another character
-// stream (including another instance of BackTracker), but provides
-// additional methods for controlling backtracking.
+// backtracking capability.  A BackTracker wraps another
+// scanner.Scanner (including another instance of BackTracker), but
+// provides additional methods for controlling backtracking.
 type BackTracker struct {
-	Src   scanner.Scanner // The source character stream
+	Src   scanner.Scanner // The source scanner
 	max   int             // Maximum length to backtrack by
 	saved *list.List      // Saved characters
 	next  *list.Element   // Next character to return
@@ -82,7 +82,7 @@ type BackTracker struct {
 	last  btElem          // Last return from source
 }
 
-// NewBackTracker wraps another character stream (which may also be a
+// NewBackTracker wraps another scanner (which may also be a
 // BackTracker, if desired) in a BackTracker.  The max parameter
 // indicates the maximum number of characters to track; use 0 to track
 // no characters, and TrackAll to track all characters.

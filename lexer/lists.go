@@ -12,32 +12,29 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package tokenstreams
+package lexer
 
-import "github.com/hydralang/ptk/lexer"
-
-// listTokenStream is an implementation of TokenStream that is
-// initialized with a list of tokens, and simply returns the tokens in
-// sequence.
-type listTokenStream struct {
-	toks    []*lexer.Token // The list of tokens
-	idx     int            // The index of the current token to return
-	started bool           // A boolean indicating whether the iterator has started
+// ListLexer is an implementation of Lexer that is initialized with a
+// list of tokens, and simply returns the tokens in sequence.
+type ListLexer struct {
+	toks    []*Token // The list of tokens
+	idx     int      // The index of the current token to return
+	started bool     // A boolean indicating whether the iterator has started
 }
 
-// NewListTokenStream returns a TokenStream that retrieves its tokens
-// from a list passed to the function.  This actually uses a
-// ChanTokenStream under the covers.
-func NewListTokenStream(toks []*lexer.Token) lexer.ILexer {
+// NewListLexer returns a Lexer that retrieves its tokens from a list
+// passed to the function.  This actually uses a ChanLexer under the
+// covers.
+func NewListLexer(toks []*Token) *ListLexer {
 	// return obj
-	return &listTokenStream{
+	return &ListLexer{
 		toks: toks,
 	}
 }
 
-// Next returns the next token.  At the end of the token stream, a nil
-// should be returned.
-func (lts *listTokenStream) Next() *lexer.Token {
+// Next returns the next token.  At the end of the lexer, a nil should
+// be returned.
+func (lts *ListLexer) Next() *Token {
 	// Check the state
 	switch {
 	case !lts.started: // Need to start?

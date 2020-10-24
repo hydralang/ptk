@@ -12,21 +12,19 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package tokenstreams
+package lexer
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/hydralang/ptk/lexer"
 )
 
-func TestNewAsyncTokenStream(t *testing.T) {
-	toks := []*lexer.Token{{}, {}, {}}
-	ts := NewListTokenStream(toks)
+func TestNewAsyncLexer(t *testing.T) {
+	toks := []*Token{{}, {}, {}}
+	ts := NewListLexer(toks)
 
-	result := NewAsyncTokenStream(ts)
+	result := NewAsyncLexer(ts)
 
 	i := 0
 	for tok := result.Next(); tok != nil; tok = result.Next() {

@@ -12,19 +12,15 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package tokenstreams
+package lexer
 
-import "github.com/hydralang/ptk/lexer"
+// NewAsyncLexer wraps another lexer and uses the ChanLexer to allow
+// running that other lexer in a separate goroutine.
+func NewAsyncLexer(ts ILexer) ILexer {
+	// Construct the ChanLexer
+	obj := NewChanLexer()
 
-// NewAsyncTokenStream wraps another token stream and uses the
-// ChanTokenStream to allow running that other token stream in a
-// separate goroutine.
-func NewAsyncTokenStream(ts lexer.ILexer) lexer.ILexer {
-	// Construct the ChanTokenStream
-	obj := NewChanTokenStream()
-
-	// Run the other token stream in a goroutine and push all its
-	// tokens
+	// Run the other lexer in a goroutine and push all its tokens
 	go func() {
 		for tok := ts.Next(); tok != nil; tok = ts.Next() {
 			obj.Push(tok)

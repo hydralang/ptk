@@ -31,9 +31,9 @@ type BaseState struct {
 	Cls Classifier // The classifier for the lex
 }
 
-// Classifier must return the classifier to use.  It is safe
-// for the application to return different Classifier
-// implementations depending on the lexer state.
+// Classifier must return the classifier to use.  It is safe for the
+// application to return different Classifier implementations
+// depending on the lexer state.
 func (bs *BaseState) Classifier() Classifier {
 	return bs.Cls
 }
