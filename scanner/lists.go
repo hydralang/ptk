@@ -12,29 +12,23 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package charstreams
+package scanner
 
-import (
-	"github.com/hydralang/ptk/common"
-)
-
-// listCharStream is a character stream that returns characters from a
-// simple list.  It is intended for testing in cases where
-// MockCharStream is not a good fit.
-type listCharStream struct {
-	chars []common.Char // Characters to return
-	pos   int           // Position within the character list
-	err   error         // Error to return on next common.EOF
+// ListScanner is a scanner that returns characters from a simple
+// list.  It is intended for testing in cases where MockScanner is not
+// a good fit.
+type ListScanner struct {
+	chars []Char // Characters to return
+	pos   int    // Position within the character list
+	err   error  // Error to return on next EOF
 }
 
-// NewListCharStream constructs and returns a common.CharStream
-// implementation that returns characters from a list of characters.
-// The last character should be a common.EOF; this character will be
-// returned with the error passed in.  This character stream is
-// intended for testing, in cases where a MockCharStream is not a good
-// fit.
-func NewListCharStream(chars []common.Char, err error) common.CharStream {
-	return &listCharStream{
+// NewListScanner constructs and returns a Scanner implementation that
+// returns characters from a list of characters.  The last character
+// should be a EOF; this character will be returned with the error
+// passed in.  This scanner is intended for testing.
+func NewListScanner(chars []Char, err error) *ListScanner {
+	return &ListScanner{
 		chars: chars,
 		err:   err,
 	}
@@ -43,7 +37,7 @@ func NewListCharStream(chars []common.Char, err error) common.CharStream {
 // Next returns the next character from the stream as a Char, which
 // will include the character's location.  If an error was
 // encountered, that will also be returned.
-func (lcs *listCharStream) Next() (common.Char, error) {
+func (lcs *ListScanner) Next() (Char, error) {
 	// Last character will be returned endlessly
 	idx := lcs.pos
 	if idx >= len(lcs.chars) {
@@ -54,7 +48,7 @@ func (lcs *listCharStream) Next() (common.Char, error) {
 
 	// Select an error to return on first EOF
 	var err error
-	if lcs.chars[idx].Rune == common.EOF {
+	if lcs.chars[idx].Rune == EOF {
 		err = lcs.err
 		lcs.err = nil
 	}

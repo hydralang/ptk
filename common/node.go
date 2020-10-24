@@ -16,13 +16,15 @@ package common
 
 import (
 	"github.com/stretchr/testify/mock"
+
+	"github.com/hydralang/ptk/scanner"
 )
 
 // Node describes one node in an abstract syntax tree.  Note that it
 // is deliberate that Token implements Node.
 type Node interface {
 	// Location returns the node's location range.
-	Location() Location
+	Location() scanner.Location
 
 	// Children returns a list of child nodes.
 	Children() []Node
@@ -39,11 +41,11 @@ type MockNode struct {
 }
 
 // Location returns the node's location range.
-func (m *MockNode) Location() Location {
+func (m *MockNode) Location() scanner.Location {
 	args := m.MethodCalled("Location")
 
 	if tmp := args.Get(0); tmp != nil {
-		return tmp.(Location)
+		return tmp.(scanner.Location)
 	}
 
 	return nil

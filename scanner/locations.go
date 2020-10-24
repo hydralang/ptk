@@ -12,11 +12,7 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package common
-
-import (
-	"github.com/stretchr/testify/mock"
-)
+package scanner
 
 // Location is an interface for location data.  Each token and node
 // should have attached location data that reports its location.  This
@@ -38,54 +34,4 @@ type Location interface {
 	// passed the character (a rune) and the tabstop size (for
 	// handling tabs).  It should return a new Location.
 	Incr(c rune, tabstop int) Location
-}
-
-// MockLocation is a mock for Location
-type MockLocation struct {
-	mock.Mock
-}
-
-// String constructs a string representation of the location.
-func (m *MockLocation) String() string {
-	args := m.MethodCalled("String")
-
-	return args.String(0)
-}
-
-// Thru creates a new Location that ranges from the beginning of this
-// location to the beginning of another Location.
-func (m *MockLocation) Thru(other Location) (Location, error) {
-	args := m.MethodCalled("Thru", other)
-
-	if tmp := args.Get(0); tmp != nil {
-		return tmp.(Location), args.Error(1)
-	}
-
-	return nil, args.Error(1)
-}
-
-// ThruEnd is similar to Thru, except that it creates a new Location
-// that ranges from the beginning of this location to the ending of
-// another location.
-func (m *MockLocation) ThruEnd(other Location) (Location, error) {
-	args := m.MethodCalled("ThruEnd", other)
-
-	if tmp := args.Get(0); tmp != nil {
-		return tmp.(Location), args.Error(1)
-	}
-
-	return nil, args.Error(1)
-}
-
-// Incr increments the location by one character.  It is passed the
-// character (a rune) and the tabstop size (for handling tabs).  It
-// should return a new Location.
-func (m *MockLocation) Incr(c rune, tabstop int) Location {
-	args := m.MethodCalled("Incr", c, tabstop)
-
-	if tmp := args.Get(0); tmp != nil {
-		return tmp.(Location)
-	}
-
-	return nil
 }

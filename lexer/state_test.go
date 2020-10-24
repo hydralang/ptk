@@ -60,7 +60,7 @@ func TestMockStateCharStreamNil(t *testing.T) {
 }
 
 func TestMockStateCharStreamNotNil(t *testing.T) {
-	cs := &common.MockCharStream{}
+	cs := &mockScanner{}
 	obj := &MockState{}
 	obj.On("CharStream").Return(cs)
 
@@ -203,7 +203,7 @@ func TestNewState(t *testing.T) {
 	cls := &MockClassifier{}
 	lexer := &MockLexer{}
 	lexer.On("Classifier").Return(cls)
-	src := &common.MockCharStream{}
+	src := &mockScanner{}
 	var opt1Called State
 	var opt2Called State
 	options := []Option{
@@ -231,7 +231,7 @@ func TestNewState(t *testing.T) {
 }
 
 func TestNextInternalBase(t *testing.T) {
-	bt := &MockBackTracker{}
+	bt := &mockBackTracker{}
 	bt.On("SetMax", TrackAll).Once()
 	bt.On("BackTrack").Times(2)
 	bt.On("Accept", 0).Once()
@@ -258,7 +258,7 @@ func TestNextInternalBase(t *testing.T) {
 }
 
 func TestNextInternalUnrecognized(t *testing.T) {
-	bt := &MockBackTracker{}
+	bt := &mockBackTracker{}
 	bt.On("SetMax", TrackAll).Once()
 	bt.On("BackTrack").Times(4)
 	bt.On("Accept", 0).Once()
@@ -287,7 +287,7 @@ func TestNextInternalUnrecognized(t *testing.T) {
 }
 
 func TestNextInternalUnclassified(t *testing.T) {
-	bt := &MockBackTracker{}
+	bt := &mockBackTracker{}
 	bt.On("SetMax", TrackAll).Once()
 	bt.On("BackTrack").Once()
 	bt.On("Accept", 0).Once()
@@ -320,7 +320,7 @@ func (f *fakeClassifier) Error(state State, str BackTracker) {
 
 func TestStateNextQueued(t *testing.T) {
 	tok := &common.Token{}
-	bt := &MockBackTracker{}
+	bt := &mockBackTracker{}
 	obj := &state{
 		bt:   bt,
 		cls:  common.NewStack(),
@@ -338,8 +338,8 @@ func TestStateNextQueued(t *testing.T) {
 
 func TestStateNextLex(t *testing.T) {
 	tok := &common.Token{}
-	src := &common.MockCharStream{}
-	bt := &MockBackTracker{}
+	src := &mockScanner{}
+	bt := &mockBackTracker{}
 	bt.On("More").Return(true)
 	bt.On("SetMax", TrackAll)
 	bt.On("BackTrack")
@@ -360,7 +360,7 @@ func TestStateNextLex(t *testing.T) {
 }
 
 func TestStateNextClosed(t *testing.T) {
-	bt := &MockBackTracker{}
+	bt := &mockBackTracker{}
 	bt.On("More").Return(false)
 	obj := &state{
 		bt:   bt,
@@ -388,7 +388,7 @@ func TestStateLexer(t *testing.T) {
 }
 
 func TestStateCharStream(t *testing.T) {
-	src := &common.MockCharStream{}
+	src := &mockScanner{}
 	obj := &state{
 		src: src,
 	}

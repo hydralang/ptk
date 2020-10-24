@@ -12,21 +12,32 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package common
+package scanner
 
 import (
 	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
+
+type mockEncodingErrorHandler struct {
+	mock.Mock
+}
+
+func (m *mockEncodingErrorHandler) Handle(e error) error {
+	args := m.MethodCalled("Handle", e)
+
+	return args.Error(0)
+}
 
 func TestLocationErrorImplementsError(t *testing.T) {
 	assert.Implements(t, (*error)(nil), &locationError{})
 }
 
 func TestLocationErrorBase(t *testing.T) {
-	loc := &MockLocation{}
+	loc := &mockLocation{}
 
 	result := LocationError(loc, assert.AnError)
 
@@ -43,7 +54,7 @@ func TestLocationErrorNoLocation(t *testing.T) {
 }
 
 func TestLocationErrorError(t *testing.T) {
-	loc := &MockLocation{}
+	loc := &mockLocation{}
 	loc.On("String").Return("location")
 	obj := &locationError{
 		loc: loc,
@@ -79,7 +90,7 @@ func (e *errorWrapper) Unwrap() error {
 }
 
 func TestLocationOfBase(t *testing.T) {
-	loc := &MockLocation{}
+	loc := &mockLocation{}
 	err := &errorWrapper{
 		err: &locationError{
 			loc: loc,

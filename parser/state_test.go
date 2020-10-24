@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/hydralang/ptk/common"
+	"github.com/hydralang/ptk/scanner"
 )
 
 func TestMockStateImplementsState(t *testing.T) {
@@ -908,7 +909,7 @@ type binaryNode struct {
 	Op *common.Token
 }
 
-func (bn *binaryNode) Location() common.Location {
+func (bn *binaryNode) Location() scanner.Location {
 	return nil
 }
 
@@ -1263,7 +1264,7 @@ type stmtNode struct {
 	toks []*common.Token
 }
 
-func (sn *stmtNode) Location() common.Location {
+func (sn *stmtNode) Location() scanner.Location {
 	return nil
 }
 

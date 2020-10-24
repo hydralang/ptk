@@ -18,6 +18,7 @@ import (
 	"container/list"
 
 	"github.com/hydralang/ptk/common"
+	"github.com/hydralang/ptk/scanner"
 )
 
 // State represents the state of the lexer.
@@ -31,8 +32,8 @@ type State interface {
 	// state.  Most applications should prefer to utilize the
 	// BackTracker instance passed to the Classify, Recognize, or
 	// Error methods, but this can be used to obtain a reference
-	// to the underlying common.CharStream, if that is desired.
-	CharStream() common.CharStream
+	// to the underlying scanner.Scanner, if that is desired.
+	CharStream() scanner.Scanner
 
 	// AppState returns the current application state.
 	AppState() interface{}
@@ -103,13 +104,13 @@ func (m *MockState) Lexer() Lexer {
 // CharStream retrieves the character stream stored in the state.
 // Most applications should prefer to utilize the BackTracker instance
 // passed to the Classify, Recognize, or Error methods, but this can
-// be used to obtain a reference to the underlying common.CharStream,
+// be used to obtain a reference to the underlying scanner.Scanner,
 // if that is desired.
-func (m *MockState) CharStream() common.CharStream {
+func (m *MockState) CharStream() scanner.Scanner {
 	args := m.MethodCalled("CharStream")
 
 	if tmp := args.Get(0); tmp != nil {
-		return tmp.(common.CharStream)
+		return tmp.(scanner.Scanner)
 	}
 
 	return nil
@@ -210,17 +211,17 @@ func (m *MockState) Push(tok *common.Token) bool {
 
 // state is an implementation of State.
 type state struct {
-	lexer    Lexer             // The lexer being used
-	src      common.CharStream // The source CharStream
-	bt       BackTracker       // Backtracker wrapping the source
-	appState common.Stack      // Stack for application state
-	cls      common.Stack      // Stack for classifier
-	toks     *list.List        // List of tokens to produce
+	lexer    Lexer           // The lexer being used
+	src      scanner.Scanner // The source CharStream
+	bt       BackTracker     // Backtracker wrapping the source
+	appState common.Stack    // Stack for application state
+	cls      common.Stack    // Stack for classifier
+	toks     *list.List      // List of tokens to produce
 }
 
 // NewState constructs and returns a new state, with the specified
 // classifier and character stream.
-func NewState(lexer Lexer, src common.CharStream, options []Option) State {
+func NewState(lexer Lexer, src scanner.Scanner, options []Option) State {
 	obj := &state{
 		lexer:    lexer,
 		src:      src,
@@ -291,9 +292,9 @@ func (s *state) Lexer() Lexer {
 // CharStream retrieves the character stream stored in the state.
 // Most applications should prefer to utilize the BackTracker instance
 // passed to the Classify, Recognize, or Error methods, but this can
-// be used to obtain a reference to the underlying common.CharStream,
+// be used to obtain a reference to the underlying scanner.Scanner,
 // if that is desired.
-func (s *state) CharStream() common.CharStream {
+func (s *state) CharStream() scanner.Scanner {
 	return s.src
 }
 

@@ -12,26 +12,11 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package lexer
-
-import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-)
-
-func TestMockRecognizerImplementsRecognizer(t *testing.T) {
-	assert.Implements(t, (*Recognizer)(nil), &MockRecognizer{})
-}
-
-func TestMockRecognizerRecognize(t *testing.T) {
-	s := &MockState{}
-	str := &mockBackTracker{}
-	obj := &MockRecognizer{}
-	obj.On("Recognize", s, str).Return(true)
-
-	result := obj.Recognize(s, str)
-
-	assert.True(t, result)
-	obj.AssertExpectations(t)
-}
+// Package scanner is a subpackage of ptk that contains various
+// implementations of the Scanner, along with related support types
+// and code such as Char and Location.  A scanner is an object that
+// can be queried for the next character in a character stream, such
+// as a file or a list of arguments; its return value is a Char, which
+// packages together a Unicode rune and a location that may be used
+// for error reporting.
+package scanner

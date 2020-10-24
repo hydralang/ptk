@@ -12,44 +12,42 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package charstreams
+package scanner
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/hydralang/ptk/common"
 )
 
-func TestMemoizingCharStreamImplementsCharStream(t *testing.T) {
-	assert.Implements(t, (*common.CharStream)(nil), &memoizingCharStream{})
+func TestMemoizingScannerImplementsScanner(t *testing.T) {
+	assert.Implements(t, (*Scanner)(nil), &MemoizingScanner{})
 }
 
-func TestNewMemoizingCharStream(t *testing.T) {
-	src := &common.MockCharStream{}
+func TestNewMemoizingScanner(t *testing.T) {
+	src := &mockScanner{}
 
-	result := NewMemoizingCharStream(src)
+	result := NewMemoizingScanner(src)
 
-	assert.Equal(t, &memoizingCharStream{
-		chars: []common.Char{},
+	assert.Equal(t, &MemoizingScanner{
+		chars: []Char{},
 		src:   src,
 	}, result)
 }
 
-func TestMemoizingCharStreamNextBase(t *testing.T) {
-	src := &common.MockCharStream{}
-	src.On("Next").Return(common.Char{Rune: 't'}, nil)
-	obj := &memoizingCharStream{
-		chars: []common.Char{},
+func TestMemoizingScannerNextBase(t *testing.T) {
+	src := &mockScanner{}
+	src.On("Next").Return(Char{Rune: 't'}, nil)
+	obj := &MemoizingScanner{
+		chars: []Char{},
 		src:   src,
 	}
 
 	result, err := obj.Next()
 
 	assert.NoError(t, err)
-	assert.Equal(t, common.Char{Rune: 't'}, result)
-	assert.Equal(t, []common.Char{
+	assert.Equal(t, Char{Rune: 't'}, result)
+	assert.Equal(t, []Char{
 		{Rune: 't'},
 	}, obj.chars)
 	assert.Equal(t, 0, obj.idx)
@@ -57,50 +55,50 @@ func TestMemoizingCharStreamNextBase(t *testing.T) {
 	src.AssertExpectations(t)
 }
 
-func TestMemoizingCharStreamNextEOF(t *testing.T) {
-	src := &common.MockCharStream{}
-	src.On("Next").Return(common.Char{Rune: common.EOF}, nil)
-	obj := &memoizingCharStream{
-		chars: []common.Char{},
+func TestMemoizingScannerNextEOF(t *testing.T) {
+	src := &mockScanner{}
+	src.On("Next").Return(Char{Rune: EOF}, nil)
+	obj := &MemoizingScanner{
+		chars: []Char{},
 		src:   src,
 	}
 
 	result, err := obj.Next()
 
 	assert.NoError(t, err)
-	assert.Equal(t, common.Char{Rune: common.EOF}, result)
-	assert.Equal(t, []common.Char{
-		{Rune: common.EOF},
+	assert.Equal(t, Char{Rune: EOF}, result)
+	assert.Equal(t, []Char{
+		{Rune: EOF},
 	}, obj.chars)
 	assert.Equal(t, 0, obj.idx)
 	assert.True(t, obj.replay)
 	src.AssertExpectations(t)
 }
 
-func TestMemoizingCharStreamNextError(t *testing.T) {
-	src := &common.MockCharStream{}
-	src.On("Next").Return(common.Char{Rune: common.EOF}, assert.AnError)
-	obj := &memoizingCharStream{
-		chars: []common.Char{},
+func TestMemoizingScannerNextError(t *testing.T) {
+	src := &mockScanner{}
+	src.On("Next").Return(Char{Rune: EOF}, assert.AnError)
+	obj := &MemoizingScanner{
+		chars: []Char{},
 		src:   src,
 	}
 
 	result, err := obj.Next()
 
 	assert.Same(t, assert.AnError, err)
-	assert.Equal(t, common.Char{Rune: common.EOF}, result)
-	assert.Equal(t, []common.Char{
-		{Rune: common.EOF},
+	assert.Equal(t, Char{Rune: EOF}, result)
+	assert.Equal(t, []Char{
+		{Rune: EOF},
 	}, obj.chars)
 	assert.Equal(t, 0, obj.idx)
 	assert.True(t, obj.replay)
 	src.AssertExpectations(t)
 }
 
-func TestMemoizingCharStreamReplay(t *testing.T) {
-	src := &common.MockCharStream{}
-	obj := &memoizingCharStream{
-		chars: []common.Char{
+func TestMemoizingScannerReplay(t *testing.T) {
+	src := &mockScanner{}
+	obj := &MemoizingScanner{
+		chars: []Char{
 			{Rune: 't'},
 			{Rune: 'e'},
 			{Rune: 's'},
@@ -113,8 +111,8 @@ func TestMemoizingCharStreamReplay(t *testing.T) {
 	result, err := obj.Next()
 
 	assert.NoError(t, err)
-	assert.Equal(t, common.Char{Rune: 't'}, result)
-	assert.Equal(t, []common.Char{
+	assert.Equal(t, Char{Rune: 't'}, result)
+	assert.Equal(t, []Char{
 		{Rune: 't'},
 		{Rune: 'e'},
 		{Rune: 's'},
@@ -125,10 +123,10 @@ func TestMemoizingCharStreamReplay(t *testing.T) {
 	src.AssertExpectations(t)
 }
 
-func TestMemoizingCharStreamReplayWrap(t *testing.T) {
-	src := &common.MockCharStream{}
-	obj := &memoizingCharStream{
-		chars: []common.Char{
+func TestMemoizingScannerReplayWrap(t *testing.T) {
+	src := &mockScanner{}
+	obj := &MemoizingScanner{
+		chars: []Char{
 			{Rune: 't'},
 			{Rune: 'e'},
 			{Rune: 's'},
@@ -142,8 +140,8 @@ func TestMemoizingCharStreamReplayWrap(t *testing.T) {
 	result, err := obj.Next()
 
 	assert.NoError(t, err)
-	assert.Equal(t, common.Char{Rune: 't'}, result)
-	assert.Equal(t, []common.Char{
+	assert.Equal(t, Char{Rune: 't'}, result)
+	assert.Equal(t, []Char{
 		{Rune: 't'},
 		{Rune: 'e'},
 		{Rune: 's'},

@@ -12,13 +12,11 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package locations
+package scanner
 
 import (
 	"bytes"
 	"fmt"
-
-	"github.com/hydralang/ptk/common"
 )
 
 // ArgPos specifies a particular character location within an argument
@@ -56,11 +54,11 @@ func (l ArgLocation) String() string {
 
 // Thru creates a new Location that ranges from the beginning of this
 // location to the beginning of another Location.
-func (l ArgLocation) Thru(other common.Location) (common.Location, error) {
+func (l ArgLocation) Thru(other Location) (Location, error) {
 	// Verify that other's compatible
 	o, ok := other.(ArgLocation)
 	if !ok {
-		return nil, common.ErrSplitLocation
+		return nil, ErrSplitLocation
 	}
 
 	// Create and return a new location
@@ -73,11 +71,11 @@ func (l ArgLocation) Thru(other common.Location) (common.Location, error) {
 // ThruEnd is similar to Thru, except that it creates a new Location
 // that ranges from the beginning of this location to the ending of
 // another location.
-func (l ArgLocation) ThruEnd(other common.Location) (common.Location, error) {
+func (l ArgLocation) ThruEnd(other Location) (Location, error) {
 	// Verify that other's compatible
 	o, ok := other.(ArgLocation)
 	if !ok {
-		return nil, common.ErrSplitLocation
+		return nil, ErrSplitLocation
 	}
 
 	// Create and return a new location
@@ -90,14 +88,54 @@ func (l ArgLocation) ThruEnd(other common.Location) (common.Location, error) {
 // Incr increments the location by one character.  It is passed the
 // character (a rune) and the tabstop size (for handling tabs).  It
 // should return a new Location.
-func (l ArgLocation) Incr(c rune, tabstop int) common.Location {
+func (l ArgLocation) Incr(c rune, tabstop int) Location {
 	// Begin by advancing the beginning
 	l.B = l.E
 
 	// Advance the ending column
-	if c != common.EOF {
+	if c != EOF {
 		l.E.C++
 	}
 
 	return l
+}
+
+// NewArgumentScanner constructs and returns a Scanner implementation
+// that returns characters drawn from a provided list of argument
+// strings.  This is intended for use with arguments taken from the
+// command line, but could be useful in other contexts as well.  The
+// strings are logically joined by spaces; to use a different joiner,
+// pass that as an option.
+func NewArgumentScanner(args []string, options ...ArgOption) Scanner {
+	// Process the options
+	opts := &argOptions{
+		joiner: " ",
+		opts:   []FileOption{LineEndings(NoLineStyle)},
+	}
+	for _, opt := range options {
+		opt.argApply(opts)
+	}
+
+	// Construct the joiner scanner
+	loc := ArgLocation{
+		B: ArgPos{I: 0, C: 1},
+		E: ArgPos{I: 0, C: 1},
+	}
+	joiner := NewMemoizingScanner(NewFileScanner(bytes.NewBufferString(opts.joiner), loc, opts.opts...))
+
+	// Construct a list of scanners
+	streams := []Scanner{}
+	for i, arg := range args {
+		if i != 0 {
+			streams = append(streams, joiner)
+		}
+
+		loc := ArgLocation{
+			B: ArgPos{I: i + 1, C: 1},
+			E: ArgPos{I: i + 1, C: 1},
+		}
+		streams = append(streams, NewFileScanner(bytes.NewBufferString(arg), loc, opts.opts...))
+	}
+
+	return NewChainingScanner(streams)
 }

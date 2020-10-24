@@ -12,41 +12,27 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package charstreams
+package scanner
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/hydralang/ptk/common"
+	"github.com/stretchr/testify/mock"
 )
 
-func TestMockLineStyleImplementsLineStyle(t *testing.T) {
-	assert.Implements(t, (*LineStyle)(nil), &MockLineStyle{})
+type mockLineStyle struct {
+	mock.Mock
 }
 
-func TestMockLineStyleHandleNil(t *testing.T) {
-	obj := &MockLineStyle{}
-	obj.On("Handle", []rune{'\r', '\n'}).Return(LineDisMore, nil)
+func (m *mockLineStyle) Handle(chs []rune) (LineDis, LineStyle) {
+	args := m.MethodCalled("Handle", chs)
 
-	dis, next := obj.Handle([]rune{'\r', '\n'})
+	if tmp := args.Get(1); tmp != nil {
+		return args.Get(0).(LineDis), tmp.(LineStyle)
+	}
 
-	assert.Equal(t, LineDisMore, dis)
-	assert.Nil(t, next)
-	obj.AssertExpectations(t)
-}
-
-func TestMockLineStyleHandleNotNil(t *testing.T) {
-	ls := &MockLineStyle{}
-	obj := &MockLineStyle{}
-	obj.On("Handle", []rune{'\r', '\n'}).Return(LineDisMore, ls)
-
-	dis, next := obj.Handle([]rune{'\r', '\n'})
-
-	assert.Equal(t, LineDisMore, dis)
-	assert.Same(t, ls, next)
-	obj.AssertExpectations(t)
+	return args.Get(0).(LineDis), nil
 }
 
 func TestUNIXLineStyleImplementsLineStyle(t *testing.T) {
@@ -118,7 +104,7 @@ func TestDOSLineStyleHandleCRNL(t *testing.T) {
 }
 
 func TestDOSLineStyleHandleCREOF(t *testing.T) {
-	dis, next := DOSLineStyle.Handle([]rune{'\r', common.EOF})
+	dis, next := DOSLineStyle.Handle([]rune{'\r', EOF})
 
 	assert.Equal(t, LineDisSpace, dis)
 	assert.Same(t, DOSLineStyle, next)
@@ -157,7 +143,7 @@ func TestUnknownLineStyleHandleCRNL(t *testing.T) {
 }
 
 func TestUnknownLineStyleHandleCREOF(t *testing.T) {
-	dis, next := UnknownLineStyle.Handle([]rune{'\r', common.EOF})
+	dis, next := UnknownLineStyle.Handle([]rune{'\r', EOF})
 
 	assert.Equal(t, LineDisNewlineSave, dis)
 	assert.Same(t, MacLineStyle, next)

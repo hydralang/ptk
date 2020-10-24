@@ -12,26 +12,23 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package lexer
+package scanner
 
 import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
+	"unicode"
 )
 
-func TestMockRecognizerImplementsRecognizer(t *testing.T) {
-	assert.Implements(t, (*Recognizer)(nil), &MockRecognizer{})
-}
+// Special runes used to signal end-of-file or other conditions in the
+// scanners.
+const (
+	EOF      rune = unicode.MaxRune + iota + 1 // Signals end-of-file
+	errRune                                    // Signals an error
+	sentinel                                   // Signals saved is unset
+)
 
-func TestMockRecognizerRecognize(t *testing.T) {
-	s := &MockState{}
-	str := &mockBackTracker{}
-	obj := &MockRecognizer{}
-	obj.On("Recognize", s, str).Return(true)
-
-	result := obj.Recognize(s, str)
-
-	assert.True(t, result)
-	obj.AssertExpectations(t)
+// Char represents a character retrieved from the source input stream.
+// It bundles together a rune and a location.
+type Char struct {
+	Rune rune     // The rune read from the source
+	Loc  Location // The location of the rune within the stream
 }

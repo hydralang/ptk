@@ -18,11 +18,12 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/hydralang/ptk/common"
+	"github.com/hydralang/ptk/scanner"
 )
 
 // Patch points to enable testing functions below in isolation.
 var (
-	newState func(Lexer, common.CharStream, []Option) State = NewState
+	newState func(Lexer, scanner.Scanner, []Option) State = NewState
 )
 
 // Option is a lexer option that may be passed to the Lex method.
@@ -46,7 +47,7 @@ type Lexer interface {
 	// interface and which reads the specified io.Reader and
 	// converts it to tokens.  Tokens represent the "words" of the
 	// language being parsed.
-	Lex(cs common.CharStream, options ...Option) common.TokenStream
+	Lex(cs scanner.Scanner, options ...Option) common.TokenStream
 }
 
 // MockLexer is a mock implementation of the Lexer interface.
@@ -70,7 +71,7 @@ func (m *MockLexer) Classifier() Classifier {
 // interface and which reads the specified io.Reader and converts it
 // to tokens.  Tokens represent the "words" of the language being
 // parsed.
-func (m *MockLexer) Lex(cs common.CharStream, options ...Option) common.TokenStream {
+func (m *MockLexer) Lex(cs scanner.Scanner, options ...Option) common.TokenStream {
 	args := m.MethodCalled("Lex", cs, options)
 
 	if tmp := args.Get(0); tmp != nil {
@@ -102,7 +103,7 @@ func (l *lexer) Classifier() Classifier {
 // interface and which reads the specified io.Reader and converts it
 // to tokens.  Tokens represent the "words" of the language being
 // parsed.
-func (l *lexer) Lex(cs common.CharStream, options ...Option) common.TokenStream {
+func (l *lexer) Lex(cs scanner.Scanner, options ...Option) common.TokenStream {
 	// Construct and return a state, which implements the
 	// TokenStream interface
 	return newState(l, cs, options)

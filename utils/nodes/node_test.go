@@ -18,10 +18,52 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/hydralang/ptk/common"
 	"github.com/hydralang/ptk/parser"
+	"github.com/hydralang/ptk/scanner"
 )
+
+type mockLocation struct {
+	mock.Mock
+}
+
+func (m *mockLocation) String() string {
+	args := m.MethodCalled("String")
+
+	return args.String(0)
+}
+
+func (m *mockLocation) Thru(other scanner.Location) (scanner.Location, error) {
+	args := m.MethodCalled("Thru", other)
+
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(scanner.Location), args.Error(1)
+	}
+
+	return nil, args.Error(1)
+}
+
+func (m *mockLocation) ThruEnd(other scanner.Location) (scanner.Location, error) {
+	args := m.MethodCalled("ThruEnd", other)
+
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(scanner.Location), args.Error(1)
+	}
+
+	return nil, args.Error(1)
+}
+
+func (m *mockLocation) Incr(c rune, tabstop int) scanner.Location {
+	args := m.MethodCalled("Incr", c, tabstop)
+
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(scanner.Location)
+	}
+
+	return nil
+}
 
 func TestAnnotatedNodeImplementsNode(t *testing.T) {
 	assert.Implements(t, (*common.Node)(nil), &AnnotatedNode{})
@@ -39,7 +81,7 @@ func TestNewAnnotatedNode(t *testing.T) {
 }
 
 func TestAnnotatedNodeLocation(t *testing.T) {
-	loc := &common.MockLocation{}
+	loc := &mockLocation{}
 	node := &common.MockNode{}
 	node.On("Location").Return(loc)
 	obj := &AnnotatedNode{
@@ -114,9 +156,9 @@ func TestUnaryFactoryBase(t *testing.T) {
 
 func TestUnaryFactoryLocation(t *testing.T) {
 	s := &parser.MockState{}
-	finalLoc := &common.MockLocation{}
-	opLoc := &common.MockLocation{}
-	expLoc := &common.MockLocation{}
+	finalLoc := &mockLocation{}
+	opLoc := &mockLocation{}
+	expLoc := &mockLocation{}
 	opLoc.On("ThruEnd", expLoc).Return(finalLoc, nil)
 	op := &common.Token{
 		Loc: opLoc,
@@ -139,8 +181,8 @@ func TestUnaryFactoryLocation(t *testing.T) {
 
 func TestUnaryFactoryLocationError(t *testing.T) {
 	s := &parser.MockState{}
-	opLoc := &common.MockLocation{}
-	expLoc := &common.MockLocation{}
+	opLoc := &mockLocation{}
+	expLoc := &mockLocation{}
 	opLoc.On("ThruEnd", expLoc).Return(nil, assert.AnError)
 	op := &common.Token{
 		Loc: opLoc,
@@ -157,7 +199,7 @@ func TestUnaryFactoryLocationError(t *testing.T) {
 }
 
 func TestUnaryOperatorLocation(t *testing.T) {
-	loc := &common.MockLocation{}
+	loc := &mockLocation{}
 	obj := &UnaryOperator{
 		Loc: loc,
 	}
@@ -216,9 +258,9 @@ func TestBinaryFactoryBase(t *testing.T) {
 
 func TestBinaryFactoryLocation(t *testing.T) {
 	s := &parser.MockState{}
-	finalLoc := &common.MockLocation{}
-	lLoc := &common.MockLocation{}
-	rLoc := &common.MockLocation{}
+	finalLoc := &mockLocation{}
+	lLoc := &mockLocation{}
+	rLoc := &mockLocation{}
 	lLoc.On("ThruEnd", rLoc).Return(finalLoc, nil)
 	op := &common.Token{}
 	l := &common.MockNode{}
@@ -245,8 +287,8 @@ func TestBinaryFactoryLocation(t *testing.T) {
 
 func TestBinaryFactoryLocationError(t *testing.T) {
 	s := &parser.MockState{}
-	lLoc := &common.MockLocation{}
-	rLoc := &common.MockLocation{}
+	lLoc := &mockLocation{}
+	rLoc := &mockLocation{}
 	lLoc.On("ThruEnd", rLoc).Return(nil, assert.AnError)
 	op := &common.Token{}
 	l := &common.MockNode{}
@@ -264,7 +306,7 @@ func TestBinaryFactoryLocationError(t *testing.T) {
 }
 
 func TestBinaryOperatorLocation(t *testing.T) {
-	loc := &common.MockLocation{}
+	loc := &mockLocation{}
 	obj := &BinaryOperator{
 		Loc: loc,
 	}

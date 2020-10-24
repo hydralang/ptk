@@ -35,7 +35,7 @@ func TestMockNodeLocationNil(t *testing.T) {
 }
 
 func TestMockNodeLocationNotNil(t *testing.T) {
-	expected := &MockLocation{}
+	expected := &mockLocation{}
 	obj := &MockNode{}
 	obj.On("Location").Return(expected)
 

@@ -12,26 +12,22 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package lexer
+package scanner
 
 import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
-func TestMockRecognizerImplementsRecognizer(t *testing.T) {
-	assert.Implements(t, (*Recognizer)(nil), &MockRecognizer{})
+type mockScanner struct {
+	mock.Mock
 }
 
-func TestMockRecognizerRecognize(t *testing.T) {
-	s := &MockState{}
-	str := &mockBackTracker{}
-	obj := &MockRecognizer{}
-	obj.On("Recognize", s, str).Return(true)
+func (m *mockScanner) Next() (Char, error) {
+	args := m.MethodCalled("Next")
 
-	result := obj.Recognize(s, str)
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(Char), args.Error(1)
+	}
 
-	assert.True(t, result)
-	obj.AssertExpectations(t)
+	return Char{}, args.Error(1)
 }

@@ -19,69 +19,57 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
-	"github.com/hydralang/ptk/common"
+	"github.com/hydralang/ptk/scanner"
 )
 
-func TestMockBackTrackerImplementBackTracker(t *testing.T) {
-	assert.Implements(t, (*BackTracker)(nil), &MockBackTracker{})
+type mockScanner struct {
+	mock.Mock
 }
 
-func TestMockBackTrackerMore(t *testing.T) {
-	obj := &MockBackTracker{}
-	obj.On("More").Return(true)
+func (m *mockScanner) Next() (scanner.Char, error) {
+	args := m.MethodCalled("Next")
 
-	result := obj.More()
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(scanner.Char), args.Error(1)
+	}
 
-	assert.True(t, result)
-	obj.AssertExpectations(t)
+	return scanner.Char{}, args.Error(1)
 }
 
-func TestMockBackTrackerSetMax(t *testing.T) {
-	obj := &MockBackTracker{}
-	obj.On("SetMax", 42)
-
-	obj.SetMax(42)
-
-	obj.AssertExpectations(t)
+type mockBackTracker struct {
+	mockScanner
 }
 
-func TestMockBackTrackerAccept(t *testing.T) {
-	obj := &MockBackTracker{}
-	obj.On("Accept", 42)
+func (m *mockBackTracker) More() bool {
+	args := m.MethodCalled("More")
 
-	obj.Accept(42)
-
-	obj.AssertExpectations(t)
+	return args.Bool(0)
 }
 
-func TestMockBackTrackerLen(t *testing.T) {
-	obj := &MockBackTracker{}
-	obj.On("Len").Return(42)
-
-	result := obj.Len()
-
-	assert.Equal(t, 42, result)
-	obj.AssertExpectations(t)
+func (m *mockBackTracker) SetMax(max int) {
+	m.MethodCalled("SetMax", max)
 }
 
-func TestMockBackTrackerPos(t *testing.T) {
-	obj := &MockBackTracker{}
-	obj.On("Pos").Return(42)
-
-	result := obj.Pos()
-
-	assert.Equal(t, 42, result)
-	obj.AssertExpectations(t)
+func (m *mockBackTracker) Accept(leave int) {
+	m.MethodCalled("Accept", leave)
 }
 
-func TestMockBackTrackerBackTrack(t *testing.T) {
-	obj := &MockBackTracker{}
-	obj.On("BackTrack")
+func (m *mockBackTracker) Len() int {
+	args := m.MethodCalled("Len")
 
-	obj.BackTrack()
+	return args.Int(0)
+}
 
-	obj.AssertExpectations(t)
+func (m *mockBackTracker) Pos() int {
+	args := m.MethodCalled("Pos")
+
+	return args.Int(0)
+}
+
+func (m *mockBackTracker) BackTrack() {
+	m.MethodCalled("BackTrack")
 }
 
 func TestBackTrackerImplementsBackTracker(t *testing.T) {
@@ -89,7 +77,7 @@ func TestBackTrackerImplementsBackTracker(t *testing.T) {
 }
 
 func TestNewBackTracker(t *testing.T) {
-	src := &common.MockCharStream{}
+	src := &mockScanner{}
 
 	result := NewBackTracker(src, 42)
 
@@ -98,201 +86,201 @@ func TestNewBackTracker(t *testing.T) {
 		max:   42,
 		saved: &list.List{},
 		last: btElem{
-			ch: common.Char{Rune: common.EOF},
+			ch: scanner.Char{Rune: scanner.EOF},
 		},
 	}, result)
 }
 
 func TestBackTrackerNextBase(t *testing.T) {
-	src := &common.MockCharStream{}
-	src.On("Next").Return(common.Char{Rune: 't'}, assert.AnError)
+	src := &mockScanner{}
+	src.On("Next").Return(scanner.Char{Rune: 't'}, assert.AnError)
 	obj := &backTracker{
 		src:   src,
 		max:   TrackAll,
 		saved: &list.List{},
 		last: btElem{
-			ch: common.Char{Rune: 'b'},
+			ch: scanner.Char{Rune: 'b'},
 		},
 	}
 
 	result, err := obj.Next()
 
 	assert.Same(t, assert.AnError, err)
-	assert.Equal(t, common.Char{Rune: 't'}, result)
+	assert.Equal(t, scanner.Char{Rune: 't'}, result)
 	assert.Same(t, src, obj.src)
 	assert.Equal(t, 1, obj.saved.Len())
 	assert.Equal(t, btElem{
-		ch:  common.Char{Rune: 't'},
+		ch:  scanner.Char{Rune: 't'},
 		err: assert.AnError,
 	}, obj.saved.Back().Value)
 	assert.Nil(t, obj.next)
 	assert.Equal(t, 1, obj.pos)
 	assert.Equal(t, btElem{
-		ch: common.Char{Rune: 'b'},
+		ch: scanner.Char{Rune: 'b'},
 	}, obj.last)
 }
 
 func TestBackTrackerNextTrackNone(t *testing.T) {
-	src := &common.MockCharStream{}
-	src.On("Next").Return(common.Char{Rune: 't'}, assert.AnError)
+	src := &mockScanner{}
+	src.On("Next").Return(scanner.Char{Rune: 't'}, assert.AnError)
 	obj := &backTracker{
 		src:   src,
 		max:   0,
 		saved: &list.List{},
 		last: btElem{
-			ch: common.Char{Rune: 'b'},
+			ch: scanner.Char{Rune: 'b'},
 		},
 	}
 
 	result, err := obj.Next()
 
 	assert.Same(t, assert.AnError, err)
-	assert.Equal(t, common.Char{Rune: 't'}, result)
+	assert.Equal(t, scanner.Char{Rune: 't'}, result)
 	assert.Same(t, src, obj.src)
 	assert.Equal(t, 0, obj.saved.Len())
 	assert.Nil(t, obj.next)
 	assert.Equal(t, 0, obj.pos)
 	assert.Equal(t, btElem{
-		ch: common.Char{Rune: 'b'},
+		ch: scanner.Char{Rune: 'b'},
 	}, obj.last)
 }
 
 func TestBackTrackerNextNoTrim(t *testing.T) {
-	src := &common.MockCharStream{}
-	src.On("Next").Return(common.Char{Rune: 't'}, assert.AnError)
+	src := &mockScanner{}
+	src.On("Next").Return(scanner.Char{Rune: 't'}, assert.AnError)
 	obj := &backTracker{
 		src:   src,
 		max:   4,
 		saved: &list.List{},
 		last: btElem{
-			ch: common.Char{Rune: 'b'},
+			ch: scanner.Char{Rune: 'b'},
 		},
 		pos: 3,
 	}
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 'e'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 's'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 'e'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 's'}})
 
 	result, err := obj.Next()
 
 	assert.Same(t, assert.AnError, err)
-	assert.Equal(t, common.Char{Rune: 't'}, result)
+	assert.Equal(t, scanner.Char{Rune: 't'}, result)
 	assert.Same(t, src, obj.src)
 	assert.Equal(t, 4, obj.saved.Len())
 	assert.Equal(t, btElem{
-		ch:  common.Char{Rune: 't'},
+		ch:  scanner.Char{Rune: 't'},
 		err: assert.AnError,
 	}, obj.saved.Back().Value)
 	assert.Nil(t, obj.next)
 	assert.Equal(t, 4, obj.pos)
 	assert.Equal(t, btElem{
-		ch: common.Char{Rune: 'b'},
+		ch: scanner.Char{Rune: 'b'},
 	}, obj.last)
 }
 
 func TestBackTrackerNextWithTrim(t *testing.T) {
-	src := &common.MockCharStream{}
-	src.On("Next").Return(common.Char{Rune: 't'}, assert.AnError)
+	src := &mockScanner{}
+	src.On("Next").Return(scanner.Char{Rune: 't'}, assert.AnError)
 	obj := &backTracker{
 		src:   src,
 		max:   3,
 		saved: &list.List{},
 		last: btElem{
-			ch: common.Char{Rune: 'b'},
+			ch: scanner.Char{Rune: 'b'},
 		},
 		pos: 3,
 	}
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 'e'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 's'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 'e'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 's'}})
 
 	result, err := obj.Next()
 
 	assert.Same(t, assert.AnError, err)
-	assert.Equal(t, common.Char{Rune: 't'}, result)
+	assert.Equal(t, scanner.Char{Rune: 't'}, result)
 	assert.Same(t, src, obj.src)
 	assert.Equal(t, 3, obj.saved.Len())
 	assert.Equal(t, btElem{
-		ch:  common.Char{Rune: 't'},
+		ch:  scanner.Char{Rune: 't'},
 		err: assert.AnError,
 	}, obj.saved.Back().Value)
 	assert.Nil(t, obj.next)
 	assert.Equal(t, 3, obj.pos)
 	assert.Equal(t, btElem{
-		ch: common.Char{Rune: 'b'},
+		ch: scanner.Char{Rune: 'b'},
 	}, obj.last)
 }
 
 func TestBackTrackerNextSaveEOF(t *testing.T) {
-	src := &common.MockCharStream{}
-	src.On("Next").Return(common.Char{Rune: common.EOF}, assert.AnError)
+	src := &mockScanner{}
+	src.On("Next").Return(scanner.Char{Rune: scanner.EOF}, assert.AnError)
 	obj := &backTracker{
 		src:   src,
 		max:   TrackAll,
 		saved: &list.List{},
 		last: btElem{
-			ch: common.Char{Rune: 'b'},
+			ch: scanner.Char{Rune: 'b'},
 		},
 	}
 
 	result, err := obj.Next()
 
 	assert.Same(t, assert.AnError, err)
-	assert.Equal(t, common.Char{Rune: common.EOF}, result)
+	assert.Equal(t, scanner.Char{Rune: scanner.EOF}, result)
 	assert.Nil(t, obj.src)
 	assert.Equal(t, 1, obj.saved.Len())
 	assert.Equal(t, btElem{
-		ch:  common.Char{Rune: common.EOF},
+		ch:  scanner.Char{Rune: scanner.EOF},
 		err: assert.AnError,
 	}, obj.saved.Back().Value)
 	assert.Nil(t, obj.next)
 	assert.Equal(t, 1, obj.pos)
 	assert.Equal(t, btElem{
-		ch: common.Char{Rune: common.EOF},
+		ch: scanner.Char{Rune: scanner.EOF},
 	}, obj.last)
 }
 
 func TestBackTrackerNextBackTracked(t *testing.T) {
-	src := &common.MockCharStream{}
+	src := &mockScanner{}
 	obj := &backTracker{
 		src:   src,
 		max:   TrackAll,
 		saved: &list.List{},
 		last: btElem{
-			ch: common.Char{Rune: 'b'},
+			ch: scanner.Char{Rune: 'b'},
 		},
 		pos: 0,
 	}
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}, err: assert.AnError})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 'e'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 's'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}, err: assert.AnError})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 'e'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 's'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}})
 	obj.next = obj.saved.Front()
 
 	result, err := obj.Next()
 
 	assert.Same(t, assert.AnError, err)
-	assert.Equal(t, common.Char{Rune: 't'}, result)
+	assert.Equal(t, scanner.Char{Rune: 't'}, result)
 	assert.Same(t, src, obj.src)
 	assert.Equal(t, 4, obj.saved.Len())
 	assert.Equal(t, btElem{
-		ch: common.Char{Rune: 't'},
+		ch: scanner.Char{Rune: 't'},
 	}, obj.saved.Back().Value)
 	assert.Same(t, obj.saved.Front().Next(), obj.next)
 	assert.Equal(t, 1, obj.pos)
 	assert.Equal(t, btElem{
-		ch: common.Char{Rune: 'b'},
+		ch: scanner.Char{Rune: 'b'},
 	}, obj.last)
 }
 
 func TestBackTrackerNextExtension(t *testing.T) {
-	src := &common.MockCharStream{}
-	src.On("Next").Return(common.Char{Rune: 't'}, assert.AnError)
+	src := &mockScanner{}
+	src.On("Next").Return(scanner.Char{Rune: 't'}, assert.AnError)
 	obj := &backTracker{
 		max:   TrackAll,
 		saved: &list.List{},
 		last: btElem{
-			ch: common.Char{Rune: 'b'},
+			ch: scanner.Char{Rune: 'b'},
 		},
 		pos: 42,
 	}
@@ -300,13 +288,13 @@ func TestBackTrackerNextExtension(t *testing.T) {
 	result, err := obj.Next()
 
 	assert.Nil(t, err)
-	assert.Equal(t, common.Char{Rune: 'b'}, result)
+	assert.Equal(t, scanner.Char{Rune: 'b'}, result)
 	assert.Nil(t, obj.src)
 	assert.Equal(t, 0, obj.saved.Len())
 	assert.Nil(t, obj.next)
 	assert.Equal(t, 42, obj.pos)
 	assert.Equal(t, btElem{
-		ch: common.Char{Rune: 'b'},
+		ch: scanner.Char{Rune: 'b'},
 	}, obj.last)
 }
 
@@ -314,7 +302,7 @@ func TestBackTrackerMoreBackTracked(t *testing.T) {
 	obj := &backTracker{
 		saved: &list.List{},
 	}
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}})
 	obj.next = obj.saved.Front()
 
 	result := obj.More()
@@ -323,7 +311,7 @@ func TestBackTrackerMoreBackTracked(t *testing.T) {
 }
 
 func TestBackTrackerMoreHaveSrc(t *testing.T) {
-	src := &common.MockCharStream{}
+	src := &mockScanner{}
 	obj := &backTracker{
 		src: src,
 	}
@@ -347,10 +335,10 @@ func TestBackTrackerSetMaxBase(t *testing.T) {
 		saved: &list.List{},
 		pos:   4,
 	}
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 'e'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 's'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 'e'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 's'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}})
 
 	obj.SetMax(TrackAll)
 
@@ -365,10 +353,10 @@ func TestBackTrackerSetMax0(t *testing.T) {
 		saved: &list.List{},
 		pos:   4,
 	}
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 'e'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 's'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 'e'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 's'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}})
 
 	obj.SetMax(0)
 
@@ -383,10 +371,10 @@ func TestBackTrackerSetMaxIncrease(t *testing.T) {
 		saved: &list.List{},
 		pos:   4,
 	}
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 'e'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 's'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 'e'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 's'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}})
 
 	obj.SetMax(4)
 
@@ -401,16 +389,16 @@ func TestBackTrackerSetMaxDecrease(t *testing.T) {
 		saved: &list.List{},
 		pos:   4,
 	}
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 'e'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 's'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 'e'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 's'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}})
 
 	obj.SetMax(2)
 
 	assert.Equal(t, 2, obj.max)
 	assert.Equal(t, 2, obj.saved.Len())
-	assert.Equal(t, btElem{ch: common.Char{Rune: 's'}}, obj.saved.Front().Value)
+	assert.Equal(t, btElem{ch: scanner.Char{Rune: 's'}}, obj.saved.Front().Value)
 	assert.Equal(t, 2, obj.pos)
 }
 
@@ -433,10 +421,10 @@ func TestBackTrackerAccept0Current(t *testing.T) {
 		saved: &list.List{},
 		pos:   4,
 	}
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 'e'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 's'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 'e'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 's'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}})
 
 	obj.Accept(0)
 
@@ -450,16 +438,16 @@ func TestBackTrackerAccept2Current(t *testing.T) {
 		saved: &list.List{},
 		pos:   4,
 	}
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 'e'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 's'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 'e'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 's'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}})
 
 	obj.Accept(2)
 
 	assert.Equal(t, 2, obj.saved.Len())
-	assert.Equal(t, btElem{ch: common.Char{Rune: 's'}}, obj.saved.Front().Value)
-	assert.Equal(t, btElem{ch: common.Char{Rune: 't'}}, obj.saved.Front().Next().Value)
+	assert.Equal(t, btElem{ch: scanner.Char{Rune: 's'}}, obj.saved.Front().Value)
+	assert.Equal(t, btElem{ch: scanner.Char{Rune: 't'}}, obj.saved.Front().Next().Value)
 	assert.Equal(t, 2, obj.pos)
 }
 
@@ -469,18 +457,18 @@ func TestBackTrackerAccept10Current(t *testing.T) {
 		saved: &list.List{},
 		pos:   4,
 	}
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 'e'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 's'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 'e'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 's'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}})
 
 	obj.Accept(10)
 
 	assert.Equal(t, 4, obj.saved.Len())
-	assert.Equal(t, btElem{ch: common.Char{Rune: 't'}}, obj.saved.Front().Value)
-	assert.Equal(t, btElem{ch: common.Char{Rune: 'e'}}, obj.saved.Front().Next().Value)
-	assert.Equal(t, btElem{ch: common.Char{Rune: 's'}}, obj.saved.Front().Next().Next().Value)
-	assert.Equal(t, btElem{ch: common.Char{Rune: 't'}}, obj.saved.Front().Next().Next().Next().Value)
+	assert.Equal(t, btElem{ch: scanner.Char{Rune: 't'}}, obj.saved.Front().Value)
+	assert.Equal(t, btElem{ch: scanner.Char{Rune: 'e'}}, obj.saved.Front().Next().Value)
+	assert.Equal(t, btElem{ch: scanner.Char{Rune: 's'}}, obj.saved.Front().Next().Next().Value)
+	assert.Equal(t, btElem{ch: scanner.Char{Rune: 't'}}, obj.saved.Front().Next().Next().Next().Value)
 	assert.Equal(t, 4, obj.pos)
 }
 
@@ -490,16 +478,16 @@ func TestBackTrackerAccept0Point(t *testing.T) {
 		saved: &list.List{},
 		pos:   3,
 	}
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 'e'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 's'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 'e'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 's'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}})
 	obj.next = obj.saved.Back()
 
 	obj.Accept(0)
 
 	assert.Equal(t, 1, obj.saved.Len())
-	assert.Equal(t, btElem{ch: common.Char{Rune: 't'}}, obj.saved.Front().Value)
+	assert.Equal(t, btElem{ch: scanner.Char{Rune: 't'}}, obj.saved.Front().Value)
 	assert.Equal(t, 0, obj.pos)
 }
 
@@ -509,18 +497,18 @@ func TestBackTrackerAccept2Point(t *testing.T) {
 		saved: &list.List{},
 		pos:   3,
 	}
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 'e'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 's'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 'e'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 's'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}})
 	obj.next = obj.saved.Back()
 
 	obj.Accept(2)
 
 	assert.Equal(t, 3, obj.saved.Len())
-	assert.Equal(t, btElem{ch: common.Char{Rune: 'e'}}, obj.saved.Front().Value)
-	assert.Equal(t, btElem{ch: common.Char{Rune: 's'}}, obj.saved.Front().Next().Value)
-	assert.Equal(t, btElem{ch: common.Char{Rune: 't'}}, obj.saved.Front().Next().Next().Value)
+	assert.Equal(t, btElem{ch: scanner.Char{Rune: 'e'}}, obj.saved.Front().Value)
+	assert.Equal(t, btElem{ch: scanner.Char{Rune: 's'}}, obj.saved.Front().Next().Value)
+	assert.Equal(t, btElem{ch: scanner.Char{Rune: 't'}}, obj.saved.Front().Next().Next().Value)
 	assert.Equal(t, 2, obj.pos)
 }
 
@@ -530,19 +518,19 @@ func TestBackTrackerAccept10Point(t *testing.T) {
 		saved: &list.List{},
 		pos:   3,
 	}
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 'e'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 's'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 'e'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 's'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}})
 	obj.next = obj.saved.Back()
 
 	obj.Accept(10)
 
 	assert.Equal(t, 4, obj.saved.Len())
-	assert.Equal(t, btElem{ch: common.Char{Rune: 't'}}, obj.saved.Front().Value)
-	assert.Equal(t, btElem{ch: common.Char{Rune: 'e'}}, obj.saved.Front().Next().Value)
-	assert.Equal(t, btElem{ch: common.Char{Rune: 's'}}, obj.saved.Front().Next().Next().Value)
-	assert.Equal(t, btElem{ch: common.Char{Rune: 't'}}, obj.saved.Front().Next().Next().Next().Value)
+	assert.Equal(t, btElem{ch: scanner.Char{Rune: 't'}}, obj.saved.Front().Value)
+	assert.Equal(t, btElem{ch: scanner.Char{Rune: 'e'}}, obj.saved.Front().Next().Value)
+	assert.Equal(t, btElem{ch: scanner.Char{Rune: 's'}}, obj.saved.Front().Next().Next().Value)
+	assert.Equal(t, btElem{ch: scanner.Char{Rune: 't'}}, obj.saved.Front().Next().Next().Next().Value)
 	assert.Equal(t, 3, obj.pos)
 }
 
@@ -550,10 +538,10 @@ func TestBackTrackerLen(t *testing.T) {
 	obj := &backTracker{
 		saved: &list.List{},
 	}
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 'e'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 's'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 'e'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 's'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}})
 
 	result := obj.Len()
 
@@ -575,10 +563,10 @@ func TestBackTrackerBackTrack(t *testing.T) {
 		saved: &list.List{},
 		pos:   4,
 	}
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 'e'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 's'}})
-	obj.saved.PushBack(btElem{ch: common.Char{Rune: 't'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 'e'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 's'}})
+	obj.saved.PushBack(btElem{ch: scanner.Char{Rune: 't'}})
 
 	obj.BackTrack()
 

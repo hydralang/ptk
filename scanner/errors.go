@@ -12,7 +12,7 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package common
+package scanner
 
 import (
 	"errors"
@@ -22,7 +22,17 @@ import (
 // Simple errors that may be generated within the package.
 var (
 	ErrSplitLocation = errors.New("Attempt to range file location through an incompatible location")
+	ErrBadEncoding   = errors.New("Invalid UTF-8 encoding")
 )
+
+// EncodingErrorHandler is an interface for an encoding error handler.
+// A scanner will call the Handle method of the error handler, which
+// must return either nil or an error (which may be the same error).
+type EncodingErrorHandler interface {
+	// Handle handles the reported encoding error.  If it returns
+	// non-nil, the scanner will report an error.
+	Handle(e error) error
+}
 
 // locationError is an implementation of error that wraps an error and
 // includes a location.

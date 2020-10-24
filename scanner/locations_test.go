@@ -12,13 +12,9 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package common
+package scanner
 
-import (
-	"github.com/stretchr/testify/mock"
-
-	"github.com/hydralang/ptk/scanner"
-)
+import "github.com/stretchr/testify/mock"
 
 type mockLocation struct {
 	mock.Mock
@@ -30,31 +26,31 @@ func (m *mockLocation) String() string {
 	return args.String(0)
 }
 
-func (m *mockLocation) Thru(other scanner.Location) (scanner.Location, error) {
+func (m *mockLocation) Thru(other Location) (Location, error) {
 	args := m.MethodCalled("Thru", other)
 
 	if tmp := args.Get(0); tmp != nil {
-		return tmp.(scanner.Location), args.Error(1)
+		return tmp.(Location), args.Error(1)
 	}
 
 	return nil, args.Error(1)
 }
 
-func (m *mockLocation) ThruEnd(other scanner.Location) (scanner.Location, error) {
+func (m *mockLocation) ThruEnd(other Location) (Location, error) {
 	args := m.MethodCalled("ThruEnd", other)
 
 	if tmp := args.Get(0); tmp != nil {
-		return tmp.(scanner.Location), args.Error(1)
+		return tmp.(Location), args.Error(1)
 	}
 
 	return nil, args.Error(1)
 }
 
-func (m *mockLocation) Incr(c rune, tabstop int) scanner.Location {
+func (m *mockLocation) Incr(c rune, tabstop int) Location {
 	args := m.MethodCalled("Incr", c, tabstop)
 
 	if tmp := args.Get(0); tmp != nil {
-		return tmp.(scanner.Location)
+		return tmp.(Location)
 	}
 
 	return nil

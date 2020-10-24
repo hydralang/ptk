@@ -12,65 +12,63 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package charstreams
+package scanner
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/hydralang/ptk/common"
 )
 
-func TestListCharStreamImplementsCharStream(t *testing.T) {
-	assert.Implements(t, (*common.CharStream)(nil), &listCharStream{})
+func TestListScannerImplementsScanner(t *testing.T) {
+	assert.Implements(t, (*Scanner)(nil), &ListScanner{})
 }
 
-func TestNewListCharStream(t *testing.T) {
-	chars := []common.Char{
+func TestNewListScanner(t *testing.T) {
+	chars := []Char{
 		{Rune: 't'},
 		{Rune: 'e'},
 		{Rune: 's'},
 		{Rune: 't'},
 	}
 
-	result := NewListCharStream(chars, assert.AnError)
+	result := NewListScanner(chars, assert.AnError)
 
-	assert.Equal(t, &listCharStream{
+	assert.Equal(t, &ListScanner{
 		chars: chars,
 		err:   assert.AnError,
 	}, result)
 }
 
-func TestListCharStreamNextFirst(t *testing.T) {
-	chars := []common.Char{
+func TestListScannerNextFirst(t *testing.T) {
+	chars := []Char{
 		{Rune: 't'},
 		{Rune: 'e'},
 		{Rune: 's'},
 		{Rune: 't'},
 	}
-	obj := &listCharStream{
+	obj := &ListScanner{
 		chars: chars,
 	}
 
 	result, err := obj.Next()
 
 	assert.NoError(t, err)
-	assert.Equal(t, common.Char{Rune: 't'}, result)
-	assert.Equal(t, &listCharStream{
+	assert.Equal(t, Char{Rune: 't'}, result)
+	assert.Equal(t, &ListScanner{
 		chars: chars,
 		pos:   1,
 	}, obj)
 }
 
-func TestListCharStreamNextLast(t *testing.T) {
-	chars := []common.Char{
+func TestListScannerNextLast(t *testing.T) {
+	chars := []Char{
 		{Rune: 't'},
 		{Rune: 'e'},
 		{Rune: 's'},
 		{Rune: 't'},
 	}
-	obj := &listCharStream{
+	obj := &ListScanner{
 		chars: chars,
 		pos:   3,
 	}
@@ -78,21 +76,21 @@ func TestListCharStreamNextLast(t *testing.T) {
 	result, err := obj.Next()
 
 	assert.NoError(t, err)
-	assert.Equal(t, common.Char{Rune: 't'}, result)
-	assert.Equal(t, &listCharStream{
+	assert.Equal(t, Char{Rune: 't'}, result)
+	assert.Equal(t, &ListScanner{
 		chars: chars,
 		pos:   4,
 	}, obj)
 }
 
-func TestListCharStreamNextAgain(t *testing.T) {
-	chars := []common.Char{
+func TestListScannerNextAgain(t *testing.T) {
+	chars := []Char{
 		{Rune: 't'},
 		{Rune: 'e'},
 		{Rune: 's'},
 		{Rune: 't'},
 	}
-	obj := &listCharStream{
+	obj := &ListScanner{
 		chars: chars,
 		pos:   4,
 	}
@@ -100,36 +98,36 @@ func TestListCharStreamNextAgain(t *testing.T) {
 	result, err := obj.Next()
 
 	assert.NoError(t, err)
-	assert.Equal(t, common.Char{Rune: 't'}, result)
-	assert.Equal(t, &listCharStream{
+	assert.Equal(t, Char{Rune: 't'}, result)
+	assert.Equal(t, &ListScanner{
 		chars: chars,
 		pos:   4,
 	}, obj)
 }
 
-func TestListCharStreamNextEOF(t *testing.T) {
-	chars := []common.Char{
-		{Rune: common.EOF},
+func TestListScannerNextEOF(t *testing.T) {
+	chars := []Char{
+		{Rune: EOF},
 	}
-	obj := &listCharStream{
+	obj := &ListScanner{
 		chars: chars,
 	}
 
 	result, err := obj.Next()
 
 	assert.NoError(t, err)
-	assert.Equal(t, common.Char{Rune: common.EOF}, result)
-	assert.Equal(t, &listCharStream{
+	assert.Equal(t, Char{Rune: EOF}, result)
+	assert.Equal(t, &ListScanner{
 		chars: chars,
 		pos:   1,
 	}, obj)
 }
 
-func TestListCharStreamNextEOFWithError(t *testing.T) {
-	chars := []common.Char{
-		{Rune: common.EOF},
+func TestListScannerNextEOFWithError(t *testing.T) {
+	chars := []Char{
+		{Rune: EOF},
 	}
-	obj := &listCharStream{
+	obj := &ListScanner{
 		chars: chars,
 		err:   assert.AnError,
 	}
@@ -137,8 +135,8 @@ func TestListCharStreamNextEOFWithError(t *testing.T) {
 	result, err := obj.Next()
 
 	assert.Same(t, assert.AnError, err)
-	assert.Equal(t, common.Char{Rune: common.EOF}, result)
-	assert.Equal(t, &listCharStream{
+	assert.Equal(t, Char{Rune: EOF}, result)
+	assert.Equal(t, &ListScanner{
 		chars: chars,
 		pos:   1,
 	}, obj)

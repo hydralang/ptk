@@ -12,26 +12,14 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package lexer
+package scanner
 
-import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-)
-
-func TestMockRecognizerImplementsRecognizer(t *testing.T) {
-	assert.Implements(t, (*Recognizer)(nil), &MockRecognizer{})
-}
-
-func TestMockRecognizerRecognize(t *testing.T) {
-	s := &MockState{}
-	str := &mockBackTracker{}
-	obj := &MockRecognizer{}
-	obj.On("Recognize", s, str).Return(true)
-
-	result := obj.Recognize(s, str)
-
-	assert.True(t, result)
-	obj.AssertExpectations(t)
+// Scanner presents a stream of characters.  The basic scanner does
+// not provide backtracking or character push-back.  The FileScanner
+// is one implementation of Scanner.
+type Scanner interface {
+	// Next returns the next character from the stream as a Char,
+	// which will include the character's location.  If an error
+	// was encountered, that will also be returned.
+	Next() (Char, error)
 }

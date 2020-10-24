@@ -12,9 +12,7 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package charstreams
-
-import "github.com/stretchr/testify/mock"
+package scanner
 
 // LineDis is a type for the return value of LineStyle.Handle.
 type LineDis int
@@ -36,25 +34,6 @@ type LineStyle interface {
 	// the disposition of the character; and a LineStyle object to
 	// use next time around.
 	Handle(chs []rune) (LineDis, LineStyle)
-}
-
-// MockLineStyle is a mock implementation of the LineStyle interface.
-type MockLineStyle struct {
-	mock.Mock
-}
-
-// Handle checks to see if a line ending sequence has been
-// encountered.  It returns a LineDis value, which indicates the
-// disposition of the character; and a LineStyle object to use next
-// time around.
-func (m *MockLineStyle) Handle(chs []rune) (LineDis, LineStyle) {
-	args := m.MethodCalled("Handle", chs)
-
-	if tmp := args.Get(1); tmp != nil {
-		return args.Get(0).(LineDis), tmp.(LineStyle)
-	}
-
-	return args.Get(0).(LineDis), nil
 }
 
 // unixLineStyle is a style for handling the case of bare newline line
