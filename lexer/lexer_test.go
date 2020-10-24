@@ -21,7 +21,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/hydralang/ptk/common"
 	"github.com/hydralang/ptk/scanner"
 )
 
@@ -72,7 +71,7 @@ func TestMockLexerLexNil(t *testing.T) {
 }
 
 func TestMockLexerLexNotNil(t *testing.T) {
-	stream := &common.MockTokenStream{}
+	stream := &MockTokenStream{}
 	cs := &mockScanner{}
 	obj := &MockLexer{}
 	obj.On("Lex", cs, mock.Anything).Return(stream)

@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/hydralang/ptk/common"
+	"github.com/hydralang/ptk/lexer"
 	"github.com/hydralang/ptk/parser"
 	"github.com/hydralang/ptk/scanner"
 )
@@ -69,13 +70,13 @@ func (an *AnnotatedNode) Unwrap() common.Node {
 // unary operator, e.g., "~".
 type UnaryOperator struct {
 	Loc scanner.Location // The location of the expression
-	Op  *common.Token    // The unary operator
+	Op  *lexer.Token     // The unary operator
 	Exp common.Node      // The expression acted upon
 }
 
 // UnaryFactory is a factory function that may be passed to Prefix,
 // and which constructs a UnaryOperator node.
-func UnaryFactory(s parser.State, op *common.Token, exp common.Node) (common.Node, error) {
+func UnaryFactory(s parser.State, op *lexer.Token, exp common.Node) (common.Node, error) {
 	obj := &UnaryOperator{
 		Op:  op,
 		Exp: exp,
@@ -114,14 +115,14 @@ func (u *UnaryOperator) String() string {
 // binary operator, e.g., "*".
 type BinaryOperator struct {
 	Loc scanner.Location // The location of the expression
-	Op  *common.Token    // The unary operator
+	Op  *lexer.Token     // The unary operator
 	L   common.Node      // The left-hand side expression
 	R   common.Node      // The right-hand side expression
 }
 
 // BinaryFactory is a factory function that may be passed to Infix or
 // InfixR, and which constructs a BinaryOperator node.
-func BinaryFactory(s parser.State, l, r common.Node, op *common.Token) (common.Node, error) {
+func BinaryFactory(s parser.State, l, r common.Node, op *lexer.Token) (common.Node, error) {
 	obj := &BinaryOperator{
 		Op: op,
 		L:  l,

@@ -12,7 +12,7 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package common
+package lexer
 
 import (
 	"bytes"
@@ -25,8 +25,7 @@ import (
 
 // Token represents a single token emitted by the lexical analyzer.  A
 // token has an associated symbol, a location, and optionally the
-// original text and a semantic value.  It also implements the Node
-// interface, allowing a Token to be a leaf Node in an AST.
+// original text and a semantic value.
 type Token struct {
 	Type  string           // The type of token
 	Loc   scanner.Location // The location of the token
@@ -37,11 +36,6 @@ type Token struct {
 // Location returns the node's location range.
 func (t *Token) Location() scanner.Location {
 	return t.Loc
-}
-
-// Children returns a list of child nodes.
-func (t *Token) Children() []Node {
-	return []Node{}
 }
 
 // String returns a string describing the node.  This should include

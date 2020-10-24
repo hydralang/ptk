@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/hydralang/ptk/common"
+	"github.com/hydralang/ptk/lexer"
 	"github.com/hydralang/ptk/parser"
 	"github.com/hydralang/ptk/scanner"
 )
@@ -141,7 +142,7 @@ func TestUnaryOperatorImplementsNode(t *testing.T) {
 
 func TestUnaryFactoryBase(t *testing.T) {
 	s := &parser.MockState{}
-	op := &common.Token{}
+	op := &lexer.Token{}
 	exp := &common.MockNode{}
 	exp.On("Location").Return(nil)
 
@@ -160,7 +161,7 @@ func TestUnaryFactoryLocation(t *testing.T) {
 	opLoc := &mockLocation{}
 	expLoc := &mockLocation{}
 	opLoc.On("ThruEnd", expLoc).Return(finalLoc, nil)
-	op := &common.Token{
+	op := &lexer.Token{
 		Loc: opLoc,
 	}
 	exp := &common.MockNode{}
@@ -184,7 +185,7 @@ func TestUnaryFactoryLocationError(t *testing.T) {
 	opLoc := &mockLocation{}
 	expLoc := &mockLocation{}
 	opLoc.On("ThruEnd", expLoc).Return(nil, assert.AnError)
-	op := &common.Token{
+	op := &lexer.Token{
 		Loc: opLoc,
 	}
 	exp := &common.MockNode{}
@@ -224,7 +225,7 @@ func TestUnaryOperatorChildren(t *testing.T) {
 
 func TestUnaryOperatorString(t *testing.T) {
 	obj := &UnaryOperator{
-		Op: &common.Token{Type: "op"},
+		Op: &lexer.Token{Type: "op"},
 	}
 
 	result := obj.String()
@@ -238,7 +239,7 @@ func TestBinaryOperatorImplementsNode(t *testing.T) {
 
 func TestBinaryFactoryBase(t *testing.T) {
 	s := &parser.MockState{}
-	op := &common.Token{}
+	op := &lexer.Token{}
 	l := &common.MockNode{}
 	l.On("Location").Return(nil)
 	r := &common.MockNode{}
@@ -262,7 +263,7 @@ func TestBinaryFactoryLocation(t *testing.T) {
 	lLoc := &mockLocation{}
 	rLoc := &mockLocation{}
 	lLoc.On("ThruEnd", rLoc).Return(finalLoc, nil)
-	op := &common.Token{}
+	op := &lexer.Token{}
 	l := &common.MockNode{}
 	l.On("Location").Return(lLoc)
 	r := &common.MockNode{}
@@ -290,7 +291,7 @@ func TestBinaryFactoryLocationError(t *testing.T) {
 	lLoc := &mockLocation{}
 	rLoc := &mockLocation{}
 	lLoc.On("ThruEnd", rLoc).Return(nil, assert.AnError)
-	op := &common.Token{}
+	op := &lexer.Token{}
 	l := &common.MockNode{}
 	l.On("Location").Return(lLoc)
 	r := &common.MockNode{}
@@ -336,7 +337,7 @@ func TestBinaryOperatorChildren(t *testing.T) {
 
 func TestBinaryOperatorString(t *testing.T) {
 	obj := &BinaryOperator{
-		Op: &common.Token{Type: "op"},
+		Op: &lexer.Token{Type: "op"},
 	}
 
 	result := obj.String()

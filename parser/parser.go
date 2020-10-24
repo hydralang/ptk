@@ -18,11 +18,12 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/hydralang/ptk/common"
+	"github.com/hydralang/ptk/lexer"
 )
 
 // Patch points to enable testing functions below in isolation.
 var (
-	newState func(Parser, common.TokenStream, []Option) State = NewState
+	newState func(Parser, lexer.TokenStream, []Option) State = NewState
 )
 
 // Option is a parse option that may be passed to one of the Parser
@@ -46,16 +47,16 @@ type Parser interface {
 
 	// Expression parses a single expression from the specified
 	// token stream.
-	Expression(stream common.TokenStream, options ...Option) (common.Node, error)
+	Expression(stream lexer.TokenStream, options ...Option) (common.Node, error)
 
 	// Statement parses a single statement from the specified
 	// token stream.
-	Statement(stream common.TokenStream, options ...Option) (common.Node, error)
+	Statement(stream lexer.TokenStream, options ...Option) (common.Node, error)
 
 	// Statements parses all statements from the specified token
 	// stream.  It is essentially equivalent to running Statement
 	// in a loop until all tokens are exhausted.
-	Statements(stream common.TokenStream, options ...Option) ([]common.Node, error)
+	Statements(stream lexer.TokenStream, options ...Option) ([]common.Node, error)
 }
 
 // MockParser is a mock implementation of the Parser interface.
@@ -77,7 +78,7 @@ func (m *MockParser) Table() Table {
 
 // Expression parses a single expression from the specified token
 // stream.
-func (m *MockParser) Expression(stream common.TokenStream, options ...Option) (common.Node, error) {
+func (m *MockParser) Expression(stream lexer.TokenStream, options ...Option) (common.Node, error) {
 	args := m.MethodCalled("Expression", stream, options)
 
 	if tmp := args.Get(0); tmp != nil {
@@ -89,7 +90,7 @@ func (m *MockParser) Expression(stream common.TokenStream, options ...Option) (c
 
 // Statement parses a single statement from the specified token
 // stream.
-func (m *MockParser) Statement(stream common.TokenStream, options ...Option) (common.Node, error) {
+func (m *MockParser) Statement(stream lexer.TokenStream, options ...Option) (common.Node, error) {
 	args := m.MethodCalled("Statement", stream, options)
 
 	if tmp := args.Get(0); tmp != nil {
@@ -102,7 +103,7 @@ func (m *MockParser) Statement(stream common.TokenStream, options ...Option) (co
 // Statements parses all statements from the specified token stream.
 // It is essentially equivalent to running Statement in a loop until
 // all tokens are exhausted.
-func (m *MockParser) Statements(stream common.TokenStream, options ...Option) ([]common.Node, error) {
+func (m *MockParser) Statements(stream lexer.TokenStream, options ...Option) ([]common.Node, error) {
 	args := m.MethodCalled("Statements", stream, options)
 
 	if tmp := args.Get(0); tmp != nil {
@@ -132,7 +133,7 @@ func (p *parser) Table() Table {
 
 // Expression parses a single expression from the specified token
 // stream.
-func (p *parser) Expression(stream common.TokenStream, options ...Option) (common.Node, error) {
+func (p *parser) Expression(stream lexer.TokenStream, options ...Option) (common.Node, error) {
 	// Construct a state
 	s := newState(p, stream, options)
 
@@ -142,7 +143,7 @@ func (p *parser) Expression(stream common.TokenStream, options ...Option) (commo
 
 // Statement parses a single statement from the specified token
 // stream.
-func (p *parser) Statement(stream common.TokenStream, options ...Option) (common.Node, error) {
+func (p *parser) Statement(stream lexer.TokenStream, options ...Option) (common.Node, error) {
 	// Construct a state
 	s := newState(p, stream, options)
 
@@ -153,7 +154,7 @@ func (p *parser) Statement(stream common.TokenStream, options ...Option) (common
 // Statements parses all statements from the specified token stream.
 // It is essentially equivalent to running Statement in a loop until
 // all tokens are exhausted.
-func (p *parser) Statements(stream common.TokenStream, options ...Option) ([]common.Node, error) {
+func (p *parser) Statements(stream lexer.TokenStream, options ...Option) ([]common.Node, error) {
 	// Construct a state
 	s := newState(p, stream, options)
 

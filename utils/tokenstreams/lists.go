@@ -14,21 +14,21 @@
 
 package tokenstreams
 
-import "github.com/hydralang/ptk/common"
+import "github.com/hydralang/ptk/lexer"
 
 // listTokenStream is an implementation of TokenStream that is
 // initialized with a list of tokens, and simply returns the tokens in
 // sequence.
 type listTokenStream struct {
-	toks    []*common.Token // The list of tokens
-	idx     int             // The index of the current token to return
-	started bool            // A boolean indicating whether the iterator has started
+	toks    []*lexer.Token // The list of tokens
+	idx     int            // The index of the current token to return
+	started bool           // A boolean indicating whether the iterator has started
 }
 
 // NewListTokenStream returns a TokenStream that retrieves its tokens
 // from a list passed to the function.  This actually uses a
 // ChanTokenStream under the covers.
-func NewListTokenStream(toks []*common.Token) common.TokenStream {
+func NewListTokenStream(toks []*lexer.Token) lexer.TokenStream {
 	// return obj
 	return &listTokenStream{
 		toks: toks,
@@ -37,7 +37,7 @@ func NewListTokenStream(toks []*common.Token) common.TokenStream {
 
 // Next returns the next token.  At the end of the token stream, a nil
 // should be returned.
-func (lts *listTokenStream) Next() *common.Token {
+func (lts *listTokenStream) Next() *lexer.Token {
 	// Check the state
 	switch {
 	case !lts.started: // Need to start?

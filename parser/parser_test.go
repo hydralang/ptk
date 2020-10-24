@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/hydralang/ptk/common"
+	"github.com/hydralang/ptk/lexer"
 )
 
 func TestAppState(t *testing.T) {
@@ -62,7 +63,7 @@ func TestMockParserTableNotNil(t *testing.T) {
 }
 
 func TestMockParserExpressionNil(t *testing.T) {
-	stream := &common.MockTokenStream{}
+	stream := &lexer.MockTokenStream{}
 	obj := &MockParser{}
 	obj.On("Expression", stream, mock.Anything).Return(nil, assert.AnError)
 
@@ -75,7 +76,7 @@ func TestMockParserExpressionNil(t *testing.T) {
 
 func TestMockParserExpressionNotNil(t *testing.T) {
 	expected := &common.MockNode{}
-	stream := &common.MockTokenStream{}
+	stream := &lexer.MockTokenStream{}
 	obj := &MockParser{}
 	obj.On("Expression", stream, mock.Anything).Return(expected, assert.AnError)
 
@@ -87,7 +88,7 @@ func TestMockParserExpressionNotNil(t *testing.T) {
 }
 
 func TestMockParserStatementNil(t *testing.T) {
-	stream := &common.MockTokenStream{}
+	stream := &lexer.MockTokenStream{}
 	obj := &MockParser{}
 	obj.On("Statement", stream, mock.Anything).Return(nil, assert.AnError)
 
@@ -100,7 +101,7 @@ func TestMockParserStatementNil(t *testing.T) {
 
 func TestMockParserStatementNotNil(t *testing.T) {
 	expected := &common.MockNode{}
-	stream := &common.MockTokenStream{}
+	stream := &lexer.MockTokenStream{}
 	obj := &MockParser{}
 	obj.On("Statement", stream, mock.Anything).Return(expected, assert.AnError)
 
@@ -112,7 +113,7 @@ func TestMockParserStatementNotNil(t *testing.T) {
 }
 
 func TestMockParserStatementsNil(t *testing.T) {
-	stream := &common.MockTokenStream{}
+	stream := &lexer.MockTokenStream{}
 	obj := &MockParser{}
 	obj.On("Statements", stream, mock.Anything).Return(nil, assert.AnError)
 
@@ -124,7 +125,7 @@ func TestMockParserStatementsNil(t *testing.T) {
 }
 
 func TestMockParserStatementsNotNil(t *testing.T) {
-	stream := &common.MockTokenStream{}
+	stream := &lexer.MockTokenStream{}
 	obj := &MockParser{}
 	obj.On("Statements", stream, mock.Anything).Return([]common.Node{}, assert.AnError)
 
@@ -171,7 +172,7 @@ func TestParserExpression(t *testing.T) {
 			"ent": Entry{},
 		},
 	}
-	stream := &common.MockTokenStream{}
+	stream := &lexer.MockTokenStream{}
 	options := []Option{
 		func(s State) {},
 		func(s State) {},
@@ -179,7 +180,7 @@ func TestParserExpression(t *testing.T) {
 	state := &MockState{}
 	node := &common.MockNode{}
 	state.On("Expression", 0).Return(node, assert.AnError)
-	defer patcher.SetVar(&newState, func(p Parser, str common.TokenStream, options []Option) State {
+	defer patcher.SetVar(&newState, func(p Parser, str lexer.TokenStream, options []Option) State {
 		assert.Same(t, obj, p)
 		assert.Same(t, stream, str)
 		assert.Len(t, options, 2)
@@ -199,7 +200,7 @@ func TestParserStatement(t *testing.T) {
 			"ent": Entry{},
 		},
 	}
-	stream := &common.MockTokenStream{}
+	stream := &lexer.MockTokenStream{}
 	options := []Option{
 		func(s State) {},
 		func(s State) {},
@@ -207,7 +208,7 @@ func TestParserStatement(t *testing.T) {
 	state := &MockState{}
 	node := &common.MockNode{}
 	state.On("Statement").Return(node, assert.AnError)
-	defer patcher.SetVar(&newState, func(p Parser, str common.TokenStream, options []Option) State {
+	defer patcher.SetVar(&newState, func(p Parser, str lexer.TokenStream, options []Option) State {
 		assert.Same(t, obj, p)
 		assert.Same(t, stream, str)
 		assert.Len(t, options, 2)
@@ -227,7 +228,7 @@ func TestParserStatementsBase(t *testing.T) {
 			"ent": Entry{},
 		},
 	}
-	stream := &common.MockTokenStream{}
+	stream := &lexer.MockTokenStream{}
 	options := []Option{
 		func(s State) {},
 		func(s State) {},
@@ -239,7 +240,7 @@ func TestParserStatementsBase(t *testing.T) {
 		state.On("Statement").Return(node, nil).Once()
 	}
 	state.On("Statement").Return(nil, nil)
-	defer patcher.SetVar(&newState, func(p Parser, str common.TokenStream, options []Option) State {
+	defer patcher.SetVar(&newState, func(p Parser, str lexer.TokenStream, options []Option) State {
 		assert.Same(t, obj, p)
 		assert.Same(t, stream, str)
 		assert.Len(t, options, 2)
@@ -259,14 +260,14 @@ func TestParserStatementsError(t *testing.T) {
 			"ent": Entry{},
 		},
 	}
-	stream := &common.MockTokenStream{}
+	stream := &lexer.MockTokenStream{}
 	options := []Option{
 		func(s State) {},
 		func(s State) {},
 	}
 	state := &MockState{}
 	state.On("Statement").Return(nil, assert.AnError)
-	defer patcher.SetVar(&newState, func(p Parser, str common.TokenStream, options []Option) State {
+	defer patcher.SetVar(&newState, func(p Parser, str lexer.TokenStream, options []Option) State {
 		assert.Same(t, obj, p)
 		assert.Same(t, stream, str)
 		assert.Len(t, options, 2)

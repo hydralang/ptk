@@ -21,11 +21,12 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/hydralang/ptk/common"
+	"github.com/hydralang/ptk/lexer"
 )
 
 func TestEntryCallFirstNil(t *testing.T) {
 	s := &MockState{}
-	tok := &common.Token{}
+	tok := &lexer.Token{}
 	ent := Entry{}
 
 	result, err := ent.callFirst(s, tok)
@@ -36,11 +37,11 @@ func TestEntryCallFirstNil(t *testing.T) {
 
 func TestEntryCallFirstNotNil(t *testing.T) {
 	s := &MockState{}
-	tok := &common.Token{}
+	tok := &lexer.Token{}
 	node := &common.MockNode{}
 	ent := Entry{
 		Power: 42,
-		First: ExprFirst(func(es State, pow int, eTok *common.Token) (common.Node, error) {
+		First: ExprFirst(func(es State, pow int, eTok *lexer.Token) (common.Node, error) {
 			assert.Same(t, s, es)
 			assert.Equal(t, 42, pow)
 			assert.Same(t, tok, eTok)
@@ -57,7 +58,7 @@ func TestEntryCallFirstNotNil(t *testing.T) {
 func TestEntryCallNextNil(t *testing.T) {
 	s := &MockState{}
 	l := &common.MockNode{}
-	tok := &common.Token{}
+	tok := &lexer.Token{}
 	ent := Entry{}
 
 	result, err := ent.callNext(s, l, tok)
@@ -69,11 +70,11 @@ func TestEntryCallNextNil(t *testing.T) {
 func TestEntryCallNextNotNil(t *testing.T) {
 	s := &MockState{}
 	l := &common.MockNode{}
-	tok := &common.Token{}
+	tok := &lexer.Token{}
 	node := &common.MockNode{}
 	ent := Entry{
 		Power: 42,
-		Next: ExprNext(func(es State, pow int, el common.Node, eTok *common.Token) (common.Node, error) {
+		Next: ExprNext(func(es State, pow int, el common.Node, eTok *lexer.Token) (common.Node, error) {
 			assert.Same(t, s, es)
 			assert.Equal(t, 42, pow)
 			assert.Same(t, l, el)
@@ -90,7 +91,7 @@ func TestEntryCallNextNotNil(t *testing.T) {
 
 func TestEntryCallStmtNil(t *testing.T) {
 	s := &MockState{}
-	tok := &common.Token{}
+	tok := &lexer.Token{}
 	ent := Entry{}
 
 	result, err := ent.callStmt(s, tok)
@@ -101,10 +102,10 @@ func TestEntryCallStmtNil(t *testing.T) {
 
 func TestEntryCallStmtNotNil(t *testing.T) {
 	s := &MockState{}
-	tok := &common.Token{}
+	tok := &lexer.Token{}
 	node := &common.MockNode{}
 	ent := Entry{
-		Stmt: Statement(func(es State, eTok *common.Token) (common.Node, error) {
+		Stmt: Statement(func(es State, eTok *lexer.Token) (common.Node, error) {
 			assert.Same(t, s, es)
 			assert.Same(t, tok, eTok)
 			return node, assert.AnError

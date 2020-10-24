@@ -18,6 +18,8 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/hydralang/ptk/common"
+	"github.com/hydralang/ptk/internal"
+	"github.com/hydralang/ptk/lexer"
 )
 
 // State represents the parser state.  This is passed to the parsing
@@ -72,35 +74,35 @@ type State interface {
 	SetTable(tab Table) Table
 
 	// Stream returns the token stream currently in use.
-	Stream() common.TokenStream
+	Stream() lexer.TokenStream
 
 	// PushStream allows pushing an alternative token stream onto
 	// the token stream stack.  Use this, paired with PopStream,
 	// when your grammar allows inclusion of alternate files.
 	// Note that if the current token stream returns a nil, an
 	// implicit PopStream will be performed.
-	PushStream(ts common.TokenStream)
+	PushStream(ts lexer.TokenStream)
 
 	// PopStream allows popping a token stream off the token
 	// stream stack.  Use this, paired with PushStream, when your
 	// grammar allows inclusion of alternate files.  Note that
 	// PopStream is called implicitly if the token stream returns
 	// a nil.
-	PopStream() common.TokenStream
+	PopStream() lexer.TokenStream
 
 	// SetStream allows changing the current token stream on the
 	// fly.  Its action is similar to a PopStream followed by a
 	// PushStream, so the number of entries in the token stream
 	// stack remains the same.
-	SetStream(ts common.TokenStream) common.TokenStream
+	SetStream(ts lexer.TokenStream) lexer.TokenStream
 
 	// Token returns the token currently being processed.  It will
 	// be nil if NextToken has not been called, or if NextToken
 	// returned a nil value.
-	Token() *common.Token
+	Token() *lexer.Token
 
 	// NextToken returns the next token to be processed.
-	NextToken() *common.Token
+	NextToken() *lexer.Token
 
 	// MoreTokens returns a boolean true if there are more tokens
 	// available, that is, if NextToken will not return nil.
@@ -109,7 +111,7 @@ type State interface {
 	// PushToken pushes a token back.  This token will end up
 	// being the next token returned when NextToken is called.
 	// Note that the token returned by Token is not changed.
-	PushToken(tok *common.Token)
+	PushToken(tok *lexer.Token)
 
 	// Expression parses a sub-expression.  This is the core,
 	// workhorse function of expression parsing utilizing the
@@ -223,11 +225,11 @@ func (m *MockState) SetTable(tab Table) Table {
 }
 
 // Stream returns the token stream currently in use.
-func (m *MockState) Stream() common.TokenStream {
+func (m *MockState) Stream() lexer.TokenStream {
 	args := m.MethodCalled("Stream")
 
 	if tmp := args.Get(0); tmp != nil {
-		return tmp.(common.TokenStream)
+		return tmp.(lexer.TokenStream)
 	}
 
 	return nil
@@ -238,7 +240,7 @@ func (m *MockState) Stream() common.TokenStream {
 // grammar allows inclusion of alternate files.  Note that if the
 // current token stream returns a nil, an implicit PopStream will be
 // performed.
-func (m *MockState) PushStream(ts common.TokenStream) {
+func (m *MockState) PushStream(ts lexer.TokenStream) {
 	m.MethodCalled("PushStream", ts)
 }
 
@@ -246,11 +248,11 @@ func (m *MockState) PushStream(ts common.TokenStream) {
 // Use this, paired with PushStream, when your grammar allows
 // inclusion of alternate files.  Note that PopStream is called
 // implicitly if the token stream returns a nil.
-func (m *MockState) PopStream() common.TokenStream {
+func (m *MockState) PopStream() lexer.TokenStream {
 	args := m.MethodCalled("PopStream")
 
 	if tmp := args.Get(0); tmp != nil {
-		return tmp.(common.TokenStream)
+		return tmp.(lexer.TokenStream)
 	}
 
 	return nil
@@ -259,11 +261,11 @@ func (m *MockState) PopStream() common.TokenStream {
 // SetStream allows changing the current token stream on the fly.  Its
 // action is similar to a PopStream followed by a PushStream, so the
 // number of entries in the token stream stack remains the same.
-func (m *MockState) SetStream(ts common.TokenStream) common.TokenStream {
+func (m *MockState) SetStream(ts lexer.TokenStream) lexer.TokenStream {
 	args := m.MethodCalled("SetStream", ts)
 
 	if tmp := args.Get(0); tmp != nil {
-		return tmp.(common.TokenStream)
+		return tmp.(lexer.TokenStream)
 	}
 
 	return nil
@@ -272,22 +274,22 @@ func (m *MockState) SetStream(ts common.TokenStream) common.TokenStream {
 // Token returns the token currently being processed.  It will be nil
 // if NextToken has not been called, or if NextToken returned a nil
 // value.
-func (m *MockState) Token() *common.Token {
+func (m *MockState) Token() *lexer.Token {
 	args := m.MethodCalled("Token")
 
 	if tmp := args.Get(0); tmp != nil {
-		return tmp.(*common.Token)
+		return tmp.(*lexer.Token)
 	}
 
 	return nil
 }
 
 // NextToken returns the next token to be processed.
-func (m *MockState) NextToken() *common.Token {
+func (m *MockState) NextToken() *lexer.Token {
 	args := m.MethodCalled("NextToken")
 
 	if tmp := args.Get(0); tmp != nil {
-		return tmp.(*common.Token)
+		return tmp.(*lexer.Token)
 	}
 
 	return nil
@@ -304,7 +306,7 @@ func (m *MockState) MoreTokens() bool {
 // PushToken pushes a token back.  This token will end up being the
 // next token returned when NextToken is called.  Note that the token
 // returned by Token is not changed.
-func (m *MockState) PushToken(tok *common.Token) {
+func (m *MockState) PushToken(tok *lexer.Token) {
 	m.MethodCalled("PushToken", tok)
 }
 
@@ -337,23 +339,23 @@ func (m *MockState) Statement() (common.Node, error) {
 
 // state is an implementation of State.
 type state struct {
-	parser   Parser        // The parser being used
-	appState common.Stack  // Stack for application state
-	table    common.Stack  // Stack for tables
-	stream   common.Stack  // Stack for token streams
-	tokens   common.Stack  // Stack of pushed-back tokens
-	tok      *common.Token // Last returned token
+	parser   Parser         // The parser being used
+	appState internal.Stack // Stack for application state
+	table    internal.Stack // Stack for tables
+	stream   internal.Stack // Stack for token streams
+	tokens   internal.Stack // Stack of pushed-back tokens
+	tok      *lexer.Token   // Last returned token
 }
 
 // NewState constructs and returns a new state, with the specified
 // table and stream.
-func NewState(parser Parser, stream common.TokenStream, options []Option) State {
+func NewState(parser Parser, stream lexer.TokenStream, options []Option) State {
 	obj := &state{
 		parser:   parser,
-		appState: common.NewStack(),
-		table:    common.NewStack(),
-		stream:   common.NewStack(),
-		tokens:   common.NewStack(),
+		appState: internal.NewStack(),
+		table:    internal.NewStack(),
+		stream:   internal.NewStack(),
+		tokens:   internal.NewStack(),
 	}
 
 	// Push the initial table and stream
@@ -443,9 +445,9 @@ func (s *state) SetTable(tab Table) Table {
 }
 
 // Stream returns the token stream currently in use.
-func (s *state) Stream() common.TokenStream {
+func (s *state) Stream() lexer.TokenStream {
 	if tmp := s.stream.Get(); tmp != nil {
-		return tmp.(common.TokenStream)
+		return tmp.(lexer.TokenStream)
 	}
 
 	return nil
@@ -456,7 +458,7 @@ func (s *state) Stream() common.TokenStream {
 // grammar allows inclusion of alternate files.  Note that if the
 // current token stream returns a nil, an implicit PopStream will be
 // performed.
-func (s *state) PushStream(ts common.TokenStream) {
+func (s *state) PushStream(ts lexer.TokenStream) {
 	s.stream.Push(ts)
 }
 
@@ -464,9 +466,9 @@ func (s *state) PushStream(ts common.TokenStream) {
 // Use this, paired with PushStream, when your grammar allows
 // inclusion of alternate files.  Note that PopStream is called
 // implicitly if the token stream returns a nil.
-func (s *state) PopStream() common.TokenStream {
+func (s *state) PopStream() lexer.TokenStream {
 	if tmp := s.stream.Pop(); tmp != nil {
-		return tmp.(common.TokenStream)
+		return tmp.(lexer.TokenStream)
 	}
 
 	return nil
@@ -475,9 +477,9 @@ func (s *state) PopStream() common.TokenStream {
 // SetStream allows changing the current token stream on the fly.  Its
 // action is similar to a PopStream followed by a PushStream, so the
 // number of entries in the token stream stack remains the same.
-func (s *state) SetStream(ts common.TokenStream) common.TokenStream {
+func (s *state) SetStream(ts lexer.TokenStream) lexer.TokenStream {
 	if tmp := s.stream.Set(ts); tmp != nil {
-		return tmp.(common.TokenStream)
+		return tmp.(lexer.TokenStream)
 	}
 
 	return nil
@@ -486,15 +488,15 @@ func (s *state) SetStream(ts common.TokenStream) common.TokenStream {
 // Token returns the token currently being processed.  It will be nil
 // if NextToken has not been called, or if NextToken returned a nil
 // value.
-func (s *state) Token() *common.Token {
+func (s *state) Token() *lexer.Token {
 	return s.tok
 }
 
 // getToken is a helper that retrieves a token from the token stream.
-func (s *state) getToken() *common.Token {
+func (s *state) getToken() *lexer.Token {
 	// Loop while we have a stream
 	for tmp := s.stream.Get(); tmp != nil; tmp = s.stream.Get() {
-		stream := tmp.(common.TokenStream)
+		stream := tmp.(lexer.TokenStream)
 
 		// Get the next token from it
 		tok := stream.Next()
@@ -512,10 +514,10 @@ func (s *state) getToken() *common.Token {
 }
 
 // NextToken returns the next token to be processed.
-func (s *state) NextToken() *common.Token {
+func (s *state) NextToken() *lexer.Token {
 	// Are there pushed-back tokens?
 	if s.tokens.Len() > 0 {
-		s.tok = s.tokens.Pop().(*common.Token)
+		s.tok = s.tokens.Pop().(*lexer.Token)
 	} else {
 		// Get a token from the stream(s)
 		s.tok = s.getToken()
@@ -548,13 +550,13 @@ func (s *state) MoreTokens() bool {
 // PushToken pushes a token back.  This token will end up being the
 // next token returned when NextToken is called.  Note that the token
 // returned by Token is not changed.
-func (s *state) PushToken(tok *common.Token) {
+func (s *state) PushToken(tok *lexer.Token) {
 	s.tokens.Push(tok)
 }
 
 // getEntry is a helper that retrieves the table entry for a
 // particular token.
-func (s *state) getEntry(tok *common.Token) (Entry, error) {
+func (s *state) getEntry(tok *lexer.Token) (Entry, error) {
 	// Get the table to use
 	tab := s.Table()
 	if tab == nil {

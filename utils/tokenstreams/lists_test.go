@@ -19,15 +19,15 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/hydralang/ptk/common"
+	"github.com/hydralang/ptk/lexer"
 )
 
 func TestListTokenStreamImplementsTokenStream(t *testing.T) {
-	assert.Implements(t, (*common.TokenStream)(nil), &listTokenStream{})
+	assert.Implements(t, (*lexer.TokenStream)(nil), &listTokenStream{})
 }
 
 func TestNewListTokenStream(t *testing.T) {
-	toks := []*common.Token{{}, {}, {}}
+	toks := []*lexer.Token{{}, {}, {}}
 
 	result := NewListTokenStream(toks)
 
@@ -37,7 +37,7 @@ func TestNewListTokenStream(t *testing.T) {
 }
 
 func TestListTokenStreamNextUnstarted(t *testing.T) {
-	toks := []*common.Token{{}, {}, {}}
+	toks := []*lexer.Token{{}, {}, {}}
 	obj := &listTokenStream{
 		toks: toks,
 	}
@@ -52,7 +52,7 @@ func TestListTokenStreamNextUnstarted(t *testing.T) {
 }
 
 func TestListTokenStreamNextStarted(t *testing.T) {
-	toks := []*common.Token{{}, {}, {}}
+	toks := []*lexer.Token{{}, {}, {}}
 	obj := &listTokenStream{
 		toks:    toks,
 		started: true,
@@ -69,7 +69,7 @@ func TestListTokenStreamNextStarted(t *testing.T) {
 }
 
 func TestListTokenStreamNextEnding(t *testing.T) {
-	toks := []*common.Token{{}, {}, {}}
+	toks := []*lexer.Token{{}, {}, {}}
 	obj := &listTokenStream{
 		toks:    toks,
 		idx:     2,

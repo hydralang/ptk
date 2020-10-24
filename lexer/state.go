@@ -17,13 +17,13 @@ package lexer
 import (
 	"container/list"
 
-	"github.com/hydralang/ptk/common"
+	"github.com/hydralang/ptk/internal"
 	"github.com/hydralang/ptk/scanner"
 )
 
 // State represents the state of the lexer.
 type State interface {
-	common.TokenStream
+	TokenStream
 
 	// Lexer returns the lexer object.
 	Lexer() Lexer
@@ -82,12 +82,12 @@ type State interface {
 	// Push pushes a token onto the list of tokens to be returned
 	// by the lexer.  Recognizers should call this method with the
 	// token or tokens that they recognize from the input.
-	Push(tok *common.Token) bool
+	Push(tok *Token) bool
 }
 
 // MockState is a mock implementation of the State interface.
 type MockState struct {
-	common.MockTokenStream
+	MockTokenStream
 }
 
 // Lexer returns the lexer object.
@@ -203,7 +203,7 @@ func (m *MockState) SetClassifier(cls Classifier) Classifier {
 // Push pushes a token onto the list of tokens to be returned by the
 // lexer.  Recognizers should call this method with the token or
 // tokens that they recognize from the input.
-func (m *MockState) Push(tok *common.Token) bool {
+func (m *MockState) Push(tok *Token) bool {
 	args := m.MethodCalled("Push", tok)
 
 	return args.Bool(0)
@@ -214,8 +214,8 @@ type state struct {
 	lexer    Lexer           // The lexer being used
 	src      scanner.Scanner // The source CharStream
 	bt       BackTracker     // Backtracker wrapping the source
-	appState common.Stack    // Stack for application state
-	cls      common.Stack    // Stack for classifier
+	appState internal.Stack  // Stack for application state
+	cls      internal.Stack  // Stack for classifier
 	toks     *list.List      // List of tokens to produce
 }
 
@@ -226,8 +226,8 @@ func NewState(lexer Lexer, src scanner.Scanner, options []Option) State {
 		lexer:    lexer,
 		src:      src,
 		bt:       NewBackTracker(src, TrackAll),
-		appState: common.NewStack(),
-		cls:      common.NewStack(),
+		appState: internal.NewStack(),
+		cls:      internal.NewStack(),
 		toks:     &list.List{},
 	}
 
@@ -266,7 +266,7 @@ func (s *state) next() {
 
 // Next returns the next token.  At the end of the token stream, a nil
 // should be returned.
-func (s *state) Next() *common.Token {
+func (s *state) Next() *Token {
 	// Loop until we have a token or all characters have been
 	// processed
 	for s.toks.Len() <= 0 {
@@ -281,7 +281,7 @@ func (s *state) Next() *common.Token {
 	defer func() {
 		s.toks.Remove(s.toks.Front())
 	}()
-	return s.toks.Front().Value.(*common.Token)
+	return s.toks.Front().Value.(*Token)
 }
 
 // Lexer returns the lexer object.
@@ -373,7 +373,7 @@ func (s *state) SetClassifier(cls Classifier) Classifier {
 // Push pushes a token onto the list of tokens to be returned by the
 // lexer.  Recognizers should call this method with the token or
 // tokens that they recognize from the input.
-func (s *state) Push(tok *common.Token) bool {
+func (s *state) Push(tok *Token) bool {
 	s.toks.PushBack(tok)
 	return true
 }

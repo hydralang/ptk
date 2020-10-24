@@ -17,6 +17,7 @@ package common
 import (
 	"github.com/stretchr/testify/mock"
 
+	"github.com/hydralang/ptk/lexer"
 	"github.com/hydralang/ptk/scanner"
 )
 
@@ -68,4 +69,14 @@ func (m *MockNode) String() string {
 	args := m.MethodCalled("String")
 
 	return args.String(0)
+}
+
+// TokenNode is an implementation of Node that wraps lexer.Token.
+type TokenNode struct {
+	lexer.Token
+}
+
+// Children returns a list of child nodes.
+func (tn *TokenNode) Children() []Node {
+	return []Node{}
 }

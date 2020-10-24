@@ -17,7 +17,6 @@ package lexer
 import (
 	"github.com/stretchr/testify/mock"
 
-	"github.com/hydralang/ptk/common"
 	"github.com/hydralang/ptk/scanner"
 )
 
@@ -43,11 +42,11 @@ type Lexer interface {
 	// to initialize the state.
 	Classifier() Classifier
 
-	// Lex returns an object that satisfies the common.TokenStream
+	// Lex returns an object that satisfies the TokenStream
 	// interface and which reads the specified io.Reader and
 	// converts it to tokens.  Tokens represent the "words" of the
 	// language being parsed.
-	Lex(cs scanner.Scanner, options ...Option) common.TokenStream
+	Lex(cs scanner.Scanner, options ...Option) TokenStream
 }
 
 // MockLexer is a mock implementation of the Lexer interface.
@@ -67,15 +66,15 @@ func (m *MockLexer) Classifier() Classifier {
 	return nil
 }
 
-// Lex returns an object that satisfies the common.TokenStream
+// Lex returns an object that satisfies the TokenStream
 // interface and which reads the specified io.Reader and converts it
 // to tokens.  Tokens represent the "words" of the language being
 // parsed.
-func (m *MockLexer) Lex(cs scanner.Scanner, options ...Option) common.TokenStream {
+func (m *MockLexer) Lex(cs scanner.Scanner, options ...Option) TokenStream {
 	args := m.MethodCalled("Lex", cs, options)
 
 	if tmp := args.Get(0); tmp != nil {
-		return tmp.(common.TokenStream)
+		return tmp.(TokenStream)
 	}
 
 	return nil
@@ -99,11 +98,11 @@ func (l *lexer) Classifier() Classifier {
 	return l.cls
 }
 
-// Lex returns an object that satisfies the common.TokenStream
+// Lex returns an object that satisfies the TokenStream
 // interface and which reads the specified io.Reader and converts it
 // to tokens.  Tokens represent the "words" of the language being
 // parsed.
-func (l *lexer) Lex(cs scanner.Scanner, options ...Option) common.TokenStream {
+func (l *lexer) Lex(cs scanner.Scanner, options ...Option) TokenStream {
 	// Construct and return a state, which implements the
 	// TokenStream interface
 	return newState(l, cs, options)

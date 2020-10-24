@@ -12,16 +12,55 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package common
+package lexer
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+
+	"github.com/hydralang/ptk/scanner"
 )
 
-func TestTokenImplementsNode(t *testing.T) {
-	assert.Implements(t, (*Node)(nil), &Token{})
+type mockLocation struct {
+	mock.Mock
+}
+
+func (m *mockLocation) String() string {
+	args := m.MethodCalled("String")
+
+	return args.String(0)
+}
+
+func (m *mockLocation) Thru(other scanner.Location) (scanner.Location, error) {
+	args := m.MethodCalled("Thru", other)
+
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(scanner.Location), args.Error(1)
+	}
+
+	return nil, args.Error(1)
+}
+
+func (m *mockLocation) ThruEnd(other scanner.Location) (scanner.Location, error) {
+	args := m.MethodCalled("ThruEnd", other)
+
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(scanner.Location), args.Error(1)
+	}
+
+	return nil, args.Error(1)
+}
+
+func (m *mockLocation) Incr(c rune, tabstop int) scanner.Location {
+	args := m.MethodCalled("Incr", c, tabstop)
+
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(scanner.Location)
+	}
+
+	return nil
 }
 
 func TestTokenLocation(t *testing.T) {
@@ -33,14 +72,6 @@ func TestTokenLocation(t *testing.T) {
 	result := obj.Location()
 
 	assert.Same(t, loc, result)
-}
-
-func TestTokenChildren(t *testing.T) {
-	obj := &Token{}
-
-	result := obj.Children()
-
-	assert.Equal(t, []Node{}, result)
 }
 
 func TestTokenStringBase(t *testing.T) {

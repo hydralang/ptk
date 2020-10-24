@@ -14,23 +14,26 @@
 
 package parser
 
-import "github.com/hydralang/ptk/common"
+import (
+	"github.com/hydralang/ptk/common"
+	"github.com/hydralang/ptk/lexer"
+)
 
 // ExprFirst functions are called to process the first token in an
 // expression.  Functions of this type are typically declared on
 // literal tokens or prefix operators.
-type ExprFirst func(state State, power int, tok *common.Token) (common.Node, error)
+type ExprFirst func(state State, power int, tok *lexer.Token) (common.Node, error)
 
 // ExprNext functions are called to process the subsequent tokens in
 // an expression.  Functions of this type are typically declared with
 // a "left binding power" (a measure of how tightly an operator binds
 // to its operands), and are used with binary operators.
-type ExprNext func(state State, power int, left common.Node, tok *common.Token) (common.Node, error)
+type ExprNext func(state State, power int, left common.Node, tok *lexer.Token) (common.Node, error)
 
 // Statement functions are called to process a statement.  They're
 // called with the first token of the statement, and should read in
 // additional tokens.
-type Statement func(state State, tok *common.Token) (common.Node, error)
+type Statement func(state State, tok *lexer.Token) (common.Node, error)
 
 // Entry is an entry in the parser table.  The Pratt technique is
 // table driven, based on the token type; objects of this type contain
@@ -43,7 +46,7 @@ type Entry struct {
 }
 
 // callFirst is a helper to call the declared ExprFirst function.
-func (e Entry) callFirst(s State, tok *common.Token) (common.Node, error) {
+func (e Entry) callFirst(s State, tok *lexer.Token) (common.Node, error) {
 	if e.First == nil {
 		return nil, UnexpectedToken(tok)
 	}
@@ -52,7 +55,7 @@ func (e Entry) callFirst(s State, tok *common.Token) (common.Node, error) {
 }
 
 // callNext is a helper to call the declared ExprNext function.
-func (e Entry) callNext(s State, l common.Node, tok *common.Token) (common.Node, error) {
+func (e Entry) callNext(s State, l common.Node, tok *lexer.Token) (common.Node, error) {
 	if e.Next == nil {
 		return nil, UnexpectedToken(tok)
 	}
@@ -61,7 +64,7 @@ func (e Entry) callNext(s State, l common.Node, tok *common.Token) (common.Node,
 }
 
 // callStmt is a helper to call the declared Statement function.
-func (e Entry) callStmt(s State, tok *common.Token) (common.Node, error) {
+func (e Entry) callStmt(s State, tok *lexer.Token) (common.Node, error) {
 	if e.Stmt == nil {
 		return nil, UnexpectedToken(tok)
 	}

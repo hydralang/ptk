@@ -19,7 +19,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/hydralang/ptk/common"
+	"github.com/hydralang/ptk/lexer"
 	"github.com/hydralang/ptk/scanner"
 )
 
@@ -73,11 +73,11 @@ func ExpectedToken(types ...string) error {
 }
 
 // UnknownTokenType constructs and returns an ErrUnknownTokenType.
-func UnknownTokenType(tok *common.Token, types ...string) error {
+func UnknownTokenType(tok *lexer.Token, types ...string) error {
 	return scanner.LocationError(tok.Loc, fmt.Errorf("%w %q%s", ErrUnknownTokenType, tok.Type, expectedTypes(types)))
 }
 
 // UnexpectedToken cunstructs and returns an ErrUnexpectedToken.
-func UnexpectedToken(tok *common.Token, types ...string) error {
+func UnexpectedToken(tok *lexer.Token, types ...string) error {
 	return scanner.LocationError(tok.Loc, fmt.Errorf("%w of type %q%s", ErrUnexpectedToken, tok.Type, expectedTypes(types)))
 }

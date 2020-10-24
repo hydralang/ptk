@@ -14,7 +14,7 @@
 
 package tokenstreams
 
-import "github.com/hydralang/ptk/common"
+import "github.com/hydralang/ptk/lexer"
 
 // ChanTokenStreamSize is the size of the input channel.
 const ChanTokenStreamSize = 20
@@ -25,25 +25,25 @@ const ChanTokenStreamSize = 20
 // Done method to signal the token stream that all tokens have been
 // pushed.
 type ChanTokenStream struct {
-	Chan chan *common.Token // The input channel
+	Chan chan *lexer.Token // The input channel
 }
 
 // NewChanTokenStream returns a ChanTokenStream
 func NewChanTokenStream() *ChanTokenStream {
 	return &ChanTokenStream{
-		Chan: make(chan *common.Token, ChanTokenStreamSize),
+		Chan: make(chan *lexer.Token, ChanTokenStreamSize),
 	}
 }
 
 // Next returns the next token.  At the end of the token stream, a nil
 // should be returned.
-func (q *ChanTokenStream) Next() *common.Token {
+func (q *ChanTokenStream) Next() *lexer.Token {
 	return <-q.Chan
 }
 
 // Push pushes a token onto the stream.  It returns true if the push
 // was successful; it will return false if Done has been called.
-func (q *ChanTokenStream) Push(tok *common.Token) (ok bool) {
+func (q *ChanTokenStream) Push(tok *lexer.Token) (ok bool) {
 	// Panic means we sent to a closed channel
 	defer func() {
 		if panicData := recover(); panicData != nil {

@@ -19,11 +19,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/hydralang/ptk/common"
+	"github.com/hydralang/ptk/lexer"
 )
 
 func TestNewAsyncTokenStream(t *testing.T) {
-	toks := []*common.Token{{}, {}, {}}
+	toks := []*lexer.Token{{}, {}, {}}
 	ts := NewListTokenStream(toks)
 
 	result := NewAsyncTokenStream(ts)

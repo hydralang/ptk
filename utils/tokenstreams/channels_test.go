@@ -19,11 +19,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/hydralang/ptk/common"
+	"github.com/hydralang/ptk/lexer"
 )
 
 func TestChanTokenStreamImplementsTokenStream(t *testing.T) {
-	assert.Implements(t, (*common.TokenStream)(nil), &ChanTokenStream{})
+	assert.Implements(t, (*lexer.TokenStream)(nil), &ChanTokenStream{})
 }
 
 func TestNewChanTokenStream(t *testing.T) {
@@ -33,7 +33,7 @@ func TestNewChanTokenStream(t *testing.T) {
 }
 
 func TestChanTokenStreamNextOpen(t *testing.T) {
-	tok := &common.Token{}
+	tok := &lexer.Token{}
 	obj := NewChanTokenStream()
 	obj.Chan <- tok
 
@@ -53,7 +53,7 @@ func TestChanTokenStreamNextClosed(t *testing.T) {
 
 func TestChanTokenStreamPushBase(t *testing.T) {
 	obj := NewChanTokenStream()
-	tok := &common.Token{}
+	tok := &lexer.Token{}
 
 	result := obj.Push(tok)
 
@@ -64,7 +64,7 @@ func TestChanTokenStreamPushBase(t *testing.T) {
 func TestChanTokenStreamPushDone(t *testing.T) {
 	obj := NewChanTokenStream()
 	close(obj.Chan)
-	tok := &common.Token{}
+	tok := &lexer.Token{}
 
 	result := obj.Push(tok)
 

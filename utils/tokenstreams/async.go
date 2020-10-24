@@ -14,12 +14,12 @@
 
 package tokenstreams
 
-import "github.com/hydralang/ptk/common"
+import "github.com/hydralang/ptk/lexer"
 
 // NewAsyncTokenStream wraps another token stream and uses the
 // ChanTokenStream to allow running that other token stream in a
 // separate goroutine.
-func NewAsyncTokenStream(ts common.TokenStream) common.TokenStream {
+func NewAsyncTokenStream(ts lexer.TokenStream) lexer.TokenStream {
 	// Construct the ChanTokenStream
 	obj := NewChanTokenStream()
 

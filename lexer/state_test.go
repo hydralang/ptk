@@ -21,7 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/hydralang/ptk/common"
+	"github.com/hydralang/ptk/internal"
 )
 
 func TestMockStateImplementsState(t *testing.T) {
@@ -185,7 +185,7 @@ func TestMockStateSetClassifierNotNil(t *testing.T) {
 }
 
 func TestMockStatePush(t *testing.T) {
-	tok := &common.Token{}
+	tok := &Token{}
 	obj := &MockState{}
 	obj.On("Push", tok).Return(true)
 
@@ -237,7 +237,7 @@ func TestNextInternalBase(t *testing.T) {
 	bt.On("Accept", 0).Once()
 	obj := &state{
 		bt:  bt,
-		cls: common.NewStack(),
+		cls: internal.NewStack(),
 	}
 	rec1 := &MockRecognizer{}
 	rec1.On("Recognize", obj, bt).Return(false)
@@ -264,7 +264,7 @@ func TestNextInternalUnrecognized(t *testing.T) {
 	bt.On("Accept", 0).Once()
 	obj := &state{
 		bt:  bt,
-		cls: common.NewStack(),
+		cls: internal.NewStack(),
 	}
 	rec1 := &MockRecognizer{}
 	rec1.On("Recognize", obj, bt).Return(false)
@@ -293,7 +293,7 @@ func TestNextInternalUnclassified(t *testing.T) {
 	bt.On("Accept", 0).Once()
 	obj := &state{
 		bt:  bt,
-		cls: common.NewStack(),
+		cls: internal.NewStack(),
 	}
 	cls := &MockClassifier{}
 	cls.On("Classify", obj, bt).Return([]Recognizer{})
@@ -307,7 +307,7 @@ func TestNextInternalUnclassified(t *testing.T) {
 }
 
 type fakeClassifier struct {
-	tok *common.Token
+	tok *Token
 }
 
 func (f *fakeClassifier) Classify(state State, str BackTracker) []Recognizer {
@@ -319,11 +319,11 @@ func (f *fakeClassifier) Error(state State, str BackTracker) {
 }
 
 func TestStateNextQueued(t *testing.T) {
-	tok := &common.Token{}
+	tok := &Token{}
 	bt := &mockBackTracker{}
 	obj := &state{
 		bt:   bt,
-		cls:  common.NewStack(),
+		cls:  internal.NewStack(),
 		toks: &list.List{},
 	}
 	obj.cls.Push(&fakeClassifier{})
@@ -337,7 +337,7 @@ func TestStateNextQueued(t *testing.T) {
 }
 
 func TestStateNextLex(t *testing.T) {
-	tok := &common.Token{}
+	tok := &Token{}
 	src := &mockScanner{}
 	bt := &mockBackTracker{}
 	bt.On("More").Return(true)
@@ -347,7 +347,7 @@ func TestStateNextLex(t *testing.T) {
 	obj := &state{
 		src:  src,
 		bt:   bt,
-		cls:  common.NewStack(),
+		cls:  internal.NewStack(),
 		toks: &list.List{},
 	}
 	obj.cls.Push(&fakeClassifier{tok: tok})
@@ -364,7 +364,7 @@ func TestStateNextClosed(t *testing.T) {
 	bt.On("More").Return(false)
 	obj := &state{
 		bt:   bt,
-		cls:  common.NewStack(),
+		cls:  internal.NewStack(),
 		toks: &list.List{},
 	}
 	obj.cls.Push(&fakeClassifier{})
@@ -399,7 +399,7 @@ func TestStateCharStream(t *testing.T) {
 }
 
 func TestStateAppState(t *testing.T) {
-	appStack := &common.MockStack{}
+	appStack := &internal.MockStack{}
 	appStack.On("Get").Return("state")
 	obj := &state{
 		appState: appStack,
@@ -412,7 +412,7 @@ func TestStateAppState(t *testing.T) {
 }
 
 func TestStatePushAppState(t *testing.T) {
-	appStack := &common.MockStack{}
+	appStack := &internal.MockStack{}
 	appStack.On("Push", "state")
 	obj := &state{
 		appState: appStack,
@@ -424,7 +424,7 @@ func TestStatePushAppState(t *testing.T) {
 }
 
 func TestStatePopAppState(t *testing.T) {
-	appStack := &common.MockStack{}
+	appStack := &internal.MockStack{}
 	appStack.On("Pop").Return("state")
 	obj := &state{
 		appState: appStack,
@@ -437,7 +437,7 @@ func TestStatePopAppState(t *testing.T) {
 }
 
 func TestStateSetAppState(t *testing.T) {
-	appStack := &common.MockStack{}
+	appStack := &internal.MockStack{}
 	appStack.On("Set", "new").Return("old")
 	obj := &state{
 		appState: appStack,
@@ -453,7 +453,7 @@ func TestStateSetAppState(t *testing.T) {
 
 func TestStateClassifierBase(t *testing.T) {
 	cls := &MockClassifier{}
-	clsStack := &common.MockStack{}
+	clsStack := &internal.MockStack{}
 	clsStack.On("Get").Return(cls)
 	obj := &state{
 		cls: clsStack,
@@ -466,7 +466,7 @@ func TestStateClassifierBase(t *testing.T) {
 }
 
 func TestStateClassifierNil(t *testing.T) {
-	clsStack := &common.MockStack{}
+	clsStack := &internal.MockStack{}
 	clsStack.On("Get").Return(nil)
 	obj := &state{
 		cls: clsStack,
@@ -480,7 +480,7 @@ func TestStateClassifierNil(t *testing.T) {
 
 func TestStatePushClassifier(t *testing.T) {
 	cls := &MockClassifier{}
-	clsStack := &common.MockStack{}
+	clsStack := &internal.MockStack{}
 	clsStack.On("Push", cls)
 	obj := &state{
 		cls: clsStack,
@@ -493,7 +493,7 @@ func TestStatePushClassifier(t *testing.T) {
 
 func TestStatePopClassifierBase(t *testing.T) {
 	cls := &MockClassifier{}
-	clsStack := &common.MockStack{}
+	clsStack := &internal.MockStack{}
 	clsStack.On("Pop").Return(cls)
 	obj := &state{
 		cls: clsStack,
@@ -506,7 +506,7 @@ func TestStatePopClassifierBase(t *testing.T) {
 }
 
 func TestStatePopClassifierNil(t *testing.T) {
-	clsStack := &common.MockStack{}
+	clsStack := &internal.MockStack{}
 	clsStack.On("Pop").Return(nil)
 	obj := &state{
 		cls: clsStack,
@@ -521,7 +521,7 @@ func TestStatePopClassifierNil(t *testing.T) {
 func TestStateSetClassifierBase(t *testing.T) {
 	cls := &MockClassifier{}
 	newCls := &MockClassifier{}
-	clsStack := &common.MockStack{}
+	clsStack := &internal.MockStack{}
 	clsStack.On("Set", newCls).Return(cls)
 	obj := &state{
 		cls: clsStack,
@@ -535,7 +535,7 @@ func TestStateSetClassifierBase(t *testing.T) {
 
 func TestStateSetClassifierNil(t *testing.T) {
 	newCls := &MockClassifier{}
-	clsStack := &common.MockStack{}
+	clsStack := &internal.MockStack{}
 	clsStack.On("Set", newCls).Return(nil)
 	obj := &state{
 		cls: clsStack,
@@ -548,7 +548,7 @@ func TestStateSetClassifierNil(t *testing.T) {
 }
 
 func TestStatePush(t *testing.T) {
-	tok := &common.Token{}
+	tok := &Token{}
 	obj := &state{
 		toks: &list.List{},
 	}
