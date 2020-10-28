@@ -18,11 +18,11 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/hydralang/ptk/common"
+	"github.com/hydralang/ptk/parser"
 )
 
 // visualize is a recursive function that renders a tree node.
-func visualize(buf io.Writer, prof Profile, node common.Node, prefix string, last bool) {
+func visualize(buf io.Writer, prof Profile, node parser.Node, prefix string, last bool) {
 	// Render this node
 	prefix = prof.Render(buf, prefix, node, last)
 
@@ -35,7 +35,7 @@ func visualize(buf io.Writer, prof Profile, node common.Node, prefix string, las
 
 // Visualize returns a string containing a visualization of the tree
 // rooted at Node.
-func Visualize(prof Profile, node common.Node) string {
+func Visualize(prof Profile, node parser.Node) string {
 	buf := &bytes.Buffer{}
 	visualize(buf, prof, node, "", false)
 	return buf.String()

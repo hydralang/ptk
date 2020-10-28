@@ -17,7 +17,6 @@ package parser
 import (
 	"github.com/stretchr/testify/mock"
 
-	"github.com/hydralang/ptk/common"
 	"github.com/hydralang/ptk/internal"
 	"github.com/hydralang/ptk/lexer"
 )
@@ -119,12 +118,12 @@ type State interface {
 	// calling this function recursively.  It should be called
 	// with a "right binding power", which is used in operator
 	// precedence calculations.
-	Expression(rbp int) (common.Node, error)
+	Expression(rbp int) (Node, error)
 
 	// Statement parses a single statement.  This is the core,
 	// workhorse function for statement parsing utilizing the
 	// Pratt technique.
-	Statement() (common.Node, error)
+	Statement() (Node, error)
 }
 
 // MockState is a mock implementation of the State interface.
@@ -315,11 +314,11 @@ func (m *MockState) PushToken(tok *lexer.Token) {
 // token parsing functions end up calling this function recursively.
 // It should be called with a "right binding power", which is used in
 // operator precedence calculations.
-func (m *MockState) Expression(rbp int) (common.Node, error) {
+func (m *MockState) Expression(rbp int) (Node, error) {
 	args := m.MethodCalled("Expression", rbp)
 
 	if tmp := args.Get(0); tmp != nil {
-		return tmp.(common.Node), args.Error(1)
+		return tmp.(Node), args.Error(1)
 	}
 
 	return nil, args.Error(1)
@@ -327,11 +326,11 @@ func (m *MockState) Expression(rbp int) (common.Node, error) {
 
 // Statement parses a single statement.  This is the core, workhorse
 // function for statement parsing utilizing the Pratt technique.
-func (m *MockState) Statement() (common.Node, error) {
+func (m *MockState) Statement() (Node, error) {
 	args := m.MethodCalled("Statement")
 
 	if tmp := args.Get(0); tmp != nil {
-		return tmp.(common.Node), args.Error(1)
+		return tmp.(Node), args.Error(1)
 	}
 
 	return nil, args.Error(1)
@@ -577,7 +576,7 @@ func (s *state) getEntry(tok *lexer.Token) (Entry, error) {
 // token parsing functions end up calling this function recursively.
 // It should be called with a "right binding power", which is used in
 // operator precedence calculations.
-func (s *state) Expression(rbp int) (common.Node, error) {
+func (s *state) Expression(rbp int) (Node, error) {
 	// Get a token from the state
 	tok := s.NextToken()
 	if tok == nil {
@@ -622,7 +621,7 @@ func (s *state) Expression(rbp int) (common.Node, error) {
 
 // Statement parses a single statement.  This is the core, workhorse
 // function for statement parsing utilizing the Pratt technique.
-func (s *state) Statement() (common.Node, error) {
+func (s *state) Statement() (Node, error) {
 	// Get a token from the state
 	tok := s.NextToken()
 	if tok == nil {

@@ -12,11 +12,9 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package common
+package parser
 
 import (
-	"github.com/stretchr/testify/mock"
-
 	"github.com/hydralang/ptk/lexer"
 	"github.com/hydralang/ptk/scanner"
 )
@@ -34,41 +32,6 @@ type Node interface {
 	// include the location range that encompasses all of the
 	// node's tokens.
 	String() string
-}
-
-// MockNode is a mock implementation of the Node interface.
-type MockNode struct {
-	mock.Mock
-}
-
-// Location returns the node's location range.
-func (m *MockNode) Location() scanner.Location {
-	args := m.MethodCalled("Location")
-
-	if tmp := args.Get(0); tmp != nil {
-		return tmp.(scanner.Location)
-	}
-
-	return nil
-}
-
-// Children returns a list of child nodes.
-func (m *MockNode) Children() []Node {
-	args := m.MethodCalled("Children")
-
-	if tmp := args.Get(0); tmp != nil {
-		return tmp.([]Node)
-	}
-
-	return nil
-}
-
-// String returns a string describing the node.  This should include
-// the location range that encompasses all of the node's tokens.
-func (m *MockNode) String() string {
-	args := m.MethodCalled("String")
-
-	return args.String(0)
 }
 
 // TokenNode is an implementation of Node that wraps lexer.Token.

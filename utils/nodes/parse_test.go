@@ -19,7 +19,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/hydralang/ptk/common"
 	"github.com/hydralang/ptk/lexer"
 	"github.com/hydralang/ptk/parser"
 )
@@ -31,17 +30,17 @@ func TestLiteral(t *testing.T) {
 	result, err := literal(s, 42, tok)
 
 	assert.NoError(t, err)
-	assert.Equal(t, &common.TokenNode{Token: *tok}, result)
+	assert.Equal(t, &parser.TokenNode{Token: *tok}, result)
 }
 
 func TestPrefixBase(t *testing.T) {
 	s := &parser.MockState{}
 	op := &lexer.Token{}
-	exp := &common.MockNode{}
+	exp := &mockNode{}
 	s.On("Expression", 42).Return(exp, nil)
-	node := &common.MockNode{}
+	node := &mockNode{}
 	factoryCalled := false
-	factory := func(fs parser.State, o *lexer.Token, e common.Node) (common.Node, error) {
+	factory := func(fs parser.State, o *lexer.Token, e parser.Node) (parser.Node, error) {
 		assert.Same(t, s, fs)
 		assert.Same(t, op, o)
 		assert.Same(t, exp, e)
@@ -60,11 +59,11 @@ func TestPrefixBase(t *testing.T) {
 func TestPrefixExpressionFails(t *testing.T) {
 	s := &parser.MockState{}
 	op := &lexer.Token{}
-	exp := &common.MockNode{}
+	exp := &mockNode{}
 	s.On("Expression", 42).Return(nil, assert.AnError)
-	node := &common.MockNode{}
+	node := &mockNode{}
 	factoryCalled := false
-	factory := func(fs parser.State, o *lexer.Token, e common.Node) (common.Node, error) {
+	factory := func(fs parser.State, o *lexer.Token, e parser.Node) (parser.Node, error) {
 		assert.Same(t, s, fs)
 		assert.Same(t, op, o)
 		assert.Same(t, exp, e)
@@ -83,10 +82,10 @@ func TestPrefixExpressionFails(t *testing.T) {
 func TestPrefixFactoryFails(t *testing.T) {
 	s := &parser.MockState{}
 	op := &lexer.Token{}
-	exp := &common.MockNode{}
+	exp := &mockNode{}
 	s.On("Expression", 42).Return(exp, nil)
 	factoryCalled := false
-	factory := func(fs parser.State, o *lexer.Token, e common.Node) (common.Node, error) {
+	factory := func(fs parser.State, o *lexer.Token, e parser.Node) (parser.Node, error) {
 		assert.Same(t, s, fs)
 		assert.Same(t, op, o)
 		assert.Same(t, exp, e)
@@ -105,12 +104,12 @@ func TestPrefixFactoryFails(t *testing.T) {
 func TestInfixBase(t *testing.T) {
 	s := &parser.MockState{}
 	op := &lexer.Token{}
-	left := &common.MockNode{}
-	right := &common.MockNode{}
+	left := &mockNode{}
+	right := &mockNode{}
 	s.On("Expression", 17).Return(right, nil)
-	node := &common.MockNode{}
+	node := &mockNode{}
 	factoryCalled := false
-	factory := func(fs parser.State, l, r common.Node, o *lexer.Token) (common.Node, error) {
+	factory := func(fs parser.State, l, r parser.Node, o *lexer.Token) (parser.Node, error) {
 		assert.Same(t, s, fs)
 		assert.Same(t, left, l)
 		assert.Same(t, right, r)
@@ -130,12 +129,12 @@ func TestInfixBase(t *testing.T) {
 func TestInfixExpressionFails(t *testing.T) {
 	s := &parser.MockState{}
 	op := &lexer.Token{}
-	left := &common.MockNode{}
-	right := &common.MockNode{}
+	left := &mockNode{}
+	right := &mockNode{}
 	s.On("Expression", 17).Return(nil, assert.AnError)
-	node := &common.MockNode{}
+	node := &mockNode{}
 	factoryCalled := false
-	factory := func(fs parser.State, l, r common.Node, o *lexer.Token) (common.Node, error) {
+	factory := func(fs parser.State, l, r parser.Node, o *lexer.Token) (parser.Node, error) {
 		assert.Same(t, s, fs)
 		assert.Same(t, left, l)
 		assert.Same(t, right, r)
@@ -155,11 +154,11 @@ func TestInfixExpressionFails(t *testing.T) {
 func TestInfixFactoryFails(t *testing.T) {
 	s := &parser.MockState{}
 	op := &lexer.Token{}
-	left := &common.MockNode{}
-	right := &common.MockNode{}
+	left := &mockNode{}
+	right := &mockNode{}
 	s.On("Expression", 17).Return(right, nil)
 	factoryCalled := false
-	factory := func(fs parser.State, l, r common.Node, o *lexer.Token) (common.Node, error) {
+	factory := func(fs parser.State, l, r parser.Node, o *lexer.Token) (parser.Node, error) {
 		assert.Same(t, s, fs)
 		assert.Same(t, op, o)
 		assert.Same(t, left, l)
@@ -179,12 +178,12 @@ func TestInfixFactoryFails(t *testing.T) {
 func TestInfixRBase(t *testing.T) {
 	s := &parser.MockState{}
 	op := &lexer.Token{}
-	left := &common.MockNode{}
-	right := &common.MockNode{}
+	left := &mockNode{}
+	right := &mockNode{}
 	s.On("Expression", 16).Return(right, nil)
-	node := &common.MockNode{}
+	node := &mockNode{}
 	factoryCalled := false
-	factory := func(fs parser.State, l, r common.Node, o *lexer.Token) (common.Node, error) {
+	factory := func(fs parser.State, l, r parser.Node, o *lexer.Token) (parser.Node, error) {
 		assert.Same(t, s, fs)
 		assert.Same(t, left, l)
 		assert.Same(t, right, r)
@@ -204,12 +203,12 @@ func TestInfixRBase(t *testing.T) {
 func TestInfixRExpressionFails(t *testing.T) {
 	s := &parser.MockState{}
 	op := &lexer.Token{}
-	left := &common.MockNode{}
-	right := &common.MockNode{}
+	left := &mockNode{}
+	right := &mockNode{}
 	s.On("Expression", 16).Return(nil, assert.AnError)
-	node := &common.MockNode{}
+	node := &mockNode{}
 	factoryCalled := false
-	factory := func(fs parser.State, l, r common.Node, o *lexer.Token) (common.Node, error) {
+	factory := func(fs parser.State, l, r parser.Node, o *lexer.Token) (parser.Node, error) {
 		assert.Same(t, s, fs)
 		assert.Same(t, left, l)
 		assert.Same(t, right, r)
@@ -229,11 +228,11 @@ func TestInfixRExpressionFails(t *testing.T) {
 func TestInfixRFactoryFails(t *testing.T) {
 	s := &parser.MockState{}
 	op := &lexer.Token{}
-	left := &common.MockNode{}
-	right := &common.MockNode{}
+	left := &mockNode{}
+	right := &mockNode{}
 	s.On("Expression", 16).Return(right, nil)
 	factoryCalled := false
-	factory := func(fs parser.State, l, r common.Node, o *lexer.Token) (common.Node, error) {
+	factory := func(fs parser.State, l, r parser.Node, o *lexer.Token) (parser.Node, error) {
 		assert.Same(t, s, fs)
 		assert.Same(t, op, o)
 		assert.Same(t, left, l)

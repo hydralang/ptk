@@ -17,7 +17,6 @@ package parser
 import (
 	"github.com/stretchr/testify/mock"
 
-	"github.com/hydralang/ptk/common"
 	"github.com/hydralang/ptk/lexer"
 )
 
@@ -47,16 +46,16 @@ type Parser interface {
 
 	// Expression parses a single expression from the specified
 	// token stream.
-	Expression(stream lexer.ILexer, options ...Option) (common.Node, error)
+	Expression(stream lexer.ILexer, options ...Option) (Node, error)
 
 	// Statement parses a single statement from the specified
 	// token stream.
-	Statement(stream lexer.ILexer, options ...Option) (common.Node, error)
+	Statement(stream lexer.ILexer, options ...Option) (Node, error)
 
 	// Statements parses all statements from the specified token
 	// stream.  It is essentially equivalent to running Statement
 	// in a loop until all tokens are exhausted.
-	Statements(stream lexer.ILexer, options ...Option) ([]common.Node, error)
+	Statements(stream lexer.ILexer, options ...Option) ([]Node, error)
 }
 
 // MockParser is a mock implementation of the Parser interface.
@@ -78,11 +77,11 @@ func (m *MockParser) Table() Table {
 
 // Expression parses a single expression from the specified token
 // stream.
-func (m *MockParser) Expression(stream lexer.ILexer, options ...Option) (common.Node, error) {
+func (m *MockParser) Expression(stream lexer.ILexer, options ...Option) (Node, error) {
 	args := m.MethodCalled("Expression", stream, options)
 
 	if tmp := args.Get(0); tmp != nil {
-		return tmp.(common.Node), args.Error(1)
+		return tmp.(Node), args.Error(1)
 	}
 
 	return nil, args.Error(1)
@@ -90,11 +89,11 @@ func (m *MockParser) Expression(stream lexer.ILexer, options ...Option) (common.
 
 // Statement parses a single statement from the specified token
 // stream.
-func (m *MockParser) Statement(stream lexer.ILexer, options ...Option) (common.Node, error) {
+func (m *MockParser) Statement(stream lexer.ILexer, options ...Option) (Node, error) {
 	args := m.MethodCalled("Statement", stream, options)
 
 	if tmp := args.Get(0); tmp != nil {
-		return tmp.(common.Node), args.Error(1)
+		return tmp.(Node), args.Error(1)
 	}
 
 	return nil, args.Error(1)
@@ -103,11 +102,11 @@ func (m *MockParser) Statement(stream lexer.ILexer, options ...Option) (common.N
 // Statements parses all statements from the specified token stream.
 // It is essentially equivalent to running Statement in a loop until
 // all tokens are exhausted.
-func (m *MockParser) Statements(stream lexer.ILexer, options ...Option) ([]common.Node, error) {
+func (m *MockParser) Statements(stream lexer.ILexer, options ...Option) ([]Node, error) {
 	args := m.MethodCalled("Statements", stream, options)
 
 	if tmp := args.Get(0); tmp != nil {
-		return tmp.([]common.Node), args.Error(1)
+		return tmp.([]Node), args.Error(1)
 	}
 
 	return nil, args.Error(1)
@@ -133,7 +132,7 @@ func (p *parser) Table() Table {
 
 // Expression parses a single expression from the specified token
 // stream.
-func (p *parser) Expression(stream lexer.ILexer, options ...Option) (common.Node, error) {
+func (p *parser) Expression(stream lexer.ILexer, options ...Option) (Node, error) {
 	// Construct a state
 	s := newState(p, stream, options)
 
@@ -143,7 +142,7 @@ func (p *parser) Expression(stream lexer.ILexer, options ...Option) (common.Node
 
 // Statement parses a single statement from the specified token
 // stream.
-func (p *parser) Statement(stream lexer.ILexer, options ...Option) (common.Node, error) {
+func (p *parser) Statement(stream lexer.ILexer, options ...Option) (Node, error) {
 	// Construct a state
 	s := newState(p, stream, options)
 
@@ -154,14 +153,14 @@ func (p *parser) Statement(stream lexer.ILexer, options ...Option) (common.Node,
 // Statements parses all statements from the specified token stream.
 // It is essentially equivalent to running Statement in a loop until
 // all tokens are exhausted.
-func (p *parser) Statements(stream lexer.ILexer, options ...Option) ([]common.Node, error) {
+func (p *parser) Statements(stream lexer.ILexer, options ...Option) ([]Node, error) {
 	// Construct a state
 	s := newState(p, stream, options)
 
 	// Parse as many statements as possible
 	var err error
-	var node common.Node
-	nodes := []common.Node{}
+	var node Node
+	nodes := []Node{}
 	for node, err = s.Statement(); node != nil; node, err = s.Statement() {
 		// Add the new node to the list
 		nodes = append(nodes, node)

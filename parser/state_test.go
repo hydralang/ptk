@@ -21,7 +21,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/hydralang/ptk/common"
 	"github.com/hydralang/ptk/internal"
 	"github.com/hydralang/ptk/lexer"
 	"github.com/hydralang/ptk/scanner"
@@ -321,7 +320,7 @@ func TestMockStateExpressionNil(t *testing.T) {
 }
 
 func TestMockStateExpressionNotNil(t *testing.T) {
-	expected := &common.MockNode{}
+	expected := &mockNode{}
 	obj := &MockState{}
 	obj.On("Expression", 42).Return(expected, assert.AnError)
 
@@ -344,7 +343,7 @@ func TestMockStateStatementNil(t *testing.T) {
 }
 
 func TestMockStateStatementNotNil(t *testing.T) {
-	expected := &common.MockNode{}
+	expected := &mockNode{}
 	obj := &MockState{}
 	obj.On("Statement").Return(expected, assert.AnError)
 
@@ -906,8 +905,8 @@ func TestStateGetEntryNoEntry(t *testing.T) {
 }
 
 type binaryNode struct {
-	L  common.Node
-	R  common.Node
+	L  Node
+	R  Node
 	Op *lexer.Token
 }
 
@@ -915,8 +914,8 @@ func (bn *binaryNode) Location() scanner.Location {
 	return nil
 }
 
-func (bn *binaryNode) Children() []common.Node {
-	return []common.Node{bn.L, bn.R}
+func (bn *binaryNode) Children() []Node {
+	return []Node{bn.L, bn.R}
 }
 
 func (bn *binaryNode) String() string {
@@ -939,12 +938,12 @@ func TestStateExpressionBase(t *testing.T) {
 		{Type: "+"},
 		{Type: "n", Value: 3},
 	}
-	var first ExprFirst = func(s State, pow int, tok *lexer.Token) (common.Node, error) {
+	var first ExprFirst = func(s State, pow int, tok *lexer.Token) (Node, error) {
 		assert.Same(t, obj, s)
 		assert.Equal(t, 0, pow)
-		return &common.TokenNode{Token: *tok}, nil
+		return &TokenNode{Token: *tok}, nil
 	}
-	var next ExprNext = func(s State, pow int, l common.Node, tok *lexer.Token) (common.Node, error) {
+	var next ExprNext = func(s State, pow int, l Node, tok *lexer.Token) (Node, error) {
 		assert.Same(t, obj, s)
 		assert.Equal(t, 10, pow)
 		r, _ := s.Expression(pow)
@@ -978,10 +977,10 @@ func TestStateExpressionBase(t *testing.T) {
 		Op: &lexer.Token{Type: "+"},
 		L: &binaryNode{
 			Op: &lexer.Token{Type: "+"},
-			L:  &common.TokenNode{Token: lexer.Token{Type: "n", Value: 1}},
-			R:  &common.TokenNode{Token: lexer.Token{Type: "n", Value: 2}},
+			L:  &TokenNode{Token: lexer.Token{Type: "n", Value: 1}},
+			R:  &TokenNode{Token: lexer.Token{Type: "n", Value: 2}},
 		},
-		R: &common.TokenNode{Token: lexer.Token{Type: "n", Value: 3}},
+		R: &TokenNode{Token: lexer.Token{Type: "n", Value: 3}},
 	}, result)
 	tableStack.AssertExpectations(t)
 	streamStack.AssertExpectations(t)
@@ -1005,12 +1004,12 @@ func TestStateExpressionPrecedence(t *testing.T) {
 		{Type: "+"},
 		{Type: "n", Value: 4},
 	}
-	var first ExprFirst = func(s State, pow int, tok *lexer.Token) (common.Node, error) {
+	var first ExprFirst = func(s State, pow int, tok *lexer.Token) (Node, error) {
 		assert.Same(t, obj, s)
 		assert.Equal(t, 0, pow)
-		return &common.TokenNode{Token: *tok}, nil
+		return &TokenNode{Token: *tok}, nil
 	}
-	var next ExprNext = func(s State, pow int, l common.Node, tok *lexer.Token) (common.Node, error) {
+	var next ExprNext = func(s State, pow int, l Node, tok *lexer.Token) (Node, error) {
 		assert.Same(t, obj, s)
 		switch tok.Type {
 		case "+":
@@ -1053,14 +1052,14 @@ func TestStateExpressionPrecedence(t *testing.T) {
 		Op: &lexer.Token{Type: "+"},
 		L: &binaryNode{
 			Op: &lexer.Token{Type: "+"},
-			L:  &common.TokenNode{Token: lexer.Token{Type: "n", Value: 1}},
+			L:  &TokenNode{Token: lexer.Token{Type: "n", Value: 1}},
 			R: &binaryNode{
 				Op: &lexer.Token{Type: "*"},
-				L:  &common.TokenNode{Token: lexer.Token{Type: "n", Value: 2}},
-				R:  &common.TokenNode{Token: lexer.Token{Type: "n", Value: 3}},
+				L:  &TokenNode{Token: lexer.Token{Type: "n", Value: 2}},
+				R:  &TokenNode{Token: lexer.Token{Type: "n", Value: 3}},
 			},
 		},
-		R: &common.TokenNode{Token: lexer.Token{Type: "n", Value: 4}},
+		R: &TokenNode{Token: lexer.Token{Type: "n", Value: 4}},
 	}, result)
 	tableStack.AssertExpectations(t)
 	streamStack.AssertExpectations(t)
@@ -1132,12 +1131,12 @@ func TestStateExpressionFirstFails(t *testing.T) {
 		{Type: "+"},
 		{Type: "n", Value: 3},
 	}
-	var first ExprFirst = func(s State, pow int, tok *lexer.Token) (common.Node, error) {
+	var first ExprFirst = func(s State, pow int, tok *lexer.Token) (Node, error) {
 		assert.Same(t, obj, s)
 		assert.Equal(t, 0, pow)
 		return nil, assert.AnError
 	}
-	var next ExprNext = func(s State, pow int, l common.Node, tok *lexer.Token) (common.Node, error) {
+	var next ExprNext = func(s State, pow int, l Node, tok *lexer.Token) (Node, error) {
 		assert.Same(t, obj, s)
 		assert.Equal(t, 10, pow)
 		r, _ := s.Expression(pow)
@@ -1187,10 +1186,10 @@ func TestStateExpressionNextEntryMissing(t *testing.T) {
 		{Type: "+"},
 		{Type: "n", Value: 3},
 	}
-	var first ExprFirst = func(s State, pow int, tok *lexer.Token) (common.Node, error) {
+	var first ExprFirst = func(s State, pow int, tok *lexer.Token) (Node, error) {
 		assert.Same(t, obj, s)
 		assert.Equal(t, 0, pow)
-		return &common.TokenNode{Token: *tok}, nil
+		return &TokenNode{Token: *tok}, nil
 	}
 	tab := Table{
 		"n": Entry{
@@ -1228,12 +1227,12 @@ func TestStateExpressionNextFails(t *testing.T) {
 		{Type: "+"},
 		{Type: "n", Value: 3},
 	}
-	var first ExprFirst = func(s State, pow int, tok *lexer.Token) (common.Node, error) {
+	var first ExprFirst = func(s State, pow int, tok *lexer.Token) (Node, error) {
 		assert.Same(t, obj, s)
 		assert.Equal(t, 0, pow)
-		return &common.TokenNode{Token: *tok}, nil
+		return &TokenNode{Token: *tok}, nil
 	}
-	var next ExprNext = func(s State, pow int, l common.Node, tok *lexer.Token) (common.Node, error) {
+	var next ExprNext = func(s State, pow int, l Node, tok *lexer.Token) (Node, error) {
 		assert.Same(t, obj, s)
 		assert.Equal(t, 10, pow)
 		return nil, assert.AnError
@@ -1270,10 +1269,10 @@ func (sn *stmtNode) Location() scanner.Location {
 	return nil
 }
 
-func (sn *stmtNode) Children() []common.Node {
-	children := []common.Node{}
+func (sn *stmtNode) Children() []Node {
+	children := []Node{}
 	for _, tok := range sn.toks[1:] {
-		children = append(children, &common.TokenNode{Token: *tok})
+		children = append(children, &TokenNode{Token: *tok})
 	}
 	return children
 }
@@ -1298,7 +1297,7 @@ func TestStateStatementBase(t *testing.T) {
 		{Type: "kw", Value: "kw3"},
 		{Type: "end"},
 	}
-	var stmt Statement = func(s State, tok *lexer.Token) (common.Node, error) {
+	var stmt Statement = func(s State, tok *lexer.Token) (Node, error) {
 		assert.Same(t, obj, s)
 		node := &stmtNode{
 			toks: []*lexer.Token{tok},
@@ -1399,7 +1398,7 @@ func TestStateStatementStmtFailed(t *testing.T) {
 		{Type: "kw", Value: "kw3"},
 		{Type: "end"},
 	}
-	var stmt Statement = func(s State, tok *lexer.Token) (common.Node, error) {
+	var stmt Statement = func(s State, tok *lexer.Token) (Node, error) {
 		assert.Same(t, obj, s)
 		return nil, assert.AnError
 	}

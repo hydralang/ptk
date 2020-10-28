@@ -20,7 +20,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/hydralang/ptk/common"
 	"github.com/hydralang/ptk/lexer"
 )
 
@@ -38,10 +37,10 @@ func TestEntryCallFirstNil(t *testing.T) {
 func TestEntryCallFirstNotNil(t *testing.T) {
 	s := &MockState{}
 	tok := &lexer.Token{}
-	node := &common.MockNode{}
+	node := &mockNode{}
 	ent := Entry{
 		Power: 42,
-		First: ExprFirst(func(es State, pow int, eTok *lexer.Token) (common.Node, error) {
+		First: ExprFirst(func(es State, pow int, eTok *lexer.Token) (Node, error) {
 			assert.Same(t, s, es)
 			assert.Equal(t, 42, pow)
 			assert.Same(t, tok, eTok)
@@ -57,7 +56,7 @@ func TestEntryCallFirstNotNil(t *testing.T) {
 
 func TestEntryCallNextNil(t *testing.T) {
 	s := &MockState{}
-	l := &common.MockNode{}
+	l := &mockNode{}
 	tok := &lexer.Token{}
 	ent := Entry{}
 
@@ -69,12 +68,12 @@ func TestEntryCallNextNil(t *testing.T) {
 
 func TestEntryCallNextNotNil(t *testing.T) {
 	s := &MockState{}
-	l := &common.MockNode{}
+	l := &mockNode{}
 	tok := &lexer.Token{}
-	node := &common.MockNode{}
+	node := &mockNode{}
 	ent := Entry{
 		Power: 42,
-		Next: ExprNext(func(es State, pow int, el common.Node, eTok *lexer.Token) (common.Node, error) {
+		Next: ExprNext(func(es State, pow int, el Node, eTok *lexer.Token) (Node, error) {
 			assert.Same(t, s, es)
 			assert.Equal(t, 42, pow)
 			assert.Same(t, l, el)
@@ -103,9 +102,9 @@ func TestEntryCallStmtNil(t *testing.T) {
 func TestEntryCallStmtNotNil(t *testing.T) {
 	s := &MockState{}
 	tok := &lexer.Token{}
-	node := &common.MockNode{}
+	node := &mockNode{}
 	ent := Entry{
-		Stmt: Statement(func(es State, eTok *lexer.Token) (common.Node, error) {
+		Stmt: Statement(func(es State, eTok *lexer.Token) (Node, error) {
 			assert.Same(t, s, es)
 			assert.Same(t, tok, eTok)
 			return node, assert.AnError

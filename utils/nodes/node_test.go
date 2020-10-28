@@ -20,7 +20,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/hydralang/ptk/common"
 	"github.com/hydralang/ptk/lexer"
 	"github.com/hydralang/ptk/parser"
 	"github.com/hydralang/ptk/scanner"
@@ -66,12 +65,42 @@ func (m *mockLocation) Incr(c rune, tabstop int) scanner.Location {
 	return nil
 }
 
+type mockNode struct {
+	mock.Mock
+}
+
+func (m *mockNode) Location() scanner.Location {
+	args := m.MethodCalled("Location")
+
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(scanner.Location)
+	}
+
+	return nil
+}
+
+func (m *mockNode) Children() []parser.Node {
+	args := m.MethodCalled("Children")
+
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.([]parser.Node)
+	}
+
+	return nil
+}
+
+func (m *mockNode) String() string {
+	args := m.MethodCalled("String")
+
+	return args.String(0)
+}
+
 func TestAnnotatedNodeImplementsNode(t *testing.T) {
-	assert.Implements(t, (*common.Node)(nil), &AnnotatedNode{})
+	assert.Implements(t, (*parser.Node)(nil), &AnnotatedNode{})
 }
 
 func TestNewAnnotatedNode(t *testing.T) {
-	node := &common.MockNode{}
+	node := &mockNode{}
 
 	result := NewAnnotatedNode(node, "annotation")
 
@@ -83,7 +112,7 @@ func TestNewAnnotatedNode(t *testing.T) {
 
 func TestAnnotatedNodeLocation(t *testing.T) {
 	loc := &mockLocation{}
-	node := &common.MockNode{}
+	node := &mockNode{}
 	node.On("Location").Return(loc)
 	obj := &AnnotatedNode{
 		node: node,
@@ -96,8 +125,8 @@ func TestAnnotatedNodeLocation(t *testing.T) {
 }
 
 func TestAnnotatedNodeChildren(t *testing.T) {
-	children := []common.Node{&common.MockNode{}, &common.MockNode{}, &common.MockNode{}}
-	node := &common.MockNode{}
+	children := []parser.Node{&mockNode{}, &mockNode{}, &mockNode{}}
+	node := &mockNode{}
 	node.On("Children").Return(children)
 	obj := &AnnotatedNode{
 		node: node,
@@ -112,7 +141,7 @@ func TestAnnotatedNodeChildren(t *testing.T) {
 }
 
 func TestAnnotatedNodeString(t *testing.T) {
-	node := &common.MockNode{}
+	node := &mockNode{}
 	node.On("String").Return("mock node")
 	obj := &AnnotatedNode{
 		node: node,
@@ -126,7 +155,7 @@ func TestAnnotatedNodeString(t *testing.T) {
 }
 
 func TestAnnotatedNodeUnwrap(t *testing.T) {
-	node := &common.MockNode{}
+	node := &mockNode{}
 	obj := &AnnotatedNode{
 		node: node,
 	}
@@ -137,13 +166,13 @@ func TestAnnotatedNodeUnwrap(t *testing.T) {
 }
 
 func TestUnaryOperatorImplementsNode(t *testing.T) {
-	assert.Implements(t, (*common.Node)(nil), &UnaryOperator{})
+	assert.Implements(t, (*parser.Node)(nil), &UnaryOperator{})
 }
 
 func TestUnaryFactoryBase(t *testing.T) {
 	s := &parser.MockState{}
 	op := &lexer.Token{}
-	exp := &common.MockNode{}
+	exp := &mockNode{}
 	exp.On("Location").Return(nil)
 
 	result, err := UnaryFactory(s, op, exp)
@@ -164,7 +193,7 @@ func TestUnaryFactoryLocation(t *testing.T) {
 	op := &lexer.Token{
 		Loc: opLoc,
 	}
-	exp := &common.MockNode{}
+	exp := &mockNode{}
 	exp.On("Location").Return(expLoc)
 
 	result, err := UnaryFactory(s, op, exp)
@@ -188,7 +217,7 @@ func TestUnaryFactoryLocationError(t *testing.T) {
 	op := &lexer.Token{
 		Loc: opLoc,
 	}
-	exp := &common.MockNode{}
+	exp := &mockNode{}
 	exp.On("Location").Return(expLoc)
 
 	result, err := UnaryFactory(s, op, exp)
@@ -211,14 +240,14 @@ func TestUnaryOperatorLocation(t *testing.T) {
 }
 
 func TestUnaryOperatorChildren(t *testing.T) {
-	exp := &common.MockNode{}
+	exp := &mockNode{}
 	obj := &UnaryOperator{
 		Exp: exp,
 	}
 
 	result := obj.Children()
 
-	assert.Equal(t, []common.Node{
+	assert.Equal(t, []parser.Node{
 		NewAnnotatedNode(exp, "Exp"),
 	}, result)
 }
@@ -234,15 +263,15 @@ func TestUnaryOperatorString(t *testing.T) {
 }
 
 func TestBinaryOperatorImplementsNode(t *testing.T) {
-	assert.Implements(t, (*common.Node)(nil), &BinaryOperator{})
+	assert.Implements(t, (*parser.Node)(nil), &BinaryOperator{})
 }
 
 func TestBinaryFactoryBase(t *testing.T) {
 	s := &parser.MockState{}
 	op := &lexer.Token{}
-	l := &common.MockNode{}
+	l := &mockNode{}
 	l.On("Location").Return(nil)
-	r := &common.MockNode{}
+	r := &mockNode{}
 	r.On("Location").Return(nil)
 
 	result, err := BinaryFactory(s, l, r, op)
@@ -264,9 +293,9 @@ func TestBinaryFactoryLocation(t *testing.T) {
 	rLoc := &mockLocation{}
 	lLoc.On("ThruEnd", rLoc).Return(finalLoc, nil)
 	op := &lexer.Token{}
-	l := &common.MockNode{}
+	l := &mockNode{}
 	l.On("Location").Return(lLoc)
-	r := &common.MockNode{}
+	r := &mockNode{}
 	r.On("Location").Return(rLoc)
 
 	result, err := BinaryFactory(s, l, r, op)
@@ -292,9 +321,9 @@ func TestBinaryFactoryLocationError(t *testing.T) {
 	rLoc := &mockLocation{}
 	lLoc.On("ThruEnd", rLoc).Return(nil, assert.AnError)
 	op := &lexer.Token{}
-	l := &common.MockNode{}
+	l := &mockNode{}
 	l.On("Location").Return(lLoc)
-	r := &common.MockNode{}
+	r := &mockNode{}
 	r.On("Location").Return(rLoc)
 
 	result, err := BinaryFactory(s, l, r, op)
@@ -318,9 +347,9 @@ func TestBinaryOperatorLocation(t *testing.T) {
 }
 
 func TestBinaryOperatorChildren(t *testing.T) {
-	l := &common.MockNode{}
+	l := &mockNode{}
 	l.On("dummy", "left")
-	r := &common.MockNode{}
+	r := &mockNode{}
 	r.On("dummy", "right")
 	obj := &BinaryOperator{
 		L: l,
@@ -329,7 +358,7 @@ func TestBinaryOperatorChildren(t *testing.T) {
 
 	result := obj.Children()
 
-	assert.Equal(t, []common.Node{
+	assert.Equal(t, []parser.Node{
 		NewAnnotatedNode(l, "L"),
 		NewAnnotatedNode(r, "R"),
 	}, result)

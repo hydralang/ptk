@@ -19,12 +19,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/hydralang/ptk/common"
 )
 
 func TestRenderRoot(t *testing.T) {
-	node := &common.MockNode{}
+	node := &mockNode{}
 	node.On("String").Return("node")
 	buf := &bytes.Buffer{}
 
@@ -36,7 +34,7 @@ func TestRenderRoot(t *testing.T) {
 }
 
 func TestRenderLast(t *testing.T) {
-	node := &common.MockNode{}
+	node := &mockNode{}
 	node.On("String").Return("node")
 	buf := &bytes.Buffer{}
 
@@ -48,7 +46,7 @@ func TestRenderLast(t *testing.T) {
 }
 
 func TestRenderBranch(t *testing.T) {
-	node := &common.MockNode{}
+	node := &mockNode{}
 	node.On("String").Return("node")
 	buf := &bytes.Buffer{}
 

@@ -17,7 +17,6 @@ package nodes
 import (
 	"fmt"
 
-	"github.com/hydralang/ptk/common"
 	"github.com/hydralang/ptk/lexer"
 	"github.com/hydralang/ptk/parser"
 	"github.com/hydralang/ptk/scanner"
@@ -30,13 +29,13 @@ import (
 // annotations to the string representations of nodes for the purposes
 // of visualizing the AST.
 type AnnotatedNode struct {
-	node common.Node // The wrapped node
+	node parser.Node // The wrapped node
 	ann  string      // The annotation text
 }
 
 // NewAnnotatedNode returns a new AnnotatedNode wrapping a given node
 // with the specified annotation.
-func NewAnnotatedNode(node common.Node, annotation string) *AnnotatedNode {
+func NewAnnotatedNode(node parser.Node, annotation string) *AnnotatedNode {
 	return &AnnotatedNode{
 		node: node,
 		ann:  annotation,
@@ -49,7 +48,7 @@ func (an *AnnotatedNode) Location() scanner.Location {
 }
 
 // Children returns a list of child nodes.
-func (an *AnnotatedNode) Children() []common.Node {
+func (an *AnnotatedNode) Children() []parser.Node {
 	return an.node.Children()
 }
 
@@ -62,7 +61,7 @@ func (an *AnnotatedNode) String() string {
 // Unwrap returns the underlying node.  This may be used when the
 // underlying node contains data or other methods that are not
 // otherwise accessible.
-func (an *AnnotatedNode) Unwrap() common.Node {
+func (an *AnnotatedNode) Unwrap() parser.Node {
 	return an.node
 }
 
@@ -71,12 +70,12 @@ func (an *AnnotatedNode) Unwrap() common.Node {
 type UnaryOperator struct {
 	Loc scanner.Location // The location of the expression
 	Op  *lexer.Token     // The unary operator
-	Exp common.Node      // The expression acted upon
+	Exp parser.Node      // The expression acted upon
 }
 
 // UnaryFactory is a factory function that may be passed to Prefix,
 // and which constructs a UnaryOperator node.
-func UnaryFactory(s parser.State, op *lexer.Token, exp common.Node) (common.Node, error) {
+func UnaryFactory(s parser.State, op *lexer.Token, exp parser.Node) (parser.Node, error) {
 	obj := &UnaryOperator{
 		Op:  op,
 		Exp: exp,
@@ -101,8 +100,8 @@ func (u *UnaryOperator) Location() scanner.Location {
 }
 
 // Children returns a list of child nodes.
-func (u *UnaryOperator) Children() []common.Node {
-	return []common.Node{NewAnnotatedNode(u.Exp, "Exp")}
+func (u *UnaryOperator) Children() []parser.Node {
+	return []parser.Node{NewAnnotatedNode(u.Exp, "Exp")}
 }
 
 // String returns a string describing the node.  This should include
@@ -116,13 +115,13 @@ func (u *UnaryOperator) String() string {
 type BinaryOperator struct {
 	Loc scanner.Location // The location of the expression
 	Op  *lexer.Token     // The unary operator
-	L   common.Node      // The left-hand side expression
-	R   common.Node      // The right-hand side expression
+	L   parser.Node      // The left-hand side expression
+	R   parser.Node      // The right-hand side expression
 }
 
 // BinaryFactory is a factory function that may be passed to Infix or
 // InfixR, and which constructs a BinaryOperator node.
-func BinaryFactory(s parser.State, l, r common.Node, op *lexer.Token) (common.Node, error) {
+func BinaryFactory(s parser.State, l, r parser.Node, op *lexer.Token) (parser.Node, error) {
 	obj := &BinaryOperator{
 		Op: op,
 		L:  l,
@@ -149,8 +148,8 @@ func (b *BinaryOperator) Location() scanner.Location {
 }
 
 // Children returns a list of child nodes.
-func (b *BinaryOperator) Children() []common.Node {
-	return []common.Node{
+func (b *BinaryOperator) Children() []parser.Node {
+	return []parser.Node{
 		NewAnnotatedNode(b.L, "L"),
 		NewAnnotatedNode(b.R, "R"),
 	}

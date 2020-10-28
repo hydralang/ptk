@@ -21,7 +21,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/hydralang/ptk/common"
 	"github.com/hydralang/ptk/lexer"
 )
 
@@ -75,7 +74,7 @@ func TestMockParserExpressionNil(t *testing.T) {
 }
 
 func TestMockParserExpressionNotNil(t *testing.T) {
-	expected := &common.MockNode{}
+	expected := &mockNode{}
 	stream := &mockLexer{}
 	obj := &MockParser{}
 	obj.On("Expression", stream, mock.Anything).Return(expected, assert.AnError)
@@ -100,7 +99,7 @@ func TestMockParserStatementNil(t *testing.T) {
 }
 
 func TestMockParserStatementNotNil(t *testing.T) {
-	expected := &common.MockNode{}
+	expected := &mockNode{}
 	stream := &mockLexer{}
 	obj := &MockParser{}
 	obj.On("Statement", stream, mock.Anything).Return(expected, assert.AnError)
@@ -127,12 +126,12 @@ func TestMockParserStatementsNil(t *testing.T) {
 func TestMockParserStatementsNotNil(t *testing.T) {
 	stream := &mockLexer{}
 	obj := &MockParser{}
-	obj.On("Statements", stream, mock.Anything).Return([]common.Node{}, assert.AnError)
+	obj.On("Statements", stream, mock.Anything).Return([]Node{}, assert.AnError)
 
 	result, err := obj.Statements(stream)
 
 	assert.Same(t, assert.AnError, err)
-	assert.Equal(t, []common.Node{}, result)
+	assert.Equal(t, []Node{}, result)
 	obj.AssertExpectations(t)
 }
 
@@ -178,7 +177,7 @@ func TestParserExpression(t *testing.T) {
 		func(s State) {},
 	}
 	state := &MockState{}
-	node := &common.MockNode{}
+	node := &mockNode{}
 	state.On("Expression", 0).Return(node, assert.AnError)
 	defer patcher.SetVar(&newState, func(p Parser, str lexer.ILexer, options []Option) State {
 		assert.Same(t, obj, p)
@@ -206,7 +205,7 @@ func TestParserStatement(t *testing.T) {
 		func(s State) {},
 	}
 	state := &MockState{}
-	node := &common.MockNode{}
+	node := &mockNode{}
 	state.On("Statement").Return(node, assert.AnError)
 	defer patcher.SetVar(&newState, func(p Parser, str lexer.ILexer, options []Option) State {
 		assert.Same(t, obj, p)
@@ -234,9 +233,9 @@ func TestParserStatementsBase(t *testing.T) {
 		func(s State) {},
 	}
 	state := &MockState{}
-	nodes := []common.Node{&common.MockNode{}, &common.MockNode{}, &common.MockNode{}}
+	nodes := []Node{&mockNode{}, &mockNode{}, &mockNode{}}
 	for i, node := range nodes {
-		node.(*common.MockNode).On("dummy", i) // make distinct
+		node.(*mockNode).On("dummy", i) // make distinct
 		state.On("Statement").Return(node, nil).Once()
 	}
 	state.On("Statement").Return(nil, nil)

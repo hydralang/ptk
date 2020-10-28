@@ -21,17 +21,17 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/hydralang/ptk/common"
+	"github.com/hydralang/ptk/parser"
 )
 
 func TestVisualizeInner(t *testing.T) {
-	children := []common.Node{&common.MockNode{}, &common.MockNode{}, &common.MockNode{}}
+	children := []parser.Node{&mockNode{}, &mockNode{}, &mockNode{}}
 	for i, child := range children {
-		n := child.(*common.MockNode)
+		n := child.(*mockNode)
 		n.On("String").Return(fmt.Sprintf("child%d", i))
-		n.On("Children").Return([]common.Node{})
+		n.On("Children").Return([]parser.Node{})
 	}
-	node := &common.MockNode{}
+	node := &mockNode{}
 	node.On("String").Return("node")
 	node.On("Children").Return(children)
 	buf := &bytes.Buffer{}
@@ -42,13 +42,13 @@ func TestVisualizeInner(t *testing.T) {
 }
 
 func TestVisualize(t *testing.T) {
-	children := []common.Node{&common.MockNode{}, &common.MockNode{}, &common.MockNode{}}
+	children := []parser.Node{&mockNode{}, &mockNode{}, &mockNode{}}
 	for i, child := range children {
-		n := child.(*common.MockNode)
+		n := child.(*mockNode)
 		n.On("String").Return(fmt.Sprintf("child%d", i))
-		n.On("Children").Return([]common.Node{})
+		n.On("Children").Return([]parser.Node{})
 	}
-	node := &common.MockNode{}
+	node := &mockNode{}
 	node.On("String").Return("node")
 	node.On("Children").Return(children)
 
