@@ -170,7 +170,7 @@ func TestUnaryOperatorImplementsNode(t *testing.T) {
 }
 
 func TestUnaryFactoryBase(t *testing.T) {
-	s := &parser.MockState{}
+	s := &mockState{}
 	op := &lexer.Token{}
 	exp := &mockNode{}
 	exp.On("Location").Return(nil)
@@ -185,7 +185,7 @@ func TestUnaryFactoryBase(t *testing.T) {
 }
 
 func TestUnaryFactoryLocation(t *testing.T) {
-	s := &parser.MockState{}
+	s := &mockState{}
 	finalLoc := &mockLocation{}
 	opLoc := &mockLocation{}
 	expLoc := &mockLocation{}
@@ -210,7 +210,7 @@ func TestUnaryFactoryLocation(t *testing.T) {
 }
 
 func TestUnaryFactoryLocationError(t *testing.T) {
-	s := &parser.MockState{}
+	s := &mockState{}
 	opLoc := &mockLocation{}
 	expLoc := &mockLocation{}
 	opLoc.On("ThruEnd", expLoc).Return(nil, assert.AnError)
@@ -267,7 +267,7 @@ func TestBinaryOperatorImplementsNode(t *testing.T) {
 }
 
 func TestBinaryFactoryBase(t *testing.T) {
-	s := &parser.MockState{}
+	s := &mockState{}
 	op := &lexer.Token{}
 	l := &mockNode{}
 	l.On("Location").Return(nil)
@@ -287,7 +287,7 @@ func TestBinaryFactoryBase(t *testing.T) {
 }
 
 func TestBinaryFactoryLocation(t *testing.T) {
-	s := &parser.MockState{}
+	s := &mockState{}
 	finalLoc := &mockLocation{}
 	lLoc := &mockLocation{}
 	rLoc := &mockLocation{}
@@ -316,7 +316,7 @@ func TestBinaryFactoryLocation(t *testing.T) {
 }
 
 func TestBinaryFactoryLocationError(t *testing.T) {
-	s := &parser.MockState{}
+	s := &mockState{}
 	lLoc := &mockLocation{}
 	rLoc := &mockLocation{}
 	lLoc.On("ThruEnd", rLoc).Return(nil, assert.AnError)

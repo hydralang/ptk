@@ -14,160 +14,105 @@
 
 package parser
 
-import (
-	"github.com/stretchr/testify/mock"
+import "github.com/hydralang/ptk/lexer"
 
-	"github.com/hydralang/ptk/lexer"
-)
+// IParser is the interface implemented by the Parser.
+type IParser interface {
+	// Expression parses a single expression from the token stream
+	// provided by the lexer.  The method will be called with a
+	// "right binding power", which should be 0 for consumers of
+	// the parser, but will be non-zero when called recursively.
+	Expression(rbp int) (Node, error)
 
-// Patch points to enable testing functions below in isolation.
-var (
-	newState func(Parser, lexer.ILexer, []Option) State = NewState
-)
+	// Statement parses a single statement from the token stream
+	// provided by the lexer.
+	Statement() (Node, error)
+}
 
-// Option is a parse option that may be passed to one of the Parser
-// methods.
-type Option func(state State)
+// Parser is an implementation of IParser.
+type Parser struct {
+	Lexer IPushBackLexer // The lexer providing the tokens
+	State State          // The state of the parser
+}
 
-// AppState is an option allowing an application state to be set when
-// parsing an expression or statements.
-func AppState(state interface{}) Option {
-	return func(s State) {
-		s.PushAppState(state)
+// New constructs a new Parser using the provided lexer and state.
+func New(l lexer.ILexer, state State) *Parser {
+	// Wrap the lexer to allow for push-back
+	var ok bool
+	var pbl IPushBackLexer
+	if pbl, ok = l.(IPushBackLexer); !ok {
+		pbl = NewPushBackLexer(l)
+	}
+
+	return &Parser{
+		Lexer: pbl,
+		State: state,
 	}
 }
 
-// Parser represents the actual parser.  This is passed to the parsing
-// functions along with the parsing state.
-type Parser interface {
-	// Table returns the default table that will be used to
-	// initialize the state.
-	Table() Table
-
-	// Expression parses a single expression from the specified
-	// token stream.
-	Expression(stream lexer.ILexer, options ...Option) (Node, error)
-
-	// Statement parses a single statement from the specified
-	// token stream.
-	Statement(stream lexer.ILexer, options ...Option) (Node, error)
-
-	// Statements parses all statements from the specified token
-	// stream.  It is essentially equivalent to running Statement
-	// in a loop until all tokens are exhausted.
-	Statements(stream lexer.ILexer, options ...Option) ([]Node, error)
-}
-
-// MockParser is a mock implementation of the Parser interface.
-type MockParser struct {
-	mock.Mock
-}
-
-// Table returns the default table that will be used to initialize the
-// state.
-func (m *MockParser) Table() Table {
-	args := m.MethodCalled("Table")
-
-	if tmp := args.Get(0); tmp != nil {
-		return tmp.(Table)
+// Expression parses a single expression from the token stream
+// provided by the lexer.  The method will be called with a "right
+// binding power", which should be 0 for consumers of the parser, but
+// will be non-zero when called recursively.
+func (p *Parser) Expression(rbp int) (Node, error) {
+	// Get a token from the lexer
+	tok := p.Lexer.Next()
+	if tok == nil {
+		return nil, ExpectedToken()
 	}
 
-	return nil
-}
-
-// Expression parses a single expression from the specified token
-// stream.
-func (m *MockParser) Expression(stream lexer.ILexer, options ...Option) (Node, error) {
-	args := m.MethodCalled("Expression", stream, options)
-
-	if tmp := args.Get(0); tmp != nil {
-		return tmp.(Node), args.Error(1)
+	// Get the table entry for it
+	ent, ok := p.State.Table()[tok.Type]
+	if !ok {
+		return nil, UnknownTokenType(tok)
 	}
 
-	return nil, args.Error(1)
-}
-
-// Statement parses a single statement from the specified token
-// stream.
-func (m *MockParser) Statement(stream lexer.ILexer, options ...Option) (Node, error) {
-	args := m.MethodCalled("Statement", stream, options)
-
-	if tmp := args.Get(0); tmp != nil {
-		return tmp.(Node), args.Error(1)
-	}
-
-	return nil, args.Error(1)
-}
-
-// Statements parses all statements from the specified token stream.
-// It is essentially equivalent to running Statement in a loop until
-// all tokens are exhausted.
-func (m *MockParser) Statements(stream lexer.ILexer, options ...Option) ([]Node, error) {
-	args := m.MethodCalled("Statements", stream, options)
-
-	if tmp := args.Get(0); tmp != nil {
-		return tmp.([]Node), args.Error(1)
-	}
-
-	return nil, args.Error(1)
-}
-
-// parser is an implementation of Parser.
-type parser struct {
-	table Table // The initial table to use when constructing a state
-}
-
-// New constructs a new parser, with the specified table.
-func New(table Table) Parser {
-	return &parser{
-		table: table,
-	}
-}
-
-// Table returns the default table that will be used to initialize the
-// state.
-func (p *parser) Table() Table {
-	return p.table
-}
-
-// Expression parses a single expression from the specified token
-// stream.
-func (p *parser) Expression(stream lexer.ILexer, options ...Option) (Node, error) {
-	// Construct a state
-	s := newState(p, stream, options)
-
-	// Parse an expression
-	return s.Expression(0)
-}
-
-// Statement parses a single statement from the specified token
-// stream.
-func (p *parser) Statement(stream lexer.ILexer, options ...Option) (Node, error) {
-	// Construct a state
-	s := newState(p, stream, options)
-
-	// Parse a statement
-	return s.Statement()
-}
-
-// Statements parses all statements from the specified token stream.
-// It is essentially equivalent to running Statement in a loop until
-// all tokens are exhausted.
-func (p *parser) Statements(stream lexer.ILexer, options ...Option) ([]Node, error) {
-	// Construct a state
-	s := newState(p, stream, options)
-
-	// Parse as many statements as possible
-	var err error
-	var node Node
-	nodes := []Node{}
-	for node, err = s.Statement(); node != nil; node, err = s.Statement() {
-		// Add the new node to the list
-		nodes = append(nodes, node)
-	}
+	// Process the token
+	node, err := ent.callFirst(p, p.State, p.Lexer, tok)
 	if err != nil {
 		return nil, err
 	}
 
-	return nodes, nil
+	// Handle subsequent tokens
+	for tok = p.Lexer.Next(); tok != nil; tok = p.Lexer.Next() {
+		// Get the table entry for the token
+		ent, ok = p.State.Table()[tok.Type]
+		if !ok {
+			return nil, UnknownTokenType(tok)
+		}
+
+		// Check the binding power of the token
+		if rbp >= ent.Power {
+			p.Lexer.PushBack(tok)
+			break
+		}
+
+		// Process the token
+		node, err = ent.callNext(p, p.State, p.Lexer, node, tok)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return node, nil
+}
+
+// Statement parses a single statement from the token stream provided
+// by the lexer.
+func (p *Parser) Statement() (Node, error) {
+	// Get a token from the lexer
+	tok := p.Lexer.Next()
+	if tok == nil {
+		// No statement
+		return nil, nil
+	}
+
+	// Get the table entry for it
+	ent, ok := p.State.Table()[tok.Type]
+	if !ok {
+		return nil, UnknownTokenType(tok)
+	}
+
+	// Process the token and return the result
+	return ent.callStmt(p, p.State, p.Lexer, tok)
 }
