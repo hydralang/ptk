@@ -21,8 +21,7 @@ import (
 	"github.com/hydralang/ptk/scanner"
 )
 
-// Node describes one node in an abstract syntax tree.  Note that it
-// is deliberate that Token implements Node.
+// Node describes one node in an abstract syntax tree.
 type Node interface {
 	// Location returns the node's location range.
 	Location() scanner.Location
@@ -36,7 +35,9 @@ type Node interface {
 	String() string
 }
 
-// TokenNode is an implementation of Node that wraps lexer.Token.
+// TokenNode is an implementation of Node that wraps lexer.Token.  It
+// provides a default implementation of Children that returns an empty
+// list of child nodes.
 type TokenNode struct {
 	lexer.Token
 }
@@ -47,46 +48,38 @@ func (tn *TokenNode) Children() []Node {
 }
 
 // AnnotatedNode is a wrapper for Node that implements Node.  The
-// Location and String calls are proxied through, and there is an
-// Unwrap call to retrieve the wrapped Node, but the String method
-// includes a specified annotation.  This is used to allow attaching
-// annotations to the string representations of nodes for the purposes
-// of visualizing the AST.
+// Location and String calls are proxied through, but the String
+// method includes a specified annotation.  This is used to allow
+// attaching annotations to the string representations of nodes for
+// the purposes of visualizing the AST.
 type AnnotatedNode struct {
-	node Node   // The wrapped node
-	ann  string // The annotation text
+	Node       Node   // The wrapped node
+	Annotation string // The annotation text
 }
 
 // NewAnnotatedNode returns a new AnnotatedNode wrapping a given node
 // with the specified annotation.
 func NewAnnotatedNode(node Node, annotation string) *AnnotatedNode {
 	return &AnnotatedNode{
-		node: node,
-		ann:  annotation,
+		Node:       node,
+		Annotation: annotation,
 	}
 }
 
 // Location returns the node's location range.
 func (an *AnnotatedNode) Location() scanner.Location {
-	return an.node.Location()
+	return an.Node.Location()
 }
 
 // Children returns a list of child nodes.
 func (an *AnnotatedNode) Children() []Node {
-	return an.node.Children()
+	return an.Node.Children()
 }
 
 // String returns a string describing the node.  This should include
 // the location range that encompasses all of the node's tokens.
 func (an *AnnotatedNode) String() string {
-	return fmt.Sprintf("%s: %s", an.ann, an.node)
-}
-
-// Unwrap returns the underlying node.  This may be used when the
-// underlying node contains data or other methods that are not
-// otherwise accessible.
-func (an *AnnotatedNode) Unwrap() Node {
-	return an.node
+	return fmt.Sprintf("%s: %s", an.Annotation, an.Node)
 }
 
 // UnaryOperator is a Node implementation that describes the use of a
@@ -99,7 +92,7 @@ type UnaryOperator struct {
 
 // UnaryFactory is a factory function that may be passed to Prefix,
 // and which constructs a UnaryOperator node.
-func UnaryFactory(s State, op *lexer.Token, exp Node) (Node, error) {
+func UnaryFactory(p IParser, s State, lex IPushBackLexer, op *lexer.Token, exp Node) (Node, error) {
 	obj := &UnaryOperator{
 		Op:  op,
 		Exp: exp,
@@ -145,7 +138,7 @@ type BinaryOperator struct {
 
 // BinaryFactory is a factory function that may be passed to Infix or
 // InfixR, and which constructs a BinaryOperator node.
-func BinaryFactory(s State, l, r Node, op *lexer.Token) (Node, error) {
+func BinaryFactory(p IParser, s State, lex IPushBackLexer, l, r Node, op *lexer.Token) (Node, error) {
 	obj := &BinaryOperator{
 		Op: op,
 		L:  l,
@@ -186,16 +179,16 @@ func (b *BinaryOperator) String() string {
 }
 
 // literal is a ExprFirst function for literal tokens.  Its
-// implementation is trivial: it simply returns the token, as Token
-// implements Node.
+// implementation is trivial: it simply returns the token wrapped in a
+// TokenNode.
 func literal(p IParser, s State, lex IPushBackLexer, pow int, tok *lexer.Token) (Node, error) {
 	return &TokenNode{Token: *tok}, nil
 }
 
 // Literal is an ExprFirst function for literal tokens.  It may be
 // used directly to initialize a First field in an Entry.  The
-// implementation of Literal is trivial: it simply returns the token,
-// as Token implements Node.
+// implementation of Literal is trivial: it simply returns the token
+// wrapped in a TokenNode.
 var Literal = ExprFirst(literal)
 
 // Prefix constructs an ExprFirst function for prefix operators, e.g.,

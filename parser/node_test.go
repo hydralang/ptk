@@ -116,8 +116,8 @@ func TestNewAnnotatedNode(t *testing.T) {
 	result := NewAnnotatedNode(node, "annotation")
 
 	assert.Equal(t, &AnnotatedNode{
-		node: node,
-		ann:  "annotation",
+		Node:       node,
+		Annotation: "annotation",
 	}, result)
 }
 
@@ -126,7 +126,7 @@ func TestAnnotatedNodeLocation(t *testing.T) {
 	node := &mockNode{}
 	node.On("Location").Return(loc)
 	obj := &AnnotatedNode{
-		node: node,
+		Node: node,
 	}
 
 	result := obj.Location()
@@ -140,7 +140,7 @@ func TestAnnotatedNodeChildren(t *testing.T) {
 	node := &mockNode{}
 	node.On("Children").Return(children)
 	obj := &AnnotatedNode{
-		node: node,
+		Node: node,
 	}
 
 	result := obj.Children()
@@ -155,8 +155,8 @@ func TestAnnotatedNodeString(t *testing.T) {
 	node := &mockNode{}
 	node.On("String").Return("mock node")
 	obj := &AnnotatedNode{
-		node: node,
-		ann:  "annotation",
+		Node:       node,
+		Annotation: "annotation",
 	}
 
 	result := obj.String()
@@ -165,28 +165,19 @@ func TestAnnotatedNodeString(t *testing.T) {
 	node.AssertExpectations(t)
 }
 
-func TestAnnotatedNodeUnwrap(t *testing.T) {
-	node := &mockNode{}
-	obj := &AnnotatedNode{
-		node: node,
-	}
-
-	result := obj.Unwrap()
-
-	assert.Same(t, node, result)
-}
-
 func TestUnaryOperatorImplementsNode(t *testing.T) {
 	assert.Implements(t, (*Node)(nil), &UnaryOperator{})
 }
 
 func TestUnaryFactoryBase(t *testing.T) {
+	p := &mockParser{}
 	s := &mockState{}
+	lex := &mockPushBackLexer{}
 	op := &lexer.Token{}
 	exp := &mockNode{}
 	exp.On("Location").Return(nil)
 
-	result, err := UnaryFactory(s, op, exp)
+	result, err := UnaryFactory(p, s, lex, op, exp)
 
 	assert.NoError(t, err)
 	assert.Equal(t, &UnaryOperator{
@@ -196,7 +187,9 @@ func TestUnaryFactoryBase(t *testing.T) {
 }
 
 func TestUnaryFactoryLocation(t *testing.T) {
+	p := &mockParser{}
 	s := &mockState{}
+	lex := &mockPushBackLexer{}
 	finalLoc := &mockLocation{}
 	opLoc := &mockLocation{}
 	expLoc := &mockLocation{}
@@ -207,7 +200,7 @@ func TestUnaryFactoryLocation(t *testing.T) {
 	exp := &mockNode{}
 	exp.On("Location").Return(expLoc)
 
-	result, err := UnaryFactory(s, op, exp)
+	result, err := UnaryFactory(p, s, lex, op, exp)
 
 	assert.NoError(t, err)
 	assert.Equal(t, &UnaryOperator{
@@ -221,7 +214,9 @@ func TestUnaryFactoryLocation(t *testing.T) {
 }
 
 func TestUnaryFactoryLocationError(t *testing.T) {
+	p := &mockParser{}
 	s := &mockState{}
+	lex := &mockPushBackLexer{}
 	opLoc := &mockLocation{}
 	expLoc := &mockLocation{}
 	opLoc.On("ThruEnd", expLoc).Return(nil, assert.AnError)
@@ -231,7 +226,7 @@ func TestUnaryFactoryLocationError(t *testing.T) {
 	exp := &mockNode{}
 	exp.On("Location").Return(expLoc)
 
-	result, err := UnaryFactory(s, op, exp)
+	result, err := UnaryFactory(p, s, lex, op, exp)
 
 	assert.Same(t, assert.AnError, err)
 	assert.Nil(t, result)
@@ -278,14 +273,16 @@ func TestBinaryOperatorImplementsNode(t *testing.T) {
 }
 
 func TestBinaryFactoryBase(t *testing.T) {
+	p := &mockParser{}
 	s := &mockState{}
+	lex := &mockPushBackLexer{}
 	op := &lexer.Token{}
 	l := &mockNode{}
 	l.On("Location").Return(nil)
 	r := &mockNode{}
 	r.On("Location").Return(nil)
 
-	result, err := BinaryFactory(s, l, r, op)
+	result, err := BinaryFactory(p, s, lex, l, r, op)
 
 	assert.NoError(t, err)
 	assert.Equal(t, &BinaryOperator{
@@ -298,7 +295,9 @@ func TestBinaryFactoryBase(t *testing.T) {
 }
 
 func TestBinaryFactoryLocation(t *testing.T) {
+	p := &mockParser{}
 	s := &mockState{}
+	lex := &mockPushBackLexer{}
 	finalLoc := &mockLocation{}
 	lLoc := &mockLocation{}
 	rLoc := &mockLocation{}
@@ -309,7 +308,7 @@ func TestBinaryFactoryLocation(t *testing.T) {
 	r := &mockNode{}
 	r.On("Location").Return(rLoc)
 
-	result, err := BinaryFactory(s, l, r, op)
+	result, err := BinaryFactory(p, s, lex, l, r, op)
 
 	assert.NoError(t, err)
 	assert.Equal(t, &BinaryOperator{
@@ -327,7 +326,9 @@ func TestBinaryFactoryLocation(t *testing.T) {
 }
 
 func TestBinaryFactoryLocationError(t *testing.T) {
+	p := &mockParser{}
 	s := &mockState{}
+	lex := &mockPushBackLexer{}
 	lLoc := &mockLocation{}
 	rLoc := &mockLocation{}
 	lLoc.On("ThruEnd", rLoc).Return(nil, assert.AnError)
@@ -337,7 +338,7 @@ func TestBinaryFactoryLocationError(t *testing.T) {
 	r := &mockNode{}
 	r.On("Location").Return(rLoc)
 
-	result, err := BinaryFactory(s, l, r, op)
+	result, err := BinaryFactory(p, s, lex, l, r, op)
 
 	assert.Same(t, assert.AnError, err)
 	assert.Nil(t, result)
