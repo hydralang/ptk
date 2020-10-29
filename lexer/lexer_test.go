@@ -27,7 +27,7 @@ func TestLexerImplementsILexer(t *testing.T) {
 	assert.Implements(t, (*ILexer)(nil), &Lexer{})
 }
 
-func TestNew(t *testing.T) {
+func TestNewBase(t *testing.T) {
 	src := &mockScanner{}
 	state := &mockState{}
 
@@ -35,6 +35,18 @@ func TestNew(t *testing.T) {
 
 	require.NotNil(t, result.Scanner)
 	assert.Same(t, src, result.Scanner.(*BackTracker).Src)
+	assert.Same(t, state, result.State)
+	assert.Equal(t, &list.List{}, result.toks)
+}
+
+func TestNewWithBackTracker(t *testing.T) {
+	src := &mockBackTracker{}
+	state := &mockState{}
+
+	result := New(src, state)
+
+	require.NotNil(t, result.Scanner)
+	assert.Same(t, src, result.Scanner)
 	assert.Same(t, state, result.State)
 	assert.Equal(t, &list.List{}, result.toks)
 }
