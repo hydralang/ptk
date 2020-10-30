@@ -37,8 +37,15 @@ type Lexer struct {
 
 // New constructs a new Lexer using the provided source and state.
 func New(src scanner.Scanner, state State) *Lexer {
+	// Wrap the scanner to allow for backtracking
+	var ok bool
+	var bt IBackTracker
+	if bt, ok = src.(IBackTracker); !ok {
+		bt = NewBackTracker(src, TrackAll)
+	}
+
 	return &Lexer{
-		Scanner: NewBackTracker(src, TrackAll),
+		Scanner: bt,
 		State:   state,
 		toks:    &list.List{},
 	}
