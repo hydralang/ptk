@@ -39,6 +39,9 @@ func (lts *ListLexer) Next() *Token {
 	switch {
 	case !lts.started: // Need to start?
 		lts.started = true
+		if lts.idx >= len(lts.toks)-1 {
+			return nil
+		}
 
 	case lts.idx >= len(lts.toks)-1:
 		return nil

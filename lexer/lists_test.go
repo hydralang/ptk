@@ -49,6 +49,21 @@ func TestListLexerNextUnstarted(t *testing.T) {
 	}, obj)
 }
 
+func TestListLexerNextUnstartedEmpty(t *testing.T) {
+	toks := []*Token{}
+	obj := &ListLexer{
+		toks: toks,
+	}
+
+	result := obj.Next()
+
+	assert.Nil(t, result)
+	assert.Equal(t, &ListLexer{
+		toks:    toks,
+		started: true,
+	}, obj)
+}
+
 func TestListLexerNextStarted(t *testing.T) {
 	toks := []*Token{{}, {}, {}}
 	obj := &ListLexer{

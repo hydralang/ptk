@@ -12,13 +12,13 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package nodes
+package visualize
 
 import (
 	"fmt"
 	"io"
 
-	"github.com/hydralang/ptk/common"
+	"github.com/hydralang/ptk/parser"
 )
 
 // Profile represents a visual profile for visualizing the tree.
@@ -33,7 +33,7 @@ type Profile struct {
 // Render renders a node into the buffer with the appropriate tree
 // indicator characters drawn from the profile.  It returns the prefix
 // that should be used when rendering children of this node.
-func (p *Profile) Render(buf io.Writer, prefix string, node common.Node, last bool) string {
+func (p *Profile) Render(buf io.Writer, prefix string, node parser.Node, last bool) string {
 	// Pick the joiner and prepare the next prefix
 	var joiner rune
 	var nextPrefix string

@@ -15,266 +15,522 @@
 package parser
 
 import (
+	"errors"
 	"testing"
 
-	"github.com/klmitch/patcher"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 
-	"github.com/hydralang/ptk/common"
 	"github.com/hydralang/ptk/lexer"
+	"github.com/hydralang/ptk/scanner"
 )
 
-func TestAppState(t *testing.T) {
-	s := &MockState{}
-	s.On("PushAppState", "state")
-
-	opt := AppState("state")
-	opt(s)
-
-	s.AssertExpectations(t)
+type mockParser struct {
+	mock.Mock
 }
 
-func TestMockParserImplementsParser(t *testing.T) {
-	assert.Implements(t, (*Parser)(nil), &MockParser{})
+func (m *mockParser) Expression(rbp int) (Node, error) {
+	args := m.MethodCalled("Expression", rbp)
+
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(Node), args.Error(1)
+	}
+
+	return nil, args.Error(1)
 }
 
-func TestMockParserTableNil(t *testing.T) {
-	obj := &MockParser{}
-	obj.On("Table").Return(nil)
+func (m *mockParser) Statement() (Node, error) {
+	args := m.MethodCalled("Statement")
 
-	result := obj.Table()
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(Node), args.Error(1)
+	}
 
-	assert.Nil(t, result)
-	obj.AssertExpectations(t)
+	return nil, args.Error(1)
 }
 
-func TestMockParserTableNotNil(t *testing.T) {
+func TestParserImplementsIParser(t *testing.T) {
+	assert.Implements(t, (*IParser)(nil), &Parser{})
+}
+
+func TestNewBase(t *testing.T) {
+	l := &mockLexer{}
+	state := &mockState{}
+
+	result := New(l, state)
+
+	require.NotNil(t, result.Lexer)
+	assert.Same(t, l, result.Lexer.(*PushBackLexer).Lexer)
+	assert.Same(t, state, result.State)
+}
+
+func TestNewWithPushBackLexer(t *testing.T) {
+	l := &mockPushBackLexer{}
+	state := &mockState{}
+
+	result := New(l, state)
+
+	assert.Same(t, l, result.Lexer)
+	assert.Same(t, state, result.State)
+}
+
+type binaryNode struct {
+	L  Node
+	R  Node
+	Op *lexer.Token
+}
+
+func (bn *binaryNode) Location() scanner.Location {
+	return nil
+}
+
+func (bn *binaryNode) Children() []Node {
+	return []Node{bn.L, bn.R}
+}
+
+func (bn *binaryNode) String() string {
+	return bn.Op.String()
+}
+
+func TestParserExpressionBase(t *testing.T) {
+	l := NewPushBackLexer(lexer.NewListLexer([]*lexer.Token{
+		{Type: "n", Value: 1},
+		{Type: "+"},
+		{Type: "n", Value: 2},
+		{Type: "+"},
+		{Type: "n", Value: 3},
+	}))
+	state := &mockState{}
+	obj := &Parser{
+		Lexer: l,
+		State: state,
+	}
+	var first ExprFirst = func(p IParser, s State, el IPushBackLexer, pow int, tok *lexer.Token) (Node, error) {
+		assert.Same(t, obj, p)
+		assert.Same(t, state, s)
+		assert.Same(t, l, el)
+		assert.Equal(t, 0, pow)
+		return &TokenNode{Token: *tok}, nil
+	}
+	var next ExprNext = func(p IParser, s State, el IPushBackLexer, pow int, ln Node, tok *lexer.Token) (Node, error) {
+		assert.Same(t, obj, p)
+		assert.Same(t, state, s)
+		assert.Same(t, l, el)
+		assert.Equal(t, 10, pow)
+		r, _ := p.Expression(pow)
+		return &binaryNode{
+			L:  ln,
+			R:  r,
+			Op: tok,
+		}, nil
+	}
 	tab := Table{
-		"ent": Entry{},
-	}
-	obj := &MockParser{}
-	obj.On("Table").Return(tab)
-
-	result := obj.Table()
-
-	assert.Equal(t, tab, result)
-	obj.AssertExpectations(t)
-}
-
-func TestMockParserExpressionNil(t *testing.T) {
-	stream := &mockLexer{}
-	obj := &MockParser{}
-	obj.On("Expression", stream, mock.Anything).Return(nil, assert.AnError)
-
-	result, err := obj.Expression(stream)
-
-	assert.Same(t, assert.AnError, err)
-	assert.Nil(t, result)
-	obj.AssertExpectations(t)
-}
-
-func TestMockParserExpressionNotNil(t *testing.T) {
-	expected := &common.MockNode{}
-	stream := &mockLexer{}
-	obj := &MockParser{}
-	obj.On("Expression", stream, mock.Anything).Return(expected, assert.AnError)
-
-	result, err := obj.Expression(stream)
-
-	assert.Same(t, assert.AnError, err)
-	assert.Same(t, expected, result)
-	obj.AssertExpectations(t)
-}
-
-func TestMockParserStatementNil(t *testing.T) {
-	stream := &mockLexer{}
-	obj := &MockParser{}
-	obj.On("Statement", stream, mock.Anything).Return(nil, assert.AnError)
-
-	result, err := obj.Statement(stream)
-
-	assert.Same(t, assert.AnError, err)
-	assert.Nil(t, result)
-	obj.AssertExpectations(t)
-}
-
-func TestMockParserStatementNotNil(t *testing.T) {
-	expected := &common.MockNode{}
-	stream := &mockLexer{}
-	obj := &MockParser{}
-	obj.On("Statement", stream, mock.Anything).Return(expected, assert.AnError)
-
-	result, err := obj.Statement(stream)
-
-	assert.Same(t, assert.AnError, err)
-	assert.Same(t, expected, result)
-	obj.AssertExpectations(t)
-}
-
-func TestMockParserStatementsNil(t *testing.T) {
-	stream := &mockLexer{}
-	obj := &MockParser{}
-	obj.On("Statements", stream, mock.Anything).Return(nil, assert.AnError)
-
-	result, err := obj.Statements(stream)
-
-	assert.Same(t, assert.AnError, err)
-	assert.Nil(t, result)
-	obj.AssertExpectations(t)
-}
-
-func TestMockParserStatementsNotNil(t *testing.T) {
-	stream := &mockLexer{}
-	obj := &MockParser{}
-	obj.On("Statements", stream, mock.Anything).Return([]common.Node{}, assert.AnError)
-
-	result, err := obj.Statements(stream)
-
-	assert.Same(t, assert.AnError, err)
-	assert.Equal(t, []common.Node{}, result)
-	obj.AssertExpectations(t)
-}
-
-func TestParserImplementsParser(t *testing.T) {
-	assert.Implements(t, (*Parser)(nil), &parser{})
-}
-
-func TestNew(t *testing.T) {
-	tab := Table{
-		"ent": Entry{},
-	}
-
-	result := New(tab)
-
-	assert.Equal(t, &parser{
-		table: tab,
-	}, result)
-}
-
-func TestParserTable(t *testing.T) {
-	obj := &parser{
-		table: Table{
-			"ent": Entry{},
+		"n": Entry{
+			Power: 0,
+			First: first,
+		},
+		"+": Entry{
+			Power: 10,
+			Next:  next,
 		},
 	}
+	state.On("Table").Return(tab)
 
-	result := obj.Table()
-
-	assert.Equal(t, Table{
-		"ent": Entry{},
-	}, result)
-}
-
-func TestParserExpression(t *testing.T) {
-	obj := &parser{
-		table: Table{
-			"ent": Entry{},
-		},
-	}
-	stream := &mockLexer{}
-	options := []Option{
-		func(s State) {},
-		func(s State) {},
-	}
-	state := &MockState{}
-	node := &common.MockNode{}
-	state.On("Expression", 0).Return(node, assert.AnError)
-	defer patcher.SetVar(&newState, func(p Parser, str lexer.ILexer, options []Option) State {
-		assert.Same(t, obj, p)
-		assert.Same(t, stream, str)
-		assert.Len(t, options, 2)
-		return state
-	}).Install().Restore()
-
-	result, err := obj.Expression(stream, options...)
-
-	assert.Same(t, assert.AnError, err)
-	assert.Same(t, node, result)
-	state.AssertExpectations(t)
-}
-
-func TestParserStatement(t *testing.T) {
-	obj := &parser{
-		table: Table{
-			"ent": Entry{},
-		},
-	}
-	stream := &mockLexer{}
-	options := []Option{
-		func(s State) {},
-		func(s State) {},
-	}
-	state := &MockState{}
-	node := &common.MockNode{}
-	state.On("Statement").Return(node, assert.AnError)
-	defer patcher.SetVar(&newState, func(p Parser, str lexer.ILexer, options []Option) State {
-		assert.Same(t, obj, p)
-		assert.Same(t, stream, str)
-		assert.Len(t, options, 2)
-		return state
-	}).Install().Restore()
-
-	result, err := obj.Statement(stream, options...)
-
-	assert.Same(t, assert.AnError, err)
-	assert.Same(t, node, result)
-	state.AssertExpectations(t)
-}
-
-func TestParserStatementsBase(t *testing.T) {
-	obj := &parser{
-		table: Table{
-			"ent": Entry{},
-		},
-	}
-	stream := &mockLexer{}
-	options := []Option{
-		func(s State) {},
-		func(s State) {},
-	}
-	state := &MockState{}
-	nodes := []common.Node{&common.MockNode{}, &common.MockNode{}, &common.MockNode{}}
-	for i, node := range nodes {
-		node.(*common.MockNode).On("dummy", i) // make distinct
-		state.On("Statement").Return(node, nil).Once()
-	}
-	state.On("Statement").Return(nil, nil)
-	defer patcher.SetVar(&newState, func(p Parser, str lexer.ILexer, options []Option) State {
-		assert.Same(t, obj, p)
-		assert.Same(t, stream, str)
-		assert.Len(t, options, 2)
-		return state
-	}).Install().Restore()
-
-	result, err := obj.Statements(stream, options...)
+	result, err := obj.Expression(0)
 
 	assert.NoError(t, err)
-	assert.Equal(t, nodes, result)
+	assert.Equal(t, &binaryNode{
+		Op: &lexer.Token{Type: "+"},
+		L: &binaryNode{
+			Op: &lexer.Token{Type: "+"},
+			L:  &TokenNode{Token: lexer.Token{Type: "n", Value: 1}},
+			R:  &TokenNode{Token: lexer.Token{Type: "n", Value: 2}},
+		},
+		R: &TokenNode{Token: lexer.Token{Type: "n", Value: 3}},
+	}, result)
 	state.AssertExpectations(t)
 }
 
-func TestParserStatementsError(t *testing.T) {
-	obj := &parser{
-		table: Table{
-			"ent": Entry{},
+func TestParserExpressionPrecedence(t *testing.T) {
+	l := NewPushBackLexer(lexer.NewListLexer([]*lexer.Token{
+		{Type: "n", Value: 1},
+		{Type: "+"},
+		{Type: "n", Value: 2},
+		{Type: "*"},
+		{Type: "n", Value: 3},
+		{Type: "+"},
+		{Type: "n", Value: 4},
+	}))
+	state := &mockState{}
+	obj := &Parser{
+		Lexer: l,
+		State: state,
+	}
+	var first ExprFirst = func(p IParser, s State, el IPushBackLexer, pow int, tok *lexer.Token) (Node, error) {
+		assert.Same(t, obj, p)
+		assert.Same(t, state, s)
+		assert.Same(t, l, el)
+		assert.Equal(t, 0, pow)
+		return &TokenNode{Token: *tok}, nil
+	}
+	var next ExprNext = func(p IParser, s State, el IPushBackLexer, pow int, ln Node, tok *lexer.Token) (Node, error) {
+		assert.Same(t, obj, p)
+		assert.Same(t, state, s)
+		assert.Same(t, l, el)
+		switch tok.Type {
+		case "+":
+			assert.Equal(t, 10, pow)
+		case "*":
+			assert.Equal(t, 20, pow)
+		}
+		r, _ := p.Expression(pow)
+		return &binaryNode{
+			L:  ln,
+			R:  r,
+			Op: tok,
+		}, nil
+	}
+	tab := Table{
+		"n": Entry{
+			Power: 0,
+			First: first,
+		},
+		"+": Entry{
+			Power: 10,
+			Next:  next,
+		},
+		"*": Entry{
+			Power: 20,
+			Next:  next,
 		},
 	}
-	stream := &mockLexer{}
-	options := []Option{
-		func(s State) {},
-		func(s State) {},
-	}
-	state := &MockState{}
-	state.On("Statement").Return(nil, assert.AnError)
-	defer patcher.SetVar(&newState, func(p Parser, str lexer.ILexer, options []Option) State {
-		assert.Same(t, obj, p)
-		assert.Same(t, stream, str)
-		assert.Len(t, options, 2)
-		return state
-	}).Install().Restore()
+	state.On("Table").Return(tab)
 
-	result, err := obj.Statements(stream, options...)
+	result, err := obj.Expression(0)
+
+	assert.NoError(t, err)
+	assert.Equal(t, &binaryNode{
+		Op: &lexer.Token{Type: "+"},
+		L: &binaryNode{
+			Op: &lexer.Token{Type: "+"},
+			L:  &TokenNode{Token: lexer.Token{Type: "n", Value: 1}},
+			R: &binaryNode{
+				Op: &lexer.Token{Type: "*"},
+				L:  &TokenNode{Token: lexer.Token{Type: "n", Value: 2}},
+				R:  &TokenNode{Token: lexer.Token{Type: "n", Value: 3}},
+			},
+		},
+		R: &TokenNode{Token: lexer.Token{Type: "n", Value: 4}},
+	}, result)
+	state.AssertExpectations(t)
+}
+
+func TestParserExpressionNoTokens(t *testing.T) {
+	l := NewPushBackLexer(lexer.NewListLexer([]*lexer.Token{}))
+	state := &mockState{}
+	obj := &Parser{
+		Lexer: l,
+		State: state,
+	}
+
+	result, err := obj.Expression(0)
+
+	assert.True(t, errors.Is(err, ErrExpectedToken))
+	assert.Nil(t, result)
+	state.AssertExpectations(t)
+}
+
+func TestParserExpressionFirstEntryMissing(t *testing.T) {
+	l := NewPushBackLexer(lexer.NewListLexer([]*lexer.Token{
+		{Type: "n", Value: 1},
+		{Type: "+"},
+		{Type: "n", Value: 2},
+		{Type: "+"},
+		{Type: "n", Value: 3},
+	}))
+	state := &mockState{}
+	obj := &Parser{
+		Lexer: l,
+		State: state,
+	}
+	tab := Table{}
+	state.On("Table").Return(tab)
+
+	result, err := obj.Expression(0)
+
+	assert.True(t, errors.Is(err, ErrUnknownTokenType))
+	assert.Nil(t, result)
+	state.AssertExpectations(t)
+}
+
+func TestParserExpressionFirstFails(t *testing.T) {
+	l := NewPushBackLexer(lexer.NewListLexer([]*lexer.Token{
+		{Type: "n", Value: 1},
+		{Type: "+"},
+		{Type: "n", Value: 2},
+		{Type: "+"},
+		{Type: "n", Value: 3},
+	}))
+	state := &mockState{}
+	obj := &Parser{
+		Lexer: l,
+		State: state,
+	}
+	var first ExprFirst = func(p IParser, s State, el IPushBackLexer, pow int, tok *lexer.Token) (Node, error) {
+		assert.Same(t, obj, p)
+		assert.Same(t, state, s)
+		assert.Same(t, l, el)
+		assert.Equal(t, 0, pow)
+		return nil, assert.AnError
+	}
+	var next ExprNext = func(p IParser, s State, el IPushBackLexer, pow int, ln Node, tok *lexer.Token) (Node, error) {
+		assert.Same(t, obj, p)
+		assert.Same(t, state, s)
+		assert.Same(t, l, el)
+		assert.Equal(t, 10, pow)
+		r, _ := p.Expression(pow)
+		return &binaryNode{
+			L:  ln,
+			R:  r,
+			Op: tok,
+		}, nil
+	}
+	tab := Table{
+		"n": Entry{
+			Power: 0,
+			First: first,
+		},
+		"+": Entry{
+			Power: 10,
+			Next:  next,
+		},
+	}
+	state.On("Table").Return(tab)
+
+	result, err := obj.Expression(0)
+
+	assert.Same(t, assert.AnError, err)
+	assert.Nil(t, result)
+	state.AssertExpectations(t)
+}
+
+func TestParserExpressionNextEntryMissing(t *testing.T) {
+	l := NewPushBackLexer(lexer.NewListLexer([]*lexer.Token{
+		{Type: "n", Value: 1},
+		{Type: "+"},
+		{Type: "n", Value: 2},
+		{Type: "+"},
+		{Type: "n", Value: 3},
+	}))
+	state := &mockState{}
+	obj := &Parser{
+		Lexer: l,
+		State: state,
+	}
+	var first ExprFirst = func(p IParser, s State, el IPushBackLexer, pow int, tok *lexer.Token) (Node, error) {
+		assert.Same(t, obj, p)
+		assert.Same(t, state, s)
+		assert.Same(t, l, el)
+		assert.Equal(t, 0, pow)
+		return &TokenNode{Token: *tok}, nil
+	}
+	tab := Table{
+		"n": Entry{
+			Power: 0,
+			First: first,
+		},
+	}
+	state.On("Table").Return(tab)
+
+	result, err := obj.Expression(0)
+
+	assert.True(t, errors.Is(err, ErrUnknownTokenType))
+	assert.Nil(t, result)
+	state.AssertExpectations(t)
+}
+
+func TestParserExpressionNextFails(t *testing.T) {
+	l := NewPushBackLexer(lexer.NewListLexer([]*lexer.Token{
+		{Type: "n", Value: 1},
+		{Type: "+"},
+		{Type: "n", Value: 2},
+		{Type: "+"},
+		{Type: "n", Value: 3},
+	}))
+	state := &mockState{}
+	obj := &Parser{
+		Lexer: l,
+		State: state,
+	}
+	var first ExprFirst = func(p IParser, s State, el IPushBackLexer, pow int, tok *lexer.Token) (Node, error) {
+		assert.Same(t, obj, p)
+		assert.Same(t, state, s)
+		assert.Same(t, l, el)
+		assert.Equal(t, 0, pow)
+		return &TokenNode{Token: *tok}, nil
+	}
+	var next ExprNext = func(p IParser, s State, el IPushBackLexer, pow int, ln Node, tok *lexer.Token) (Node, error) {
+		assert.Same(t, obj, p)
+		assert.Same(t, state, s)
+		assert.Same(t, l, el)
+		assert.Equal(t, 10, pow)
+		return nil, assert.AnError
+	}
+	tab := Table{
+		"n": Entry{
+			Power: 0,
+			First: first,
+		},
+		"+": Entry{
+			Power: 10,
+			Next:  next,
+		},
+	}
+	state.On("Table").Return(tab)
+
+	result, err := obj.Expression(0)
+
+	assert.Same(t, assert.AnError, err)
+	assert.Nil(t, result)
+	state.AssertExpectations(t)
+}
+
+type stmtNode struct {
+	toks []*lexer.Token
+}
+
+func (sn *stmtNode) Location() scanner.Location {
+	return nil
+}
+
+func (sn *stmtNode) Children() []Node {
+	children := []Node{}
+	for _, tok := range sn.toks[1:] {
+		children = append(children, &TokenNode{Token: *tok})
+	}
+	return children
+}
+
+func (sn *stmtNode) String() string {
+	return sn.toks[0].String()
+}
+
+func TestStateStatementBase(t *testing.T) {
+	l := NewPushBackLexer(lexer.NewListLexer([]*lexer.Token{
+		{Type: "stmt"},
+		{Type: "kw", Value: "kw1"},
+		{Type: "kw", Value: "kw2"},
+		{Type: "kw", Value: "kw3"},
+		{Type: "end"},
+	}))
+	state := &mockState{}
+	obj := &Parser{
+		Lexer: l,
+		State: state,
+	}
+	var stmt Statement = func(p IParser, s State, el IPushBackLexer, tok *lexer.Token) (Node, error) {
+		assert.Same(t, obj, p)
+		assert.Same(t, state, s)
+		assert.Same(t, l, el)
+		node := &stmtNode{
+			toks: []*lexer.Token{tok},
+		}
+		for nextTok := el.Next(); nextTok != nil; nextTok = el.Next() {
+			node.toks = append(node.toks, nextTok)
+			if tok.Type == "end" {
+				break
+			}
+		}
+		return node, nil
+	}
+	tab := Table{
+		"stmt": Entry{
+			Stmt: stmt,
+		},
+	}
+	state.On("Table").Return(tab)
+
+	result, err := obj.Statement()
+
+	assert.NoError(t, err)
+	assert.Equal(t, &stmtNode{
+		toks: []*lexer.Token{
+			{Type: "stmt"},
+			{Type: "kw", Value: "kw1"},
+			{Type: "kw", Value: "kw2"},
+			{Type: "kw", Value: "kw3"},
+			{Type: "end"},
+		},
+	}, result)
+	state.AssertExpectations(t)
+}
+
+func TestStateStatementNoTokens(t *testing.T) {
+	l := NewPushBackLexer(lexer.NewListLexer([]*lexer.Token{}))
+	state := &mockState{}
+	obj := &Parser{
+		Lexer: l,
+		State: state,
+	}
+
+	result, err := obj.Statement()
+
+	assert.NoError(t, err)
+	assert.Nil(t, result)
+	state.AssertExpectations(t)
+}
+
+func TestStateStatementNoEntry(t *testing.T) {
+	l := NewPushBackLexer(lexer.NewListLexer([]*lexer.Token{
+		{Type: "stmt"},
+		{Type: "kw", Value: "kw1"},
+		{Type: "kw", Value: "kw2"},
+		{Type: "kw", Value: "kw3"},
+		{Type: "end"},
+	}))
+	state := &mockState{}
+	obj := &Parser{
+		Lexer: l,
+		State: state,
+	}
+	tab := Table{}
+	state.On("Table").Return(tab)
+
+	result, err := obj.Statement()
+
+	assert.True(t, errors.Is(err, ErrUnknownTokenType))
+	assert.Nil(t, result)
+	state.AssertExpectations(t)
+}
+
+func TestStateStatementStmtFailed(t *testing.T) {
+	l := NewPushBackLexer(lexer.NewListLexer([]*lexer.Token{
+		{Type: "stmt"},
+		{Type: "kw", Value: "kw1"},
+		{Type: "kw", Value: "kw2"},
+		{Type: "kw", Value: "kw3"},
+		{Type: "end"},
+	}))
+	state := &mockState{}
+	obj := &Parser{
+		Lexer: l,
+		State: state,
+	}
+	var stmt Statement = func(p IParser, s State, el IPushBackLexer, tok *lexer.Token) (Node, error) {
+		assert.Same(t, obj, p)
+		assert.Same(t, state, s)
+		assert.Same(t, l, el)
+		return nil, assert.AnError
+	}
+	tab := Table{
+		"stmt": Entry{
+			Stmt: stmt,
+		},
+	}
+	state.On("Table").Return(tab)
+
+	result, err := obj.Statement()
 
 	assert.Same(t, assert.AnError, err)
 	assert.Nil(t, result)

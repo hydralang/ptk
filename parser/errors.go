@@ -63,7 +63,10 @@ func expectedTypes(types []string) string {
 	return buf.String()
 }
 
-// ExpectedToken constructs and returns an ErrExpectedToken.
+// ExpectedToken constructs and returns an ErrExpectedToken.  Its
+// optional arguments are a list of token types, which are expressed
+// as strings; these will be used to generate an error message
+// explaining what token types are expected.
 func ExpectedToken(types ...string) error {
 	tail := expectedTypes(types)
 	if tail == "" {
@@ -72,12 +75,18 @@ func ExpectedToken(types ...string) error {
 	return fmt.Errorf("%w%s", ErrExpectedToken, tail)
 }
 
-// UnknownTokenType constructs and returns an ErrUnknownTokenType.
+// UnknownTokenType constructs and returns an ErrUnknownTokenType,
+// given a token.  It may also be passed additional arguments, which
+// are interpreted as token types; these will be used to generate an
+// error message explaining what token types are expected.
 func UnknownTokenType(tok *lexer.Token, types ...string) error {
 	return scanner.LocationError(tok.Loc, fmt.Errorf("%w %q%s", ErrUnknownTokenType, tok.Type, expectedTypes(types)))
 }
 
-// UnexpectedToken cunstructs and returns an ErrUnexpectedToken.
+// UnexpectedToken cunstructs and returns an ErrUnexpectedToken, given
+// a token.  It may also be passed additional arguments, which are
+// interpreted as token types; these will be used to generate an error
+// message explaining what token types are expected.
 func UnexpectedToken(tok *lexer.Token, types ...string) error {
 	return scanner.LocationError(tok.Loc, fmt.Errorf("%w of type %q%s", ErrUnexpectedToken, tok.Type, expectedTypes(types)))
 }

@@ -12,19 +12,51 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-package nodes
+package visualize
 
 import (
 	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
-	"github.com/hydralang/ptk/common"
+	"github.com/hydralang/ptk/parser"
+	"github.com/hydralang/ptk/scanner"
 )
 
+type mockNode struct {
+	mock.Mock
+}
+
+func (m *mockNode) Location() scanner.Location {
+	args := m.MethodCalled("Location")
+
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.(scanner.Location)
+	}
+
+	return nil
+}
+
+func (m *mockNode) Children() []parser.Node {
+	args := m.MethodCalled("Children")
+
+	if tmp := args.Get(0); tmp != nil {
+		return tmp.([]parser.Node)
+	}
+
+	return nil
+}
+
+func (m *mockNode) String() string {
+	args := m.MethodCalled("String")
+
+	return args.String(0)
+}
+
 func TestRenderRoot(t *testing.T) {
-	node := &common.MockNode{}
+	node := &mockNode{}
 	node.On("String").Return("node")
 	buf := &bytes.Buffer{}
 
@@ -36,7 +68,7 @@ func TestRenderRoot(t *testing.T) {
 }
 
 func TestRenderLast(t *testing.T) {
-	node := &common.MockNode{}
+	node := &mockNode{}
 	node.On("String").Return("node")
 	buf := &bytes.Buffer{}
 
@@ -48,7 +80,7 @@ func TestRenderLast(t *testing.T) {
 }
 
 func TestRenderBranch(t *testing.T) {
-	node := &common.MockNode{}
+	node := &mockNode{}
 	node.On("String").Return("node")
 	buf := &bytes.Buffer{}
 
