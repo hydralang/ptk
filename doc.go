@@ -12,96 +12,76 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-// Package ptk is a toolkit for building parsers using the Vaughan
-// Pratt top-down recursive-descent technique.  This technique is
-// based on the concept of creating the functions of recursive descent
-// around tokens, rather than around productions, and yields a more
-// efficient parser.  It's particularly effective for parsing
-// expressions, where operator precedence is important; with a
-// straight recursive-descent technique, a different function has to
-// be created (and recursed through) for each class of operators,
-// whereas the same parser in the Pratt construction requires
-// essentially a single function.
+// Package ptk is a toolkit for creating language parsers using a
+// top-down recursive descent technique first described by Vaughan
+// Pratt.  This technique is based on the concept of creating the
+// functions around token types, rather than around productions, and
+// yields a more efficient recursive descent parser that doesn't
+// require recursing as deeply.  The Pratt technique is particularly
+// effective for parsing expressions, where operator precedence is
+// important; instead of a different function for each operator class,
+// the Pratt technique enables handling the situation with a single
+// function.
 //
-// The parser framework itself lives in the parser subdirectory.  The
-// Pratt technique is a table-driven technique, and developers
-// utilizing this toolkit need to create a Table, keyed by the token
-// type (a simple string), and mapping to an Entry.  Entries have a
-// "binding power" (assigned to the Power field of Entry), where
-// higher values result in tighter binding--so, for instance, the "*"
-// multiplication operator binds tighter than "+", so should have a
-// higher binding power.  In addition, an entry has three optional
-// functions: ExprFirst (assigned to the First field); ExprNext
-// (assigned to the Next field); and Statement (assigned to the Stmt
-// field).  The semantics of these functions will be described below.
+// Creating a parser using ptk involves three main components--a
+// scanner, a lexer, and a parser--each represented by a different
+// subpackage.  The scanner takes a source representation and breaks
+// it down into single characters that are paired their location
+// within the source.  The lexer then takes these characters and,
+// using user-provided classifiers and recognizers, groups them into
+// tokens; a token is comprised of a token type, a location, and an
+// optional semantic meaning (for instance, the characters "12345"
+// would likely have a semantic meaning consisting of the numerical
+// value represented by that character sequence).  Finally, the parser
+// takes a sequence of tokens and, with a user-provided parse table,
+// constructs an abstract syntax tree.  This AST is the final result
+// of the parsing, and the caller may process it in any necessary
+// fashion.
 //
-// The user of a parser built using this toolkit will create a new
-// Parser object by calling parser.New and passing it a Table.  An
-// expression may then be parsed by calling the Parser.Expression
-// method, and passing it a TokenStream.  The Parser.Expression method
-// constructs a parser.State object with the Table and the
-// TokenStream, and then proceeds to call the State.Expression method,
-// which performs the heavy lifting.  That method begins by looking up
-// the Entry corresponding to the first token; calling the First
-// function defined there, passing it the parser, state, power, and
-// token; then running the Next function on subsequent tokens until
-// reading a token whose binding power is less than the power the
-// specific instance of State.Expression was called with.  Typically,
-// the First function would get called on a literal token, which it
-// would simply return as-is; the Next function would then typically
-// call the State.Expression function recursively with the operator's
-// binding power (which is passed to Next) to retrieve the right-hand
-// side expression.
+// The scanner subpackage contains two main scanners--a FileScanner,
+// which actually takes an io.Reader instance, and an argument
+// scanner, which takes a list of character strings and treats them as
+// a single source separated by an optional separator that defaults to
+// whitespace.  In addition, there are several composite scanners,
+// such as the "memoizing" scanner and the chaining scanner; the
+// argument scanner is actually built by composing these composite
+// scanners around the arguments.  A ListScanner is also provided to
+// simplify testing code.  This subpackage also contains the Location
+// interface and types, which represent a range of the source
+// containing a single character or group of characters.
 //
-// For parsing statements, the Parser.Statement method would be used,
-// again passing it a TokenStream.  The Parser.Statement method is
-// much simpler, simply calling the Stmt function defined in the Entry
-// associated with the first token's token type.  Subsequent calls
-// would extract subsequent statements, so a Parser.Statements
-// function (added "s") can be used to retrieve a list of statements.
+// The lexer subpackage contains a Lexer type, which is initialized by
+// passing in a user-created scanner and a lexer.State; the state is
+// used by the lexer to find a Classifier.  The lexer calls the
+// Classifier.Classify method to get a list of Recognizer instances
+// that may be able to handle the input, which the lexer then calls in
+// turn until one of the recognizers successfully recognizes the
+// input.  Recognizers call the Lexer.Push method to register any
+// tokens they extract from the input; but a recognizer need not push
+// any tokens.  (For instance, in most languages, whitespace is simply
+// discarded, so a recognizer for whitespace would not produce any
+// tokens.)  A lexer.BaseState type is provided that has the basic
+// functionality, but applications are free to extend or reimplement
+// the functionality.
 //
-// The Token and TokenStream types are defined in the common
-// subdirectory.  A Token is a simple structure, containing the token
-// type (a string), and three optional fields: the Location of the
-// token, any Value associated with the token, and the original Text
-// of the token.  The application's lexical analyzer should produce
-// instances of this struct and communicate them to the parser through
-// a TokenStream instance; TokenStream is an interface with a Next
-// method, which returns subsequent Token instances.  (Several
-// implementations of TokenStream are provided in the utils package,
-// but the lexical analyzer could also be designed to implement the
-// TokenStream interface.)
+// The parser subpackage contains a Parser type, which is initialized
+// by passing in a user-created lexer and a parser.State; the state is
+// used by the parser to find a Table, which maps token types produced
+// by the lexer to an Entry, which itself contains an integer binding
+// Power, along with three callback functions related to three
+// contexts in which a token may appear.  As with the lexer, a default
+// simple implementation of parser.State is provided, named
+// parser.BaseState; applications may extend or reimplement the
+// functionality as needed.  The parser subpackage also contains some
+// utilities for building an AST; specifically, the UnaryOperator and
+// BinaryOperator types are implementations of parser.Node, and the
+// Prefix, Infix, and InfixR functions can be used to construct the
+// callback functions for some common casses, while Literal is a
+// parser.ExprFirst function for literals.
 //
-// The Location type is also defined in common, as is LocationError.
-// The former is an interface with three methods, the most important
-// being String; the latter allows wrapping an error with the location
-// of the error.  There is also an implementation of Location,
-// FileLocation, in the utils package; this Location implementation
-// should be suitable for most uses.
-//
-// The final important type in common is the Node type, which is the
-// return type for all the major functions involved in the parser
-// framework.  Typically, the Node would be a set of data structures
-// which form an abstract syntax tree, but the use of an interface
-// here should allow alternatives depending on the application.  An
-// AnnotatedNode is also available in the utils package; this allows
-// wrapping arbitrary Node instances with additional annotation, which
-// may be useful for the visualization utilities.
-//
-// The utils directory contains utilities that may be useful to
-// developers working with ptk.  Besides the implementations mentioned
-// above, it contains UnaryOperator and BinaryOperator, which are
-// implementations of Node that can be used with unary and binary
-// operators, as the name implies.  It also provides the Literal
-// function, which may be used for literal tokens and can be assigned
-// to Entry.First; the Prefix function, which generates a closure
-// assignable to Entry.First for tokens representing unary operators;
-// and the Infix and InfixR functions, which generate closures
-// assignable to Entry.Next for tokens representing left-associative
-// and right-associative binary operators, respectively.
-//
-// The utils directory also contains the Visualize function, which can
-// be used to create a string dump of an abstract syntax tree; the
-// exact look of the string is controlled by the Profile, with ASCII,
-// Rounded, and Square available.
+// A fourth subpackage is provided: the parser/visualize subpackage
+// contains the Visualize function, which allows rendering an abstract
+// syntax tree into a visual representation.  This may be used while
+// developing a parser to ensure that it is producing the correct AST
+// for a given input.
 package ptk
