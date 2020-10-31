@@ -59,9 +59,9 @@ func (l *Lexer) next() {
 	l.Scanner.SetMax(TrackAll)
 
 	// Classify the contents
-	for _, rec := range l.State.Classifier().Classify(l, l.State, l.Scanner) {
+	for _, rec := range l.State.Classifier().Classify(l) {
 		l.Scanner.BackTrack()
-		if rec.Recognize(l, l.State, l.Scanner) {
+		if rec.Recognize(l) {
 			l.Scanner.Accept(0)
 			return
 		}
@@ -69,7 +69,7 @@ func (l *Lexer) next() {
 
 	// None of the recognizers recognized the contents
 	l.Scanner.BackTrack()
-	l.State.Classifier().Error(l, l.State, l.Scanner)
+	l.State.Classifier().Error(l)
 	l.Scanner.Accept(0)
 }
 

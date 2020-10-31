@@ -16,20 +16,8 @@ package parser
 
 import "github.com/hydralang/ptk/lexer"
 
-// IParser is the interface implemented by the Parser.
-type IParser interface {
-	// Expression parses a single expression from the token stream
-	// provided by the lexer.  The method will be called with a
-	// "right binding power", which should be 0 for consumers of
-	// the parser, but will be non-zero when called recursively.
-	Expression(rbp int) (Node, error)
-
-	// Statement parses a single statement from the token stream
-	// provided by the lexer.
-	Statement() (Node, error)
-}
-
-// Parser is an implementation of IParser.
+// Parser is the object that performs parsing; it assembles a sequence
+// of tokens, as presented by the lexer, into an abstract syntax tree.
 type Parser struct {
 	Lexer IPushBackLexer // The lexer providing the tokens
 	State State          // The state of the parser
@@ -68,7 +56,7 @@ func (p *Parser) Expression(rbp int) (Node, error) {
 	}
 
 	// Process the token
-	node, err := ent.callFirst(p, p.State, p.Lexer, tok)
+	node, err := ent.callFirst(p, tok)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +76,7 @@ func (p *Parser) Expression(rbp int) (Node, error) {
 		}
 
 		// Process the token
-		node, err = ent.callNext(p, p.State, p.Lexer, node, tok)
+		node, err = ent.callNext(p, node, tok)
 		if err != nil {
 			return nil, err
 		}
@@ -114,5 +102,5 @@ func (p *Parser) Statement() (Node, error) {
 	}
 
 	// Process the token and return the result
-	return ent.callStmt(p, p.State, p.Lexer, tok)
+	return ent.callStmt(p, tok)
 }
