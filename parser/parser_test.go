@@ -46,24 +46,6 @@ func TestNewWithPushBackLexer(t *testing.T) {
 	assert.Same(t, state, result.State)
 }
 
-type binaryNode struct {
-	L  Node
-	R  Node
-	Op *lexer.Token
-}
-
-func (bn *binaryNode) Location() scanner.Location {
-	return nil
-}
-
-func (bn *binaryNode) Children() []Node {
-	return []Node{bn.L, bn.R}
-}
-
-func (bn *binaryNode) String() string {
-	return bn.Op.String()
-}
-
 func TestParserExpressionBase(t *testing.T) {
 	l := NewPushBackLexer(lexer.NewListLexer([]*lexer.Token{
 		{Type: "n", Value: 1},
@@ -86,7 +68,7 @@ func TestParserExpressionBase(t *testing.T) {
 		assert.Same(t, obj, p)
 		assert.Equal(t, 10, pow)
 		r, _ := p.Expression(pow)
-		return &binaryNode{
+		return &BinaryOperator{
 			L:  ln,
 			R:  r,
 			Op: tok,
@@ -107,9 +89,9 @@ func TestParserExpressionBase(t *testing.T) {
 	result, err := obj.Expression(0)
 
 	assert.NoError(t, err)
-	assert.Equal(t, &binaryNode{
+	assert.Equal(t, &BinaryOperator{
 		Op: &lexer.Token{Type: "+"},
-		L: &binaryNode{
+		L: &BinaryOperator{
 			Op: &lexer.Token{Type: "+"},
 			L:  &TokenNode{Token: &lexer.Token{Type: "n", Value: 1}},
 			R:  &TokenNode{Token: &lexer.Token{Type: "n", Value: 2}},
@@ -148,7 +130,7 @@ func TestParserExpressionPrecedence(t *testing.T) {
 			assert.Equal(t, 20, pow)
 		}
 		r, _ := p.Expression(pow)
-		return &binaryNode{
+		return &BinaryOperator{
 			L:  ln,
 			R:  r,
 			Op: tok,
@@ -173,12 +155,12 @@ func TestParserExpressionPrecedence(t *testing.T) {
 	result, err := obj.Expression(0)
 
 	assert.NoError(t, err)
-	assert.Equal(t, &binaryNode{
+	assert.Equal(t, &BinaryOperator{
 		Op: &lexer.Token{Type: "+"},
-		L: &binaryNode{
+		L: &BinaryOperator{
 			Op: &lexer.Token{Type: "+"},
 			L:  &TokenNode{Token: &lexer.Token{Type: "n", Value: 1}},
-			R: &binaryNode{
+			R: &BinaryOperator{
 				Op: &lexer.Token{Type: "*"},
 				L:  &TokenNode{Token: &lexer.Token{Type: "n", Value: 2}},
 				R:  &TokenNode{Token: &lexer.Token{Type: "n", Value: 3}},
@@ -249,7 +231,7 @@ func TestParserExpressionFirstFails(t *testing.T) {
 		assert.Same(t, obj, p)
 		assert.Equal(t, 10, pow)
 		r, _ := p.Expression(pow)
-		return &binaryNode{
+		return &BinaryOperator{
 			L:  ln,
 			R:  r,
 			Op: tok,
