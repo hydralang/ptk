@@ -15,6 +15,7 @@
 package parser
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -170,14 +171,12 @@ func TestUnaryOperatorImplementsNode(t *testing.T) {
 }
 
 func TestUnaryFactoryBase(t *testing.T) {
-	p := &mockParser{}
-	s := &mockState{}
-	lex := &mockPushBackLexer{}
+	p := &Parser{}
 	op := &lexer.Token{}
 	exp := &mockNode{}
 	exp.On("Location").Return(nil)
 
-	result, err := UnaryFactory(p, s, lex, op, exp)
+	result, err := UnaryFactory(p, op, exp)
 
 	assert.NoError(t, err)
 	assert.Equal(t, &UnaryOperator{
@@ -187,9 +186,7 @@ func TestUnaryFactoryBase(t *testing.T) {
 }
 
 func TestUnaryFactoryLocation(t *testing.T) {
-	p := &mockParser{}
-	s := &mockState{}
-	lex := &mockPushBackLexer{}
+	p := &Parser{}
 	finalLoc := &mockLocation{}
 	opLoc := &mockLocation{}
 	expLoc := &mockLocation{}
@@ -200,7 +197,7 @@ func TestUnaryFactoryLocation(t *testing.T) {
 	exp := &mockNode{}
 	exp.On("Location").Return(expLoc)
 
-	result, err := UnaryFactory(p, s, lex, op, exp)
+	result, err := UnaryFactory(p, op, exp)
 
 	assert.NoError(t, err)
 	assert.Equal(t, &UnaryOperator{
@@ -214,9 +211,7 @@ func TestUnaryFactoryLocation(t *testing.T) {
 }
 
 func TestUnaryFactoryLocationError(t *testing.T) {
-	p := &mockParser{}
-	s := &mockState{}
-	lex := &mockPushBackLexer{}
+	p := &Parser{}
 	opLoc := &mockLocation{}
 	expLoc := &mockLocation{}
 	opLoc.On("ThruEnd", expLoc).Return(nil, assert.AnError)
@@ -226,7 +221,7 @@ func TestUnaryFactoryLocationError(t *testing.T) {
 	exp := &mockNode{}
 	exp.On("Location").Return(expLoc)
 
-	result, err := UnaryFactory(p, s, lex, op, exp)
+	result, err := UnaryFactory(p, op, exp)
 
 	assert.Same(t, assert.AnError, err)
 	assert.Nil(t, result)
@@ -273,16 +268,14 @@ func TestBinaryOperatorImplementsNode(t *testing.T) {
 }
 
 func TestBinaryFactoryBase(t *testing.T) {
-	p := &mockParser{}
-	s := &mockState{}
-	lex := &mockPushBackLexer{}
+	p := &Parser{}
 	op := &lexer.Token{}
 	l := &mockNode{}
 	l.On("Location").Return(nil)
 	r := &mockNode{}
 	r.On("Location").Return(nil)
 
-	result, err := BinaryFactory(p, s, lex, l, r, op)
+	result, err := BinaryFactory(p, l, r, op)
 
 	assert.NoError(t, err)
 	assert.Equal(t, &BinaryOperator{
@@ -295,9 +288,7 @@ func TestBinaryFactoryBase(t *testing.T) {
 }
 
 func TestBinaryFactoryLocation(t *testing.T) {
-	p := &mockParser{}
-	s := &mockState{}
-	lex := &mockPushBackLexer{}
+	p := &Parser{}
 	finalLoc := &mockLocation{}
 	lLoc := &mockLocation{}
 	rLoc := &mockLocation{}
@@ -308,7 +299,7 @@ func TestBinaryFactoryLocation(t *testing.T) {
 	r := &mockNode{}
 	r.On("Location").Return(rLoc)
 
-	result, err := BinaryFactory(p, s, lex, l, r, op)
+	result, err := BinaryFactory(p, l, r, op)
 
 	assert.NoError(t, err)
 	assert.Equal(t, &BinaryOperator{
@@ -326,9 +317,7 @@ func TestBinaryFactoryLocation(t *testing.T) {
 }
 
 func TestBinaryFactoryLocationError(t *testing.T) {
-	p := &mockParser{}
-	s := &mockState{}
-	lex := &mockPushBackLexer{}
+	p := &Parser{}
 	lLoc := &mockLocation{}
 	rLoc := &mockLocation{}
 	lLoc.On("ThruEnd", rLoc).Return(nil, assert.AnError)
@@ -338,7 +327,7 @@ func TestBinaryFactoryLocationError(t *testing.T) {
 	r := &mockNode{}
 	r.On("Location").Return(rLoc)
 
-	result, err := BinaryFactory(p, s, lex, l, r, op)
+	result, err := BinaryFactory(p, l, r, op)
 
 	assert.Same(t, assert.AnError, err)
 	assert.Nil(t, result)
@@ -387,295 +376,308 @@ func TestBinaryOperatorString(t *testing.T) {
 }
 
 func TestLiteral(t *testing.T) {
-	p := &mockParser{}
-	s := &mockState{}
-	lex := &mockPushBackLexer{}
+	p := &Parser{}
 	tok := &lexer.Token{}
 
-	result, err := literal(p, s, lex, 42, tok)
+	result, err := literal(p, 42, tok)
 
 	assert.NoError(t, err)
-	assert.Equal(t, &TokenNode{Token: *tok}, result)
-	p.AssertExpectations(t)
-	s.AssertExpectations(t)
-	lex.AssertExpectations(t)
+	assert.Equal(t, &TokenNode{Token: tok}, result)
 }
 
 func TestPrefixBase(t *testing.T) {
-	p := &mockParser{}
-	s := &mockState{}
+	tok := &lexer.Token{Type: "n"}
 	lex := &mockPushBackLexer{}
+	lex.On("Next").Return(tok).Once()
+	lex.On("Next").Return(nil)
+	s := &mockState{}
+	s.On("Table").Return(Table{
+		"n": Entry{
+			Power: 0,
+			First: Literal,
+		},
+	})
+	p := &Parser{
+		Lexer: lex,
+		State: s,
+	}
 	op := &lexer.Token{}
-	exp := &mockNode{}
-	p.On("Expression", 42).Return(exp, nil)
 	node := &mockNode{}
 	factoryCalled := false
-	factory := func(fp IParser, fs State, fLex IPushBackLexer, o *lexer.Token, e Node) (Node, error) {
+	factory := func(fp *Parser, o *lexer.Token, e Node) (Node, error) {
 		assert.Same(t, p, fp)
-		assert.Same(t, s, fs)
-		assert.Same(t, lex, fLex)
 		assert.Same(t, op, o)
-		assert.Same(t, exp, e)
+		assert.Equal(t, &TokenNode{Token: tok}, e)
 		factoryCalled = true
 		return node, nil
 	}
 
 	first := Prefix(factory, 42)
-	result, err := first(p, s, lex, 17, op)
+	result, err := first(p, 17, op)
 
 	assert.NoError(t, err)
 	assert.Same(t, node, result)
 	assert.True(t, factoryCalled)
-	p.AssertExpectations(t)
 	s.AssertExpectations(t)
 	lex.AssertExpectations(t)
 }
 
 func TestPrefixExpressionFails(t *testing.T) {
-	p := &mockParser{}
-	s := &mockState{}
 	lex := &mockPushBackLexer{}
+	lex.On("Next").Return(nil)
+	p := &Parser{
+		Lexer: lex,
+	}
 	op := &lexer.Token{}
-	exp := &mockNode{}
-	p.On("Expression", 42).Return(nil, assert.AnError)
-	node := &mockNode{}
 	factoryCalled := false
-	factory := func(fp IParser, fs State, fLex IPushBackLexer, o *lexer.Token, e Node) (Node, error) {
-		assert.Same(t, p, fp)
-		assert.Same(t, s, fs)
-		assert.Same(t, lex, fLex)
-		assert.Same(t, op, o)
-		assert.Same(t, exp, e)
+	factory := func(fp *Parser, o *lexer.Token, e Node) (Node, error) {
 		factoryCalled = true
-		return node, nil
+		return nil, nil
 	}
 
 	first := Prefix(factory, 42)
-	result, err := first(p, s, lex, 17, op)
+	result, err := first(p, 17, op)
 
-	assert.Same(t, assert.AnError, err)
+	assert.True(t, errors.Is(err, ErrExpectedToken))
 	assert.Nil(t, result)
 	assert.False(t, factoryCalled)
-	p.AssertExpectations(t)
-	s.AssertExpectations(t)
 	lex.AssertExpectations(t)
 }
 
 func TestPrefixFactoryFails(t *testing.T) {
-	p := &mockParser{}
-	s := &mockState{}
+	tok := &lexer.Token{Type: "n"}
 	lex := &mockPushBackLexer{}
+	lex.On("Next").Return(tok).Once()
+	lex.On("Next").Return(nil)
+	s := &mockState{}
+	s.On("Table").Return(Table{
+		"n": Entry{
+			Power: 0,
+			First: Literal,
+		},
+	})
+	p := &Parser{
+		Lexer: lex,
+		State: s,
+	}
 	op := &lexer.Token{}
-	exp := &mockNode{}
-	p.On("Expression", 42).Return(exp, nil)
 	factoryCalled := false
-	factory := func(fp IParser, fs State, fLex IPushBackLexer, o *lexer.Token, e Node) (Node, error) {
+	factory := func(fp *Parser, o *lexer.Token, e Node) (Node, error) {
 		assert.Same(t, p, fp)
-		assert.Same(t, s, fs)
-		assert.Same(t, lex, fLex)
 		assert.Same(t, op, o)
-		assert.Same(t, exp, e)
+		assert.Equal(t, &TokenNode{Token: tok}, e)
 		factoryCalled = true
 		return nil, assert.AnError
 	}
 
 	first := Prefix(factory, 42)
-	result, err := first(p, s, lex, 17, op)
+	result, err := first(p, 17, op)
 
 	assert.Same(t, assert.AnError, err)
 	assert.Nil(t, result)
 	assert.True(t, factoryCalled)
-	p.AssertExpectations(t)
 	s.AssertExpectations(t)
 	lex.AssertExpectations(t)
 }
 
 func TestInfixBase(t *testing.T) {
-	p := &mockParser{}
-	s := &mockState{}
+	tok := &lexer.Token{Type: "n"}
 	lex := &mockPushBackLexer{}
+	lex.On("Next").Return(tok).Once()
+	lex.On("Next").Return(nil)
+	s := &mockState{}
+	s.On("Table").Return(Table{
+		"n": Entry{
+			Power: 0,
+			First: Literal,
+		},
+	})
+	p := &Parser{
+		Lexer: lex,
+		State: s,
+	}
 	op := &lexer.Token{}
 	left := &mockNode{}
-	right := &mockNode{}
-	p.On("Expression", 17).Return(right, nil)
 	node := &mockNode{}
 	factoryCalled := false
-	factory := func(fp IParser, fs State, fLex IPushBackLexer, l, r Node, o *lexer.Token) (Node, error) {
+	factory := func(fp *Parser, l, r Node, o *lexer.Token) (Node, error) {
 		assert.Same(t, p, fp)
-		assert.Same(t, s, fs)
-		assert.Same(t, lex, fLex)
 		assert.Same(t, left, l)
-		assert.Same(t, right, r)
+		assert.Equal(t, &TokenNode{Token: tok}, r)
 		assert.Same(t, op, o)
 		factoryCalled = true
 		return node, nil
 	}
 
 	next := Infix(factory)
-	result, err := next(p, s, lex, 17, left, op)
+	result, err := next(p, 17, left, op)
 
 	assert.NoError(t, err)
 	assert.Same(t, node, result)
 	assert.True(t, factoryCalled)
-	p.AssertExpectations(t)
 	s.AssertExpectations(t)
 	lex.AssertExpectations(t)
 }
 
 func TestInfixExpressionFails(t *testing.T) {
-	p := &mockParser{}
-	s := &mockState{}
 	lex := &mockPushBackLexer{}
+	lex.On("Next").Return(nil)
+	p := &Parser{
+		Lexer: lex,
+	}
 	op := &lexer.Token{}
 	left := &mockNode{}
-	right := &mockNode{}
-	p.On("Expression", 17).Return(nil, assert.AnError)
 	node := &mockNode{}
 	factoryCalled := false
-	factory := func(fp IParser, fs State, fLex IPushBackLexer, l, r Node, o *lexer.Token) (Node, error) {
-		assert.Same(t, p, fp)
-		assert.Same(t, s, fs)
-		assert.Same(t, lex, fLex)
-		assert.Same(t, left, l)
-		assert.Same(t, right, r)
-		assert.Same(t, op, o)
+	factory := func(fp *Parser, l, r Node, o *lexer.Token) (Node, error) {
 		factoryCalled = true
 		return node, nil
 	}
 
 	next := Infix(factory)
-	result, err := next(p, s, lex, 17, left, op)
+	result, err := next(p, 17, left, op)
 
-	assert.Same(t, assert.AnError, err)
+	assert.True(t, errors.Is(err, ErrExpectedToken))
 	assert.Nil(t, result)
 	assert.False(t, factoryCalled)
-	p.AssertExpectations(t)
-	s.AssertExpectations(t)
 	lex.AssertExpectations(t)
 }
 
 func TestInfixFactoryFails(t *testing.T) {
-	p := &mockParser{}
-	s := &mockState{}
+	tok := &lexer.Token{Type: "n"}
 	lex := &mockPushBackLexer{}
+	lex.On("Next").Return(tok).Once()
+	lex.On("Next").Return(nil)
+	s := &mockState{}
+	s.On("Table").Return(Table{
+		"n": Entry{
+			Power: 0,
+			First: Literal,
+		},
+	})
+	p := &Parser{
+		Lexer: lex,
+		State: s,
+	}
 	op := &lexer.Token{}
 	left := &mockNode{}
-	right := &mockNode{}
-	p.On("Expression", 17).Return(right, nil)
 	factoryCalled := false
-	factory := func(fp IParser, fs State, fLex IPushBackLexer, l, r Node, o *lexer.Token) (Node, error) {
+	factory := func(fp *Parser, l, r Node, o *lexer.Token) (Node, error) {
 		assert.Same(t, p, fp)
-		assert.Same(t, s, fs)
-		assert.Same(t, lex, fLex)
 		assert.Same(t, op, o)
 		assert.Same(t, left, l)
-		assert.Same(t, right, r)
+		assert.Equal(t, &TokenNode{Token: tok}, r)
 		factoryCalled = true
 		return nil, assert.AnError
 	}
 
 	next := Infix(factory)
-	result, err := next(p, s, lex, 17, left, op)
+	result, err := next(p, 17, left, op)
 
 	assert.Same(t, assert.AnError, err)
 	assert.Nil(t, result)
 	assert.True(t, factoryCalled)
-	p.AssertExpectations(t)
 	s.AssertExpectations(t)
 	lex.AssertExpectations(t)
 }
 
 func TestInfixRBase(t *testing.T) {
-	p := &mockParser{}
-	s := &mockState{}
+	tok := &lexer.Token{Type: "n"}
 	lex := &mockPushBackLexer{}
+	lex.On("Next").Return(tok).Once()
+	lex.On("Next").Return(nil)
+	s := &mockState{}
+	s.On("Table").Return(Table{
+		"n": Entry{
+			Power: 0,
+			First: Literal,
+		},
+	})
+	p := &Parser{
+		Lexer: lex,
+		State: s,
+	}
 	op := &lexer.Token{}
 	left := &mockNode{}
-	right := &mockNode{}
-	p.On("Expression", 16).Return(right, nil)
 	node := &mockNode{}
 	factoryCalled := false
-	factory := func(fp IParser, fs State, fLex IPushBackLexer, l, r Node, o *lexer.Token) (Node, error) {
+	factory := func(fp *Parser, l, r Node, o *lexer.Token) (Node, error) {
 		assert.Same(t, p, fp)
-		assert.Same(t, s, fs)
-		assert.Same(t, lex, fLex)
 		assert.Same(t, left, l)
-		assert.Same(t, right, r)
+		assert.Equal(t, &TokenNode{Token: tok}, r)
 		assert.Same(t, op, o)
 		factoryCalled = true
 		return node, nil
 	}
 
 	next := InfixR(factory)
-	result, err := next(p, s, lex, 17, left, op)
+	result, err := next(p, 17, left, op)
 
 	assert.NoError(t, err)
 	assert.Same(t, node, result)
 	assert.True(t, factoryCalled)
-	p.AssertExpectations(t)
 	s.AssertExpectations(t)
 	lex.AssertExpectations(t)
 }
 
 func TestInfixRExpressionFails(t *testing.T) {
-	p := &mockParser{}
-	s := &mockState{}
 	lex := &mockPushBackLexer{}
+	lex.On("Next").Return(nil)
+	p := &Parser{
+		Lexer: lex,
+	}
 	op := &lexer.Token{}
 	left := &mockNode{}
-	right := &mockNode{}
-	p.On("Expression", 16).Return(nil, assert.AnError)
 	node := &mockNode{}
 	factoryCalled := false
-	factory := func(fp IParser, fs State, fLex IPushBackLexer, l, r Node, o *lexer.Token) (Node, error) {
-		assert.Same(t, p, fp)
-		assert.Same(t, s, fs)
-		assert.Same(t, lex, fLex)
-		assert.Same(t, left, l)
-		assert.Same(t, right, r)
-		assert.Same(t, op, o)
+	factory := func(fp *Parser, l, r Node, o *lexer.Token) (Node, error) {
 		factoryCalled = true
 		return node, nil
 	}
 
 	next := InfixR(factory)
-	result, err := next(p, s, lex, 17, left, op)
+	result, err := next(p, 17, left, op)
 
-	assert.Same(t, assert.AnError, err)
+	assert.True(t, errors.Is(err, ErrExpectedToken))
 	assert.Nil(t, result)
 	assert.False(t, factoryCalled)
-	p.AssertExpectations(t)
-	s.AssertExpectations(t)
 	lex.AssertExpectations(t)
 }
 
 func TestInfixRFactoryFails(t *testing.T) {
-	p := &mockParser{}
-	s := &mockState{}
+	tok := &lexer.Token{Type: "n"}
 	lex := &mockPushBackLexer{}
+	lex.On("Next").Return(tok).Once()
+	lex.On("Next").Return(nil)
+	s := &mockState{}
+	s.On("Table").Return(Table{
+		"n": Entry{
+			Power: 0,
+			First: Literal,
+		},
+	})
+	p := &Parser{
+		Lexer: lex,
+		State: s,
+	}
 	op := &lexer.Token{}
 	left := &mockNode{}
-	right := &mockNode{}
-	p.On("Expression", 16).Return(right, nil)
 	factoryCalled := false
-	factory := func(fp IParser, fs State, fLex IPushBackLexer, l, r Node, o *lexer.Token) (Node, error) {
+	factory := func(fp *Parser, l, r Node, o *lexer.Token) (Node, error) {
 		assert.Same(t, p, fp)
-		assert.Same(t, s, fs)
-		assert.Same(t, lex, fLex)
 		assert.Same(t, op, o)
 		assert.Same(t, left, l)
-		assert.Same(t, right, r)
+		assert.Equal(t, &TokenNode{Token: tok}, r)
 		factoryCalled = true
 		return nil, assert.AnError
 	}
 
 	next := InfixR(factory)
-	result, err := next(p, s, lex, 17, left, op)
+	result, err := next(p, 17, left, op)
 
 	assert.Same(t, assert.AnError, err)
 	assert.Nil(t, result)
 	assert.True(t, factoryCalled)
-	p.AssertExpectations(t)
 	s.AssertExpectations(t)
 	lex.AssertExpectations(t)
 }

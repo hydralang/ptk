@@ -39,7 +39,7 @@ type Node interface {
 // provides a default implementation of Children that returns an empty
 // list of child nodes.
 type TokenNode struct {
-	lexer.Token
+	*lexer.Token
 }
 
 // Children returns a list of child nodes.
@@ -92,7 +92,7 @@ type UnaryOperator struct {
 
 // UnaryFactory is a factory function that may be passed to Prefix,
 // and which constructs a UnaryOperator node.
-func UnaryFactory(p IParser, s State, lex IPushBackLexer, op *lexer.Token, exp Node) (Node, error) {
+func UnaryFactory(p *Parser, op *lexer.Token, exp Node) (Node, error) {
 	obj := &UnaryOperator{
 		Op:  op,
 		Exp: exp,
@@ -138,7 +138,7 @@ type BinaryOperator struct {
 
 // BinaryFactory is a factory function that may be passed to Infix or
 // InfixR, and which constructs a BinaryOperator node.
-func BinaryFactory(p IParser, s State, lex IPushBackLexer, l, r Node, op *lexer.Token) (Node, error) {
+func BinaryFactory(p *Parser, l, r Node, op *lexer.Token) (Node, error) {
 	obj := &BinaryOperator{
 		Op: op,
 		L:  l,
@@ -181,8 +181,8 @@ func (b *BinaryOperator) String() string {
 // literal is a ExprFirst function for literal tokens.  Its
 // implementation is trivial: it simply returns the token wrapped in a
 // TokenNode.
-func literal(p IParser, s State, lex IPushBackLexer, pow int, tok *lexer.Token) (Node, error) {
-	return &TokenNode{Token: *tok}, nil
+func literal(p *Parser, pow int, tok *lexer.Token) (Node, error) {
+	return &TokenNode{Token: tok}, nil
 }
 
 // Literal is an ExprFirst function for literal tokens.  It may be
@@ -200,8 +200,8 @@ var Literal = ExprFirst(literal)
 // should also be called with a binding power; typically, this binding
 // power will be higher than the binding power for the same operator
 // as a binary operator, which is why it is separate from the Entry.
-func Prefix(factory func(p IParser, s State, lex IPushBackLexer, op *lexer.Token, exp Node) (Node, error), power int) ExprFirst {
-	return func(p IParser, s State, lex IPushBackLexer, pow int, tok *lexer.Token) (Node, error) {
+func Prefix(factory func(p *Parser, op *lexer.Token, exp Node) (Node, error), power int) ExprFirst {
+	return func(p *Parser, pow int, tok *lexer.Token) (Node, error) {
 		// Get the sub-expression on the right
 		exp, err := p.Expression(power)
 		if err != nil {
@@ -209,7 +209,7 @@ func Prefix(factory func(p IParser, s State, lex IPushBackLexer, op *lexer.Token
 		}
 
 		// Construct the node and return it
-		return factory(p, s, lex, tok, exp)
+		return factory(p, tok, exp)
 	}
 }
 
@@ -220,8 +220,8 @@ func Prefix(factory func(p IParser, s State, lex IPushBackLexer, op *lexer.Token
 // "factory" function that constructs a Node; this function will be
 // called with the left and right nodes and the token representing the
 // operator.
-func Infix(factory func(p IParser, s State, lex IPushBackLexer, l, r Node, op *lexer.Token) (Node, error)) ExprNext {
-	return func(p IParser, s State, lex IPushBackLexer, pow int, l Node, tok *lexer.Token) (Node, error) {
+func Infix(factory func(p *Parser, l, r Node, op *lexer.Token) (Node, error)) ExprNext {
+	return func(p *Parser, pow int, l Node, tok *lexer.Token) (Node, error) {
 		// Get the sub-expression on the right
 		r, err := p.Expression(pow)
 		if err != nil {
@@ -229,7 +229,7 @@ func Infix(factory func(p IParser, s State, lex IPushBackLexer, l, r Node, op *l
 		}
 
 		// Construct the node and return it
-		return factory(p, s, lex, l, r, tok)
+		return factory(p, l, r, tok)
 	}
 }
 
@@ -239,8 +239,8 @@ func Infix(factory func(p IParser, s State, lex IPushBackLexer, l, r Node, op *l
 // The InfixR should be passed a factory function, which will be
 // called with the left and right nodes and the token representing the
 // operator.
-func InfixR(factory func(p IParser, s State, lex IPushBackLexer, l, r Node, op *lexer.Token) (Node, error)) ExprNext {
-	return func(p IParser, s State, lex IPushBackLexer, pow int, l Node, tok *lexer.Token) (Node, error) {
+func InfixR(factory func(p *Parser, l, r Node, op *lexer.Token) (Node, error)) ExprNext {
+	return func(p *Parser, pow int, l Node, tok *lexer.Token) (Node, error) {
 		// Get the sub-expression on the right
 		r, err := p.Expression(pow - 1)
 		if err != nil {
@@ -248,6 +248,6 @@ func InfixR(factory func(p IParser, s State, lex IPushBackLexer, l, r Node, op *
 		}
 
 		// Construct the node and return it
-		return factory(p, s, lex, l, r, tok)
+		return factory(p, l, r, tok)
 	}
 }
