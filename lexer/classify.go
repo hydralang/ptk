@@ -22,9 +22,9 @@ type Classifier interface {
 	// Classify takes a lexer, a state, and a backtracking scanner
 	// and determines one or more recognizers to extract a token
 	// or a set of tokens from the lexer input.
-	Classify(lexer *Lexer, state State, str IBackTracker) []Recognizer
+	Classify(lexer *Lexer) []Recognizer
 
 	// Error is called by the lexer if all recognizers returned by
 	// Classify return without success.
-	Error(lexer *Lexer, state State, str IBackTracker)
+	Error(lexer *Lexer)
 }

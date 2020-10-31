@@ -20,8 +20,8 @@ type mockClassifier struct {
 	mock.Mock
 }
 
-func (m *mockClassifier) Classify(lexer *Lexer, state State, str IBackTracker) []Recognizer {
-	args := m.MethodCalled("Classify", lexer, state, str)
+func (m *mockClassifier) Classify(lexer *Lexer) []Recognizer {
+	args := m.MethodCalled("Classify", lexer)
 
 	if tmp := args.Get(0); tmp != nil {
 		return tmp.([]Recognizer)
@@ -30,6 +30,6 @@ func (m *mockClassifier) Classify(lexer *Lexer, state State, str IBackTracker) [
 	return nil
 }
 
-func (m *mockClassifier) Error(lexer *Lexer, state State, str IBackTracker) {
-	m.MethodCalled("Error", lexer, state, str)
+func (m *mockClassifier) Error(lexer *Lexer) {
+	m.MethodCalled("Error", lexer)
 }

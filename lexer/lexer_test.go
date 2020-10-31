@@ -63,12 +63,12 @@ func TestLexerNextInternalBase(t *testing.T) {
 	bt.On("BackTrack").Times(2)
 	bt.On("Accept", 0).Once()
 	rec1 := &mockRecognizer{}
-	rec1.On("Recognize", obj, state, bt).Return(false)
+	rec1.On("Recognize", obj).Return(false)
 	rec2 := &mockRecognizer{}
-	rec2.On("Recognize", obj, state, bt).Return(true)
+	rec2.On("Recognize", obj).Return(true)
 	rec3 := &mockRecognizer{}
 	cls := &mockClassifier{}
-	cls.On("Classify", obj, state, bt).Return([]Recognizer{rec1, rec2, rec3})
+	cls.On("Classify", obj).Return([]Recognizer{rec1, rec2, rec3})
 	state.On("Classifier").Return(cls)
 
 	obj.next()
@@ -93,14 +93,14 @@ func TestLexerNextInternalUnrecognized(t *testing.T) {
 	bt.On("BackTrack").Times(4)
 	bt.On("Accept", 0).Once()
 	rec1 := &mockRecognizer{}
-	rec1.On("Recognize", obj, state, bt).Return(false)
+	rec1.On("Recognize", obj).Return(false)
 	rec2 := &mockRecognizer{}
-	rec2.On("Recognize", obj, state, bt).Return(false)
+	rec2.On("Recognize", obj).Return(false)
 	rec3 := &mockRecognizer{}
-	rec3.On("Recognize", obj, state, bt).Return(false)
+	rec3.On("Recognize", obj).Return(false)
 	cls := &mockClassifier{}
-	cls.On("Classify", obj, state, bt).Return([]Recognizer{rec1, rec2, rec3})
-	cls.On("Error", obj, state, bt)
+	cls.On("Classify", obj).Return([]Recognizer{rec1, rec2, rec3})
+	cls.On("Error", obj)
 	state.On("Classifier").Return(cls)
 
 	obj.next()
@@ -125,8 +125,8 @@ func TestLexerNextInternalUnclassified(t *testing.T) {
 	bt.On("BackTrack").Once()
 	bt.On("Accept", 0).Once()
 	cls := &mockClassifier{}
-	cls.On("Classify", obj, state, bt).Return([]Recognizer{})
-	cls.On("Error", obj, state, bt)
+	cls.On("Classify", obj).Return([]Recognizer{})
+	cls.On("Error", obj)
 	state.On("Classifier").Return(cls)
 
 	obj.next()
@@ -169,8 +169,8 @@ func TestLexerNextLex(t *testing.T) {
 	bt.On("BackTrack").Once()
 	bt.On("Accept", 0).Once()
 	cls := &mockClassifier{}
-	cls.On("Classify", obj, state, bt).Return([]Recognizer{}).Once()
-	cls.On("Error", obj, state, bt).Run(func(args mock.Arguments) {
+	cls.On("Classify", obj).Return([]Recognizer{}).Once()
+	cls.On("Error", obj).Run(func(args mock.Arguments) {
 		obj.toks.PushBack(tok)
 	}).Once()
 	state.On("Classifier").Return(cls)
